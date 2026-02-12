@@ -1,0 +1,21 @@
+# Build artifacts
+circular
+*.exe
+*.out
+
+# Runtime logs
+*.log
+
+# Generated analysis outputs
+graph.dot
+dependencies.tsv
+coverage.out
+xdot.png
+
+# Local config overrides
+circular.toml
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/

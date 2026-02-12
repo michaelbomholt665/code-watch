@@ -1,0 +1,20 @@
+# circular.example.toml
+
+grammars_path = "./grammars"
+watch_paths = ["./src"]
+
+[exclude]
+dirs = [".git", "node_modules", "vendor", "__pycache__"]
+files = ["*.tmp", "*.log"]
+symbols = ["self", "ctx", "p", "log", "toml", "sitter", "tea", "fsnotify"]
+
+[watch]
+debounce = "1s"
+
+[output]
+dot = "graph.dot"
+tsv = "dependencies.tsv"
+
+[alerts]
+beep = true
+terminal = true
