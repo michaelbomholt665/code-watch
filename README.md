@@ -23,7 +23,9 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 ## Install / Build
 
 Requirements:
-- Go `1.25.7` (from `go.mod`)
+- Go `1.24.2+` supported
+- Go `1.23` is not supported by current dependencies
+- `go.mod` currently pins `go 1.25.7`
 
 Build:
 
