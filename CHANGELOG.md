@@ -80,6 +80,7 @@ All notable changes to this project will be documented in this file.
 - `parser:` Grammar loader now initializes runtime grammars for registry-enabled `css`, `html`, `java`, `javascript`, `rust`, `tsx`, and `typescript`.
 - `parser:` `gomod` and `gosum` parsing now uses raw-text extraction paths that do not require runtime tree-sitter bindings.
 - `app:` App startup now registers default extractors from the language registry instead of hardcoding Go/Python extractor wiring.
+- `config:` Expanded example exclude guidance to cover project-specific symbol/import suppression.
 
 ### Fixed
 - `compatibility:` Restored `GOTOOLCHAIN=go1.24 go test ./...` compatibility by aligning the module Go directive.
@@ -87,6 +88,8 @@ All notable changes to this project will be documented in this file.
 - `history:` Improved corrupt-database handling with explicit SQLite initialization/ping failures and drift-safe schema validation.
 - `resolver:` Corrected unused-import suppression to honor `exclude.imports` (module path/base name matching) instead of symbol exclusions.
 - `config:` Corrected TOML key placement for runtime/example configs so top-level `grammars_path` and `watch_paths` load under the intended schema.
+- `resolver:` Treated indexed local symbols (for example `items[i].Field`) as local to avoid false unresolved findings.
+- `resolver:` Reported qualified unresolved references even when no matching import is present.
 
 ### Removed
 - `parser:` Removed language-specific extractor files `internal/parser/{javascript,typescript,tsx,java,rust,html,css,gomod,gosum}.go` after profile parity migration.
@@ -116,3 +119,4 @@ All notable changes to this project will be documented in this file.
 - Updated `docs/plans/grammar-expansion-aib14-aib15-plan.md` to mark T5/T7/T8/T9 complete and record the simplified profile implementation approach.
 - Corrected README and configuration examples to place `grammars_path`/`watch_paths` at TOML top-level and documented `exclude.imports` for unused-import suppression.
 - Documented `--include-tests` default behavior (tests excluded unless flag is enabled).
+- Documented example exclude lists for project-specific symbol/import suppression in configuration docs.

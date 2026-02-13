@@ -92,6 +92,9 @@ config_path = ""
 [exclude]
 dirs = [".git", "node_modules", "vendor", "__pycache__"]
 files = ["*.tmp", "*.log"]
+# Add entries here to suppress known-safe, project-specific unresolved references.
+# This is intended for per-project configs (for example MCP server deployments).
+# Prefer module/package names and stable aliases; keep list minimal.
 symbols = [
   "self",
   "ctx",
@@ -114,6 +117,36 @@ symbols = [
   "tree_sitter_python",
   "tree_sitter_rust",
   "tree_sitter_typescript",
+]
+# Add entries here to suppress noisy unused-import detections for known-safe imports.
+# Use fully-qualified module paths or common stdlib packages. Keep list minimal.
+imports = [
+  "fmt",
+  "sort",
+  "strings",
+  "os",
+  "os/exec",
+  "time",
+  "sync",
+  "context",
+  "path",
+  "path/filepath",
+  "unicode",
+  "errors",
+  "io",
+  "io/fs",
+  "embed",
+  "encoding/json",
+  "circular/internal/engine/resolver",
+  "circular/internal/shared/util",
+  "circular/internal/data/query",
+  "circular/internal/ui/report",
+  "circular/internal/ui/report/formats",
+  "github.com/charmbracelet/bubbles/list",
+  "github.com/charmbracelet/bubbletea",
+  "github.com/charmbracelet/lipgloss",
+  "github.com/tree-sitter/go-tree-sitter",
+  "github.com/gobwas/glob",
 ]
 
 [watch]

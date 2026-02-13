@@ -59,8 +59,10 @@ config_path = ""
 [exclude]
 dirs = [".git", "node_modules", "vendor"]
 files = ["*.tmp", "*.log"]
+# Add entries here to suppress known-safe, project-specific unresolved references.
 symbols = ["self", "ctx", "p"]
-imports = ["fmt", "strings"]
+# Add entries here to suppress noisy unused-import detections for known-safe imports.
+imports = ["fmt", "sort", "strings"]
 
 [watch]
 debounce = "500ms"
@@ -148,8 +150,11 @@ top_complexity = 5
 - optional exact-file routing (for example `go.mod`, `go.sum`)
 - `watch_paths` (`[]string`)
 - defaults to `["."]`
+- `exclude.symbols` (`[]string`)
+- symbol names to suppress unresolved reference findings for known-safe locals or framework names
 - `exclude.imports` (`[]string`)
 - import module paths or reference base names to suppress unused-import findings
+- keep lists minimal and prefer project-specific overrides when embedding MCP configs
 - `watch.debounce` (`duration`)
 - defaults to `500ms`
 - `output.*`, `alerts.*`, `architecture.*`

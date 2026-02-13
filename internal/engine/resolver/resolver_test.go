@@ -181,6 +181,28 @@ func TestResolver_LocalSymbols(t *testing.T) {
 	}
 }
 
+func TestResolver_LocalSymbolsWithIndexAccess(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:         "idx.go",
+		Language:     "go",
+		Module:       "modIdx",
+		LocalSymbols: []string{"items"},
+		References: []parser.Reference{
+			{Name: "items[i].Field"},
+			{Name: "items[i].Other"},
+		},
+	})
+
+	res := NewResolver(g, nil, nil)
+	unresolved := res.FindUnresolved()
+
+	if len(unresolved) != 0 {
+		t.Fatalf("expected no unresolved references, got %d", len(unresolved))
+	}
+}
+
 func TestResolver_FindUnresolvedForPaths(t *testing.T) {
 	g := graph.NewGraph()
 
