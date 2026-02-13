@@ -20,6 +20,7 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 - Detects import cycles across internal modules
 - Detects unresolved references using local symbols, imports, stdlib, and builtins
 - Detects unused imports and appends findings to TSV output
+- Supports unused-import suppression via `exclude.imports` for known false-positive paths
 - Applies language-scoped resolver policies for `go`, `python`, `javascript`/`typescript`/`tsx`, `java`, and `rust`
 - Disables unused-import checks for unsupported/metadata-only languages to reduce false positives
 - Computes module dependency metrics (depth, fan-in, fan-out)
@@ -78,14 +79,13 @@ Before a version bump/release:
 
 ## Quick Start
 
-1. Copy example config:
+1. Review default config:
 
 ```bash
-mkdir -p data/config
-cp data/config/circular.example.toml data/config/circular.toml
+cat data/config/circular.toml
 ```
 
-2. Update `watch_paths` in `data/config/circular.toml` to your project path.
+2. Update `watch_paths` in `data/config/circular.toml` to your target project paths if needed.
 
 3. Run a one-time scan:
 
@@ -119,6 +119,7 @@ Flags:
 - `--trace` print shortest import chain from one module to another, then exit
 - `--impact` analyze direct/transitive impact for a file path or module, then exit
 - `--verify-grammars` verify enabled language grammar artifacts and exit
+- `--include-tests` include test files in analysis (default excludes tests)
 - `--verbose` enable debug logs
 - `--version` print version and exit
 
@@ -126,7 +127,7 @@ Positional arg:
 - first positional argument overrides `watch_paths` with a single path
 - in trace mode, exactly two positional arguments are required (`<from> <to>`)
 
-Version in source: `1.0.0` (`internal/cliapp/cli.go`).
+Version in source: `1.0.0` (`internal/ui/cli/cli.go`).
 
 ## Configuration
 
@@ -136,6 +137,12 @@ Example (`data/config/circular.example.toml`):
 
 ```toml
 version = 2
+
+grammars_path = "./grammars"
+watch_paths = ["./src"]
+
+[grammar_verification]
+enabled = true
 
 [paths]
 project_root = ""
@@ -171,10 +178,6 @@ transport = "stdio"
 address = "127.0.0.1:8765"
 config_path = ""
 
-grammars_path = "./grammars"
-[grammar_verification]
-enabled = true
-
 [languages]
 # Optional per-language overrides. Go/Python are enabled by default.
 
@@ -186,12 +189,11 @@ enabled = true
 # [languages.rust]
 # enabled = true
 
-watch_paths = ["./src"]
-
 [exclude]
 dirs = [".git", "node_modules", "vendor", "__pycache__"]
 files = ["*.tmp", "*.log"]
 symbols = ["self", "ctx", "p", "log", "toml", "sitter", "tea", "fsnotify"]
+imports = ["fmt", "strings"]
 
 [watch]
 debounce = "1s"
@@ -230,7 +232,7 @@ paths = ["internal/api", "cmd"]
 
 [[architecture.layers]]
 name = "core"
-paths = ["internal/core", "internal/graph", "internal/parser", "internal/resolver"]
+paths = ["internal/core", "internal/engine/graph", "internal/engine/parser", "internal/engine/resolver"]
 
 [[architecture.rules]]
 name = "api-to-core-only"
@@ -270,66 +272,69 @@ Mermaid:
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
 flowchart LR
-  circular_cmd_circular["circular/cmd/circular\n(0 funcs, 1 files)\n(d=6 in=0 out=1)"]
-  circular_internal_app["circular/internal/app\n(34 funcs, 3 files)\n(d=4 in=1 out=8)"]
-  circular_internal_cliapp["circular/internal/cliapp\n(20 funcs, 8 files)\n(d=5 in=1 out=8)"]
-  circular_internal_config["circular/internal/config\n(18 funcs, 2 files)\n(d=0 in=2 out=0)\n(cx=101)"]
-  circular_internal_graph["circular/internal/graph\n(49 funcs, 6 files)\n(d=1 in=5 out=1)"]
-  circular_internal_history["circular/internal/history\n(21 funcs, 7 files)\n(d=0 in=4 out=0)"]
-  circular_internal_output["circular/internal/output\n(32 funcs, 8 files)\n(d=3 in=2 out=4)\n(cx=123)"]
-  circular_internal_parser["circular/internal/parser\n(21 funcs, 7 files)\n(d=0 in=6 out=0)\n(cx=80)"]
-  circular_internal_query["circular/internal/query\n(14 funcs, 3 files)\n(d=2 in=2 out=3)"]
-  circular_internal_resolver["circular/internal/resolver\n(25 funcs, 6 files)\n(d=2 in=3 out=2)"]
-  circular_internal_watcher["circular/internal/watcher\n(7 funcs, 2 files)\n(d=0 in=1 out=0)"]
-  __external_aggregate__["External/Stdlib\n(31 modules)"]
+  circular_cmd_circular["circular/cmd/circular\n(0 funcs, 1 files)\n(d=9 in=0 out=1)"]
+  circular_internal_core_app["circular/internal/core/app\n(21 funcs, 2 files)\n(d=7 in=1 out=6)"]
+  circular_internal_core_config["circular/internal/core/config\n(27 funcs, 3 files)\n(d=0 in=2 out=0)\n(cx=101)"]
+  circular_internal_core_watcher["circular/internal/core/watcher\n(5 funcs, 1 files)\n(d=0 in=1 out=0)"]
+  circular_internal_engine_graph["circular/internal/engine/graph\n(37 funcs, 5 files)\n(d=3 in=5 out=1)"]
+  circular_internal_engine_parser["circular/internal/engine/parser\n(45 funcs, 12 files)\n(d=2 in=5 out=2)"]
+  circular_internal_engine_parser_extractors["circular/internal/engine/parser/extractors\n(2 funcs, 1 files)\n(d=3 in=0 out=1)"]
+  circular_internal_engine_parser_grammar["circular/internal/engine/parser/grammar\n(6 funcs, 2 files)\n(d=1 in=1 out=1)"]
+  circular_internal_engine_parser_registry["circular/internal/engine/parser/registry\n(4 funcs, 1 files)\n(d=0 in=2 out=0)"]
+  circular_internal_engine_resolver["circular/internal/engine/resolver\n(13 funcs, 7 files)\n(d=4 in=3 out=3)"]
+  circular_internal_engine_resolver_drivers["circular/internal/engine/resolver/drivers\n(17 funcs, 5 files)\n(d=0 in=1 out=0)"]
+  circular_internal_ui_cli["circular/internal/ui/cli\n(7 funcs, 6 files)\n(d=8 in=1 out=6)\n(cx=82)"]
+  circular_internal_ui_report["circular/internal/ui/report\n(8 funcs, 3 files)\n(d=6 in=2 out=2)"]
+  circular_internal_ui_report_formats["circular/internal/ui/report/formats\n(13 funcs, 4 files)\n(d=5 in=1 out=2)\n(cx=123)"]
+  __external_aggregate__["External/Stdlib\n(36 modules)"]
 
   classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
-  class circular_cmd_circular,circular_internal_app,circular_internal_cliapp,circular_internal_config,circular_internal_graph,circular_internal_history,circular_internal_output,circular_internal_parser,circular_internal_query,circular_internal_resolver,circular_internal_watcher internalNode;
+  class circular_cmd_circular,circular_internal_core_app,circular_internal_core_config,circular_internal_core_watcher,circular_internal_engine_graph,circular_internal_engine_parser,circular_internal_engine_parser_extractors,circular_internal_engine_parser_grammar,circular_internal_engine_parser_registry,circular_internal_engine_resolver,circular_internal_engine_resolver_drivers,circular_internal_ui_cli,circular_internal_ui_report,circular_internal_ui_report_formats internalNode;
   classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3,color:#000000;
   class __external_aggregate__ externalNode;
   classDef hotspotNode stroke:#8a4f00,stroke-width:2px,color:#000000;
-  class circular_internal_config,circular_internal_output,circular_internal_parser hotspotNode;
+  class circular_internal_core_config,circular_internal_ui_cli,circular_internal_ui_report_formats hotspotNode;
 
-  circular_cmd_circular --> circular_internal_cliapp
-  circular_internal_app --> circular_internal_config
-  circular_internal_app --> circular_internal_graph
-  circular_internal_app --> circular_internal_history
-  circular_internal_app --> circular_internal_output
-  circular_internal_app --> circular_internal_parser
-  circular_internal_app --> circular_internal_query
-  circular_internal_app --> circular_internal_resolver
-  circular_internal_app --> circular_internal_watcher
-  circular_internal_cliapp --> circular_internal_app
-  circular_internal_cliapp --> circular_internal_config
-  circular_internal_cliapp --> circular_internal_graph
-  circular_internal_cliapp --> circular_internal_history
-  circular_internal_cliapp --> circular_internal_output
-  circular_internal_cliapp --> circular_internal_parser
-  circular_internal_cliapp --> circular_internal_query
-  circular_internal_cliapp --> circular_internal_resolver
-  circular_internal_graph --> circular_internal_parser
-  circular_internal_output --> circular_internal_graph
-  circular_internal_output --> circular_internal_history
-  circular_internal_output --> circular_internal_parser
-  circular_internal_output --> circular_internal_resolver
-  circular_internal_query --> circular_internal_graph
-  circular_internal_query --> circular_internal_history
-  circular_internal_query --> circular_internal_parser
-  circular_internal_resolver --> circular_internal_graph
-  circular_internal_resolver --> circular_internal_parser
+  circular_cmd_circular --> circular_internal_ui_cli
+  circular_internal_core_app --> circular_internal_core_config
+  circular_internal_core_app --> circular_internal_core_watcher
+  circular_internal_core_app --> circular_internal_engine_graph
+  circular_internal_core_app --> circular_internal_engine_parser
+  circular_internal_core_app --> circular_internal_engine_resolver
+  circular_internal_core_app --> circular_internal_ui_report
+  circular_internal_engine_graph --> circular_internal_engine_parser
+  circular_internal_engine_parser --> circular_internal_engine_parser_grammar
+  circular_internal_engine_parser --> circular_internal_engine_parser_registry
+  circular_internal_engine_parser_extractors --> circular_internal_engine_parser
+  circular_internal_engine_parser_grammar --> circular_internal_engine_parser_registry
+  circular_internal_engine_resolver --> circular_internal_engine_graph
+  circular_internal_engine_resolver --> circular_internal_engine_parser
+  circular_internal_engine_resolver --> circular_internal_engine_resolver_drivers
+  circular_internal_ui_cli --> circular_internal_core_app
+  circular_internal_ui_cli --> circular_internal_core_config
+  circular_internal_ui_cli --> circular_internal_engine_graph
+  circular_internal_ui_cli --> circular_internal_engine_parser
+  circular_internal_ui_cli --> circular_internal_engine_resolver
+  circular_internal_ui_cli --> circular_internal_ui_report
+  circular_internal_ui_report --> circular_internal_engine_graph
+  circular_internal_ui_report --> circular_internal_ui_report_formats
+  circular_internal_ui_report_formats --> circular_internal_engine_graph
+  circular_internal_ui_report_formats --> circular_internal_engine_resolver
   circular_cmd_circular -->|ext:1| __external_aggregate__
-  circular_internal_app -->|ext:12| __external_aggregate__
-  circular_internal_cliapp -->|ext:13| __external_aggregate__
-  circular_internal_config -->|ext:7| __external_aggregate__
-  circular_internal_graph -->|ext:8| __external_aggregate__
-  circular_internal_history -->|ext:13| __external_aggregate__
-  circular_internal_output -->|ext:9| __external_aggregate__
-  circular_internal_parser -->|ext:11| __external_aggregate__
-  circular_internal_query -->|ext:6| __external_aggregate__
-  circular_internal_resolver -->|ext:7| __external_aggregate__
-  circular_internal_watcher -->|ext:10| __external_aggregate__
+  circular_internal_core_app -->|ext:12| __external_aggregate__
+  circular_internal_core_config -->|ext:6| __external_aggregate__
+  circular_internal_core_watcher -->|ext:8| __external_aggregate__
+  circular_internal_engine_graph -->|ext:7| __external_aggregate__
+  circular_internal_engine_parser -->|ext:18| __external_aggregate__
+  circular_internal_engine_parser_grammar -->|ext:7| __external_aggregate__
+  circular_internal_engine_parser_registry -->|ext:4| __external_aggregate__
+  circular_internal_engine_resolver -->|ext:2| __external_aggregate__
+  circular_internal_engine_resolver_drivers -->|ext:5| __external_aggregate__
+  circular_internal_ui_cli -->|ext:14| __external_aggregate__
+  circular_internal_ui_report -->|ext:6| __external_aggregate__
+  circular_internal_ui_report_formats -->|ext:5| __external_aggregate__
 
-  linkStyle 27,28,29,30,31,32,33,34,35,36,37 stroke:#777777,stroke-dasharray:4 3;
+  linkStyle 25,26,27,28,29,30,31,32,33,34,35,36,37 stroke:#777777,stroke-dasharray:4 3;
 
   subgraph legend_info["Legend"]
     legend_metrics["Node line 1: module\nline 2: funcs/files\n(d=depth in=fan-in out=fan-out)\n(cx=complexity hotspot score)"]
@@ -352,57 +357,60 @@ skinparam nodesep 80
 skinparam ranksep 100
 left to right direction
 
-component "circular/cmd/circular\n(0 funcs, 1 files)\n(d=6 in=0 out=1)" as circular_cmd_circular
-component "circular/internal/app\n(34 funcs, 3 files)\n(d=4 in=1 out=8)" as circular_internal_app
-component "circular/internal/cliapp\n(20 funcs, 8 files)\n(d=5 in=1 out=8)" as circular_internal_cliapp
-component "circular/internal/config\n(18 funcs, 2 files)\n(d=0 in=2 out=0)\n(cx=101)" as circular_internal_config
-component "circular/internal/graph\n(49 funcs, 6 files)\n(d=1 in=5 out=1)" as circular_internal_graph
-component "circular/internal/history\n(21 funcs, 7 files)\n(d=0 in=4 out=0)" as circular_internal_history
-component "circular/internal/output\n(32 funcs, 8 files)\n(d=3 in=2 out=4)\n(cx=123)" as circular_internal_output
-component "circular/internal/parser\n(21 funcs, 7 files)\n(d=0 in=6 out=0)\n(cx=80)" as circular_internal_parser
-component "circular/internal/query\n(14 funcs, 3 files)\n(d=2 in=2 out=3)" as circular_internal_query
-component "circular/internal/resolver\n(25 funcs, 6 files)\n(d=2 in=3 out=2)" as circular_internal_resolver
-component "circular/internal/watcher\n(7 funcs, 2 files)\n(d=0 in=1 out=0)" as circular_internal_watcher
-component "External/Stdlib\n(31 modules)" as __external_aggregate__ #DDDDDD
+component "circular/cmd/circular\n(0 funcs, 1 files)\n(d=9 in=0 out=1)" as circular_cmd_circular
+component "circular/internal/core/app\n(21 funcs, 2 files)\n(d=7 in=1 out=6)" as circular_internal_core_app
+component "circular/internal/core/config\n(27 funcs, 3 files)\n(d=0 in=2 out=0)\n(cx=101)" as circular_internal_core_config
+component "circular/internal/core/watcher\n(5 funcs, 1 files)\n(d=0 in=1 out=0)" as circular_internal_core_watcher
+component "circular/internal/engine/graph\n(37 funcs, 5 files)\n(d=3 in=5 out=1)" as circular_internal_engine_graph
+component "circular/internal/engine/parser\n(45 funcs, 12 files)\n(d=2 in=5 out=2)" as circular_internal_engine_parser
+component "circular/internal/engine/parser/extractors\n(2 funcs, 1 files)\n(d=3 in=0 out=1)" as circular_internal_engine_parser_extractors
+component "circular/internal/engine/parser/grammar\n(6 funcs, 2 files)\n(d=1 in=1 out=1)" as circular_internal_engine_parser_grammar
+component "circular/internal/engine/parser/registry\n(4 funcs, 1 files)\n(d=0 in=2 out=0)" as circular_internal_engine_parser_registry
+component "circular/internal/engine/resolver\n(13 funcs, 7 files)\n(d=4 in=3 out=3)" as circular_internal_engine_resolver
+component "circular/internal/engine/resolver/drivers\n(17 funcs, 5 files)\n(d=0 in=1 out=0)" as circular_internal_engine_resolver_drivers
+component "circular/internal/ui/cli\n(7 funcs, 6 files)\n(d=8 in=1 out=6)\n(cx=82)" as circular_internal_ui_cli
+component "circular/internal/ui/report\n(8 funcs, 3 files)\n(d=6 in=2 out=2)" as circular_internal_ui_report
+component "circular/internal/ui/report/formats\n(13 funcs, 4 files)\n(d=5 in=1 out=2)\n(cx=123)" as circular_internal_ui_report_formats
+component "External/Stdlib\n(36 modules)" as __external_aggregate__ #DDDDDD
 
-circular_cmd_circular --> circular_internal_cliapp
-circular_internal_app --> circular_internal_config
-circular_internal_app --> circular_internal_graph
-circular_internal_app --> circular_internal_history
-circular_internal_app --> circular_internal_output
-circular_internal_app --> circular_internal_parser
-circular_internal_app --> circular_internal_query
-circular_internal_app --> circular_internal_resolver
-circular_internal_app --> circular_internal_watcher
-circular_internal_cliapp --> circular_internal_app
-circular_internal_cliapp --> circular_internal_config
-circular_internal_cliapp --> circular_internal_graph
-circular_internal_cliapp --> circular_internal_history
-circular_internal_cliapp --> circular_internal_output
-circular_internal_cliapp --> circular_internal_parser
-circular_internal_cliapp --> circular_internal_query
-circular_internal_cliapp --> circular_internal_resolver
-circular_internal_graph --> circular_internal_parser
-circular_internal_output --> circular_internal_graph
-circular_internal_output --> circular_internal_history
-circular_internal_output --> circular_internal_parser
-circular_internal_output --> circular_internal_resolver
-circular_internal_query --> circular_internal_graph
-circular_internal_query --> circular_internal_history
-circular_internal_query --> circular_internal_parser
-circular_internal_resolver --> circular_internal_graph
-circular_internal_resolver --> circular_internal_parser
+circular_cmd_circular --> circular_internal_ui_cli
+circular_internal_core_app --> circular_internal_core_config
+circular_internal_core_app --> circular_internal_core_watcher
+circular_internal_core_app --> circular_internal_engine_graph
+circular_internal_core_app --> circular_internal_engine_parser
+circular_internal_core_app --> circular_internal_engine_resolver
+circular_internal_core_app --> circular_internal_ui_report
+circular_internal_engine_graph --> circular_internal_engine_parser
+circular_internal_engine_parser --> circular_internal_engine_parser_grammar
+circular_internal_engine_parser --> circular_internal_engine_parser_registry
+circular_internal_engine_parser_extractors --> circular_internal_engine_parser
+circular_internal_engine_parser_grammar --> circular_internal_engine_parser_registry
+circular_internal_engine_resolver --> circular_internal_engine_graph
+circular_internal_engine_resolver --> circular_internal_engine_parser
+circular_internal_engine_resolver --> circular_internal_engine_resolver_drivers
+circular_internal_ui_cli --> circular_internal_core_app
+circular_internal_ui_cli --> circular_internal_core_config
+circular_internal_ui_cli --> circular_internal_engine_graph
+circular_internal_ui_cli --> circular_internal_engine_parser
+circular_internal_ui_cli --> circular_internal_engine_resolver
+circular_internal_ui_cli --> circular_internal_ui_report
+circular_internal_ui_report --> circular_internal_engine_graph
+circular_internal_ui_report --> circular_internal_ui_report_formats
+circular_internal_ui_report_formats --> circular_internal_engine_graph
+circular_internal_ui_report_formats --> circular_internal_engine_resolver
 circular_cmd_circular -[#777777,dashed]-> __external_aggregate__ : ext:1
-circular_internal_app -[#777777,dashed]-> __external_aggregate__ : ext:12
-circular_internal_cliapp -[#777777,dashed]-> __external_aggregate__ : ext:13
-circular_internal_config -[#777777,dashed]-> __external_aggregate__ : ext:7
-circular_internal_graph -[#777777,dashed]-> __external_aggregate__ : ext:8
-circular_internal_history -[#777777,dashed]-> __external_aggregate__ : ext:13
-circular_internal_output -[#777777,dashed]-> __external_aggregate__ : ext:9
-circular_internal_parser -[#777777,dashed]-> __external_aggregate__ : ext:11
-circular_internal_query -[#777777,dashed]-> __external_aggregate__ : ext:6
-circular_internal_resolver -[#777777,dashed]-> __external_aggregate__ : ext:7
-circular_internal_watcher -[#777777,dashed]-> __external_aggregate__ : ext:10
+circular_internal_core_app -[#777777,dashed]-> __external_aggregate__ : ext:12
+circular_internal_core_config -[#777777,dashed]-> __external_aggregate__ : ext:6
+circular_internal_core_watcher -[#777777,dashed]-> __external_aggregate__ : ext:8
+circular_internal_engine_graph -[#777777,dashed]-> __external_aggregate__ : ext:7
+circular_internal_engine_parser -[#777777,dashed]-> __external_aggregate__ : ext:18
+circular_internal_engine_parser_grammar -[#777777,dashed]-> __external_aggregate__ : ext:7
+circular_internal_engine_parser_registry -[#777777,dashed]-> __external_aggregate__ : ext:4
+circular_internal_engine_resolver -[#777777,dashed]-> __external_aggregate__ : ext:2
+circular_internal_engine_resolver_drivers -[#777777,dashed]-> __external_aggregate__ : ext:5
+circular_internal_ui_cli -[#777777,dashed]-> __external_aggregate__ : ext:14
+circular_internal_ui_report -[#777777,dashed]-> __external_aggregate__ : ext:6
+circular_internal_ui_report_formats -[#777777,dashed]-> __external_aggregate__ : ext:5
 
 legend right
 |= Item |= Meaning |
@@ -438,9 +446,14 @@ AI audit reports are in `docs/reviews/`:
 ## Project Layout
 
 - `cmd/circular/` CLI app, orchestration, TUI
-- `internal/config/` TOML config loading
-- `internal/parser/` Tree-sitter parsing and extractors
-- `internal/graph/` dependency graph + cycle detection
-- `internal/resolver/` unresolved reference detection
-- `internal/watcher/` fsnotify watch + debounce
-- `internal/output/` DOT/TSV/Mermaid/PlantUML generators + markdown injection
+- `internal/core/config/` TOML config loading
+- `internal/engine/parser/` Tree-sitter parsing and extractors
+- `internal/engine/parser/registry/` language registry defaults/override validation
+- `internal/engine/parser/grammar/` grammar manifest loading and artifact verification
+- `internal/engine/parser/extractors/` extractor wrapper constructors
+- `internal/engine/graph/` dependency graph + cycle detection
+- `internal/engine/resolver/` unresolved reference detection
+- `internal/engine/resolver/drivers/` language-specific resolver drivers
+- `internal/core/watcher/` fsnotify watch + debounce
+- `internal/ui/report/` DOT/TSV/Mermaid/PlantUML generators + markdown injection
+- `internal/ui/report/formats/` report format generators (DOT/TSV/Mermaid/PlantUML)

@@ -1,11 +1,17 @@
 # Configuration Reference
 
-Config is decoded from TOML in `internal/config`.
+Config is decoded from TOML in `internal/core/config`.
 
 ## Full Schema
 
 ```toml
 version = 2
+
+grammars_path = "./grammars"
+watch_paths = ["."]
+
+[grammar_verification]
+enabled = true
 
 [paths]
 project_root = ""
@@ -41,10 +47,6 @@ transport = "stdio"
 address = "127.0.0.1:8765"
 config_path = ""
 
-grammars_path = "./grammars"
-[grammar_verification]
-enabled = true
-
 [languages]
 # Optional per-language overrides.
 # Defaults: go=true, python=true, others=false.
@@ -54,12 +56,11 @@ enabled = true
 # extensions = [".js", ".cjs", ".mjs"]
 # filenames = []
 
-watch_paths = ["."]
-
 [exclude]
 dirs = [".git", "node_modules", "vendor"]
 files = ["*.tmp", "*.log"]
 symbols = ["self", "ctx", "p"]
+imports = ["fmt", "strings"]
 
 [watch]
 debounce = "500ms"
@@ -147,6 +148,8 @@ top_complexity = 5
 - optional exact-file routing (for example `go.mod`, `go.sum`)
 - `watch_paths` (`[]string`)
 - defaults to `["."]`
+- `exclude.imports` (`[]string`)
+- import module paths or reference base names to suppress unused-import findings
 - `watch.debounce` (`duration`)
 - defaults to `500ms`
 - `output.*`, `alerts.*`, `architecture.*`

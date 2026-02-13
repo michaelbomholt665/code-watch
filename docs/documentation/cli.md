@@ -1,6 +1,6 @@
 # CLI Reference
 
-Entrypoint: `cmd/circular/main.go` delegates to `internal/cliapp.Run(...)`.
+Entrypoint: `cmd/circular/main.go` delegates to `internal/ui/cli.Run(...)`.
 
 ## Usage
 
@@ -34,6 +34,9 @@ circular [flags] [path]
 - verifies enabled-language grammar artifacts against `grammars/manifest.toml` and exits
 - language enablement is controlled by `[languages.<id>]` in config (defaults keep only `go`/`python` enabled)
 - cannot be combined with `--trace`, `--impact`, or `--query-*`
+- `--include-tests`
+- include test files in analysis (`_test.go`, `test_*.py`)
+- default behavior excludes test files
 - `--history`
 - enables local history snapshot capture and trend reporting
 - writes snapshots to configured `db.path` (default resolved path: `data/database/history.db`)

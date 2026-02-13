@@ -20,6 +20,7 @@
 - dependency graph is module-level, not symbol-level edges
 - cycle detection and import-chain tracing operate on module graph only
 - unused import detection is reference-name based, not full semantic usage analysis
+- `exclude.imports` suppresses by exact module path or import reference base name; broad entries can hide real issues
 - unused import detection is intentionally disabled for metadata/markup languages (for example `html`, `css`, `gomod`, `gosum`)
 
 ## Watch Semantics

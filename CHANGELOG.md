@@ -44,8 +44,14 @@ All notable changes to this project will be documented in this file.
 - `resolver:` Added language-scoped stdlib catalogs in `internal/resolver/stdlib/{javascript,java,rust}.txt` and wired them into unresolved reference checks.
 - `parser:` Added consolidated profile-driven extractor registry in `internal/parser/profile_extractors.go` and default extractor auto-registration for all enabled languages.
 - `parser:` Added multi-language parser matrix coverage for `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`.
+- `config:` Added committed runtime defaults at `data/config/circular.toml` and `data/config/projects.toml` so the default config path works out of the box.
 
 ### Changed
+- `architecture:` Reorganized internal packages into pillar paths: `internal/core/{app,config,watcher}`, `internal/engine/{parser,resolver,graph}`, `internal/data/{history,query}`, and `internal/ui/{cli,report}`.
+- `ui:` Renamed UI package identifiers to match directory names (`package cli`, `package report`) while preserving existing CLI behavior and outputs.
+- `parser:` Split parser internals into sub-packages `internal/engine/parser/{registry,grammar,extractors}` while preserving `internal/engine/parser` APIs via bridges.
+- `resolver:` Split language-specific resolver logic into `internal/engine/resolver/drivers` while preserving `resolver.New*Resolver()` API surface.
+- `report:` Split report format generators into `internal/ui/report/formats` while preserving `report.New*Generator()` API surface.
 - `runtime:` Lowered module minimum Go version in `go.mod` from `1.25.x` to `1.24`.
 - `docs:` Clarified semantic versioning policy in `AGENTS.md` and `README.md`.
 - `config:` Extended `circular.toml` schema with `[architecture]`, `[[architecture.layers]]`, and `[[architecture.rules]]`.
@@ -79,11 +85,16 @@ All notable changes to this project will be documented in this file.
 - `compatibility:` Restored `GOTOOLCHAIN=go1.24 go test ./...` compatibility by aligning the module Go directive.
 - `watcher:` Serialized debounced callbacks to avoid overlapping update handlers during bursty filesystem activity.
 - `history:` Improved corrupt-database handling with explicit SQLite initialization/ping failures and drift-safe schema validation.
+- `resolver:` Corrected unused-import suppression to honor `exclude.imports` (module path/base name matching) instead of symbol exclusions.
+- `config:` Corrected TOML key placement for runtime/example configs so top-level `grammars_path` and `watch_paths` load under the intended schema.
 
 ### Removed
 - `parser:` Removed language-specific extractor files `internal/parser/{javascript,typescript,tsx,java,rust,html,css,gomod,gosum}.go` after profile parity migration.
 
 ### Docs
+- Updated `README.md` and `docs/documentation/*` package-path references for the new `internal/core|engine|data|ui` layout.
+- Updated `docs/plans/internal-refactor-plan.md` checklist to mark completed refactor and verification tasks.
+- Updated package documentation for new sub-package locations under parser/resolver/report.
 - Documented trace-mode CLI behavior and runtime mode flow in `docs/documentation/cli.md`.
 - Updated docs index in `docs/documentation/README.md` to include output reference docs.
 - Updated architecture/configuration/output/package docs and root `README.md` for new medium-tier features.
@@ -103,3 +114,5 @@ All notable changes to this project will be documented in this file.
 - Updated README/configuration/packages/limitations docs to describe language-scoped resolver policies and unsupported-language unused-import behavior.
 - Updated README and docs (`architecture.md`, `cli.md`, `configuration.md`, `packages.md`, `limitations.md`) to reflect profile-driven multi-language extraction and registry-based rollout controls.
 - Updated `docs/plans/grammar-expansion-aib14-aib15-plan.md` to mark T5/T7/T8/T9 complete and record the simplified profile implementation approach.
+- Corrected README and configuration examples to place `grammars_path`/`watch_paths` at TOML top-level and documented `exclude.imports` for unused-import suppression.
+- Documented `--include-tests` default behavior (tests excluded unless flag is enabled).
