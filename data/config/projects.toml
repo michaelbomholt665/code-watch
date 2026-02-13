@@ -1,0 +1,4 @@
+[[entries]]
+name = "default"
+root = "."
+db_namespace = "default"

@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"circular/internal/cliapp"
+	"circular/internal/ui/cli"
 )
 
 func main() {
-	os.Exit(cliapp.Run(os.Args[1:]))
+	os.Exit(cli.Run(os.Args[1:]))
 }

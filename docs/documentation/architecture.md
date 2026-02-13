@@ -2,16 +2,16 @@
 
 ## Runtime Pipeline
 
-`cmd/circular/main.go` is a thin entrypoint that calls `internal/cliapp.Run`.
+`cmd/circular/main.go` is a thin entrypoint that calls `internal/ui/cli.Run`.
 
-`internal/cliapp.Run` pipeline:
+`internal/ui/cli.Run` pipeline:
 1. parse flags/options
 2. optionally print version and exit
 3. configure logging
 4. load config (with default-path fallback)
 5. apply mode constraints (`--trace`/`--impact` conflict and arg checks)
 6. normalize `grammars_path`
-7. build `internal/app.App`
+7. build `internal/core/app.App`
 8. run `InitialScan`
 9. optionally run single-command mode (`--trace` or `--impact`) and exit
 10. run analyses, generate outputs, and print summary
@@ -19,7 +19,7 @@
 
 ## Core App Responsibilities
 
-`internal/app.App` owns orchestration between parser, graph, resolver, output, and watcher.
+`internal/core/app.App` owns orchestration between parser, graph, resolver, output, and watcher.
 
 Main responsibilities:
 - scan directories and parse supported source files
@@ -58,7 +58,7 @@ Main responsibilities:
 
 ## Watch/Incremental Behavior
 
-Watcher (`internal/watcher`) behavior:
+Watcher (`internal/core/watcher`) behavior:
 - recursive directory watch registration
 - dynamic registration of newly created directories
 - event filtering with directory/file globs
@@ -66,7 +66,7 @@ Watcher (`internal/watcher`) behavior:
 - debounced path batching
 - serialized callback execution
 
-Update behavior (`internal/app.HandleChanges`):
+Update behavior (`internal/core/app.HandleChanges`):
 - invalidates transitive importer chain for changed files
 - removes deleted files from graph and incremental caches
 - reprocesses changed files
@@ -76,10 +76,10 @@ Update behavior (`internal/app.HandleChanges`):
 ## Boundaries
 
 - `cmd/circular`: process entrypoint only
-- `internal/cliapp`: flags, mode decisions, logging, UI runtime wiring
-- `internal/app`: orchestration and workflow state
-- `internal/parser`: AST extraction to normalized file model
-- `internal/graph`: dependency state + graph algorithms
-- `internal/resolver`: unresolved/unused heuristics
-- `internal/watcher`: fsnotify + debounce
-- `internal/output`: DOT/TSV rendering
+- `internal/ui/cli`: flags, mode decisions, logging, UI runtime wiring
+- `internal/core/app`: orchestration and workflow state
+- `internal/engine/parser`: AST extraction to normalized file model
+- `internal/engine/graph`: dependency state + graph algorithms
+- `internal/engine/resolver`: unresolved/unused heuristics
+- `internal/core/watcher`: fsnotify + debounce
+- `internal/ui/report`: DOT/TSV rendering

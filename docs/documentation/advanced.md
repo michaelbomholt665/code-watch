@@ -5,7 +5,7 @@ This document covers the implemented advanced feature set from `docs/plans/high-
 ## Capability Summary
 
 - SQLite-backed history persistence at `data/database/history.db`
-- versioned schema bootstrap/migrations (`internal/history/schema.go`)
+- versioned schema bootstrap/migrations (`internal/data/history/schema.go`)
 - lock-aware write/read retry policy for transient SQLite contention
 - trend reports with configurable moving window (`--history-window`)
 - additive trend dimensions:
@@ -87,5 +87,5 @@ History subsystem benchmarks:
 Run them with:
 
 ```bash
-go test ./internal/history -bench .
+go test ./internal/data/history -bench .
 ```

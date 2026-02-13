@@ -1,6 +1,6 @@
 # Output Reference
 
-`circular` can emit DOT, TSV, Mermaid, and PlantUML outputs via `internal/output`.
+`circular` can emit DOT, TSV, Mermaid, and PlantUML outputs via `internal/ui/report`.
 
 ## `dependencies.tsv`
 

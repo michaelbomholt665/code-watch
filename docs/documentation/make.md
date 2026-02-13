@@ -71,9 +71,9 @@ make help
 make once
 make watch PATH_ARG=.
 make ui CONFIG=./data/config/circular.example.toml
-make trace TRACE_FROM=cmd/circular TRACE_TO=internal/parser
-make impact IMPACT=internal/resolver/resolver.go
+make trace TRACE_FROM=cmd/circular TRACE_TO=internal/engine/parser
+make impact IMPACT=internal/engine/resolver/resolver.go
 make history SINCE=2026-02-01 HISTORY_WINDOW=72h
 make query-modules QUERY_FILTER=resolver QUERY_LIMIT=20
-make query-trace QUERY_TRACE=cmd/circular:internal/parser QUERY_LIMIT=10
+make query-trace QUERY_TRACE=cmd/circular:internal/engine/parser QUERY_LIMIT=10
 ```

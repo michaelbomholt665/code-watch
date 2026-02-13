@@ -2,9 +2,9 @@
 
 ## `cmd/circular`
 
-- `main.go` only calls `cliapp.Run(os.Args[1:])`
+- `main.go` only calls `cli.Run(os.Args[1:])`
 
-## `internal/cliapp`
+## `internal/ui/cli`
 
 - parses CLI flags/options (`cli.go`)
 - applies mode constraints and config fallback (`runtime.go`)
@@ -14,7 +14,7 @@
 - provides issue + module-explorer UI panels backed by query read models
 - supports module drill-down, trend overlays, and source-jump actions (`ui_actions.go`, `ui_panels.go`)
 
-## `internal/app`
+## `internal/core/app`
 
 - central orchestrator over parser/graph/resolver/output/watcher
 - builds parser from language registry + config overrides
@@ -26,19 +26,19 @@
 - supports trace and impact commands
 - writes DOT/TSV outputs
 
-## `internal/history`
+## `internal/data/history`
 
 - local SQLite snapshot persistence with schema migration/version checks
 - optional git metadata enrichment for snapshots
 - deterministic trend report generation (deltas + moving averages + module growth and fan-in/fan-out drift)
 
-## `internal/query`
+## `internal/data/query`
 
 - shared read/query service over graph/history state
 - deterministic module listing, module details, dependency trace, and trend slices
 - context-aware APIs for cancellation-safe calls
 
-## `internal/config`
+## `internal/core/config`
 
 - TOML decode into config structs
 - applies defaults:
@@ -47,7 +47,7 @@
 - `architecture.top_complexity=5` when `<=0`
 - validates architecture layer/rule schema when enabled
 
-## `internal/parser`
+## `internal/engine/parser`
 
 - `GrammarLoader` creates enabled runtime languages and validates manifest-bound grammar artifacts
 - `Parser` routes by registry-defined extensions + filename matchers
@@ -66,7 +66,21 @@
 - complexity metrics per callable
 - `gomod` and `gosum` use raw-text extractors (no runtime tree-sitter binding required)
 
-## `internal/graph`
+## `internal/engine/parser/registry`
+
+- owns `LanguageSpec` defaults and override-merging validation
+- enforces deterministic extension/filename ownership for enabled languages
+
+## `internal/engine/parser/grammar`
+
+- loads and validates `grammars/manifest.toml`
+- verifies enabled-language grammar artifacts (checksums + required manifest coverage)
+
+## `internal/engine/parser/extractors`
+
+- provides wrapper constructors for built-in extractor registrations
+
+## `internal/engine/graph`
 
 - stores files/modules/import edges/reverse edges/definitions
 - `AddFile` replacement semantics remove old file contributions first
@@ -80,7 +94,7 @@
 - architecture rule validation
 - impact analysis (direct + transitive importers)
 
-## `internal/resolver`
+## `internal/engine/resolver`
 
 - unresolved-reference detection with heuristics:
 - local symbols
@@ -93,7 +107,11 @@
 - unused-import detection with confidence levels
 - unused-import checks disabled for unsupported languages to avoid noisy output
 
-## `internal/watcher`
+## `internal/engine/resolver/drivers`
+
+- language-specific module-name and import-resolution drivers (`go`, `python`, `javascript`, `java`, `rust`)
+
+## `internal/core/watcher`
 
 - wraps fsnotify with:
 - recursive watch registration
@@ -102,7 +120,7 @@
 - debounce batching
 - serialized callback execution
 
-## `internal/output`
+## `internal/ui/report`
 
 - `DOTGenerator` emits enriched module graph (cycle/metrics/hotspot annotations)
 - `TSVGenerator` emits:
@@ -112,3 +130,7 @@
 - trend renderers emit additive advanced outputs:
 - `RenderTrendTSV(...)`
 - `RenderTrendJSON(...)`
+
+## `internal/ui/report/formats`
+
+- concrete format generators: `DOTGenerator`, `TSVGenerator`, `MermaidGenerator`, `PlantUMLGenerator`
