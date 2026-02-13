@@ -133,3 +133,4 @@ All notable changes to this project will be documented in this file.
 - Documented MCP OpenAPI spec source configuration in `README.md` and `docs/documentation/cli.md`.
 - Documented MCP stdio protocol and operation surface in `docs/documentation/mcp.md`.
 - Documented systemd socket-activation and stdio bridge setup for MCP clients in `docs/documentation/mcp.md`.
+- Linked MCP socket-activation guidance from `README.md`.
