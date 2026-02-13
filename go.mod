@@ -1,6 +1,6 @@
 module circular
 
-go 1.25.7
+go 1.24.9
 
 require (
 	github.com/BurntSushi/toml v1.6.0

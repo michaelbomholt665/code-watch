@@ -8,11 +8,23 @@ import (
 )
 
 type DOTGenerator struct {
-	graph *graph.Graph
+	graph   *graph.Graph
+	metrics map[string]graph.ModuleMetrics
 }
 
 func NewDOTGenerator(g *graph.Graph) *DOTGenerator {
 	return &DOTGenerator{graph: g}
+}
+
+func (d *DOTGenerator) SetModuleMetrics(metrics map[string]graph.ModuleMetrics) {
+	if len(metrics) == 0 {
+		d.metrics = nil
+		return
+	}
+	d.metrics = make(map[string]graph.ModuleMetrics, len(metrics))
+	for mod, m := range metrics {
+		d.metrics[mod] = m
+	}
 }
 
 func (d *DOTGenerator) Generate(cycles [][]string) (string, error) {
@@ -70,6 +82,9 @@ func (d *DOTGenerator) Generate(cycles [][]string) (string, error) {
 		funcCount := len(mod.Exports)
 		fileCount := len(mod.Files)
 		label := fmt.Sprintf("%s\\n(%d funcs, %d files)", modName, funcCount, fileCount)
+		if metric, ok := d.metrics[modName]; ok {
+			label = fmt.Sprintf("%s\\n(d=%d in=%d out=%d)", label, metric.Depth, metric.FanIn, metric.FanOut)
+		}
 
 		inCycle := false
 		for _, cycle := range cycles {
@@ -84,7 +99,11 @@ func (d *DOTGenerator) Generate(cycles [][]string) (string, error) {
 		if inCycle {
 			buf.WriteString(fmt.Sprintf("    \"%s\" [label=\"%s\", fillcolor=\"mistyrose\", color=\"red\", penwidth=2.0];\n", modName, label))
 		} else {
-			buf.WriteString(fmt.Sprintf("    \"%s\" [label=\"%s\", color=\"darkslategrey\"];\n", modName, label))
+			if metric, ok := d.metrics[modName]; ok {
+				buf.WriteString(fmt.Sprintf("    \"%s\" [label=\"%s\", fillcolor=\"%s\", style=\"rounded,filled\", color=\"darkslategrey\"];\n", modName, label, depthColor(metric.Depth)))
+			} else {
+				buf.WriteString(fmt.Sprintf("    \"%s\" [label=\"%s\", color=\"darkslategrey\"];\n", modName, label))
+			}
 		}
 	}
 	buf.WriteString("  }\n\n")
@@ -128,4 +147,15 @@ func (d *DOTGenerator) Generate(cycles [][]string) (string, error) {
 	buf.WriteString("}\n")
 
 	return buf.String(), nil
+}
+
+func depthColor(depth int) string {
+	switch {
+	case depth <= 0:
+		return "honeydew"
+	case depth == 1:
+		return "lemonchiffon"
+	default:
+		return "mistyrose"
+	}
 }

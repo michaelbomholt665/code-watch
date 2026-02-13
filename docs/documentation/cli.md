@@ -18,6 +18,9 @@ circular [flags] [path]
 - `--ui`
 - start Bubble Tea UI mode
 - logs are redirected to user state log path to avoid TUI corruption
+- `--trace`
+- trace shortest dependency chain: `circular --trace <from-module> <to-module>`
+- requires exactly two module arguments and exits after printing the chain
 - `--verbose`
 - sets logger level to debug
 - `--version`
@@ -33,10 +36,18 @@ Example:
 circular --once ./internal
 ```
 
+Trace example:
+
+```bash
+circular --trace github.com/acme/project/cmd/app github.com/acme/project/internal/store
+```
+
 ## Runtime Modes
 
 - one-shot mode:
-- parse -> build graph -> detect cycles/unresolved -> write outputs -> print summary -> exit
+- parse -> build graph -> detect cycles/unresolved/unused-imports -> write outputs -> print summary -> exit
+- trace mode (`--trace`):
+- parse -> build graph -> print import chain (or not-found error) -> exit
 - watch mode (default):
 - same initial pass, then watches configured paths for changes and incrementally reprocesses changed files
 - UI mode (`--ui`):

@@ -50,8 +50,9 @@ terminal = true
 - `output.tsv` (`string`)
 - path for TSV edge list output
 - empty string disables TSV emission
+- when unused imports are detected, the file appends a second TSV block with `Type=unused_import` rows
 - `alerts.beep` (`bool`)
-- emits terminal bell when cycles or unresolved references are present in update
+- emits terminal bell when cycles, unresolved references, or unused imports are present in update
 - `alerts.terminal` (`bool`)
 - enables/disables printed summary output
 

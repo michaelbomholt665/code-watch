@@ -12,6 +12,16 @@ type UnresolvedReference struct {
 	File      string
 }
 
+type UnusedImport struct {
+	File       string
+	Language   string
+	Module     string
+	Alias      string
+	Item       string
+	Location   parser.Location
+	Confidence string
+}
+
 type Resolver struct {
 	graph           *graph.Graph
 	stdlib          map[string]bool
@@ -56,6 +66,114 @@ func (r *Resolver) FindUnresolvedForPaths(paths []string) []UnresolvedReference 
 	}
 
 	return unresolved
+}
+
+func (r *Resolver) FindUnusedImports(paths []string) []UnusedImport {
+	seen := make(map[string]bool, len(paths))
+	unused := make([]UnusedImport, 0)
+
+	for _, path := range paths {
+		if seen[path] {
+			continue
+		}
+		seen[path] = true
+
+		file, ok := r.graph.GetFile(path)
+		if !ok {
+			continue
+		}
+
+		unused = append(unused, r.findUnusedInFile(file)...)
+	}
+
+	return unused
+}
+
+func (r *Resolver) findUnusedInFile(file *parser.File) []UnusedImport {
+	unused := make([]UnusedImport, 0)
+	refHits := make(map[string]int, len(file.References))
+	for _, ref := range file.References {
+		refHits[ref.Name]++
+	}
+
+	for _, imp := range file.Imports {
+		// Go side-effect imports are intentionally "unused" in code references.
+		if file.Language == "go" && imp.Alias == "_" {
+			continue
+		}
+		// Dot imports blend symbols into local namespace and are hard to verify safely.
+		if file.Language == "go" && imp.Alias == "." {
+			continue
+		}
+
+		if len(imp.Items) > 0 {
+			for _, item := range imp.Items {
+				if item == "" {
+					continue
+				}
+				if !hasSymbolUse(refHits, item) {
+					unused = append(unused, UnusedImport{
+						File:       file.Path,
+						Language:   file.Language,
+						Module:     imp.Module,
+						Alias:      imp.Alias,
+						Item:       item,
+						Location:   imp.Location,
+						Confidence: "high",
+					})
+				}
+			}
+			continue
+		}
+
+		name := importReferenceName(file.Language, imp)
+		if name == "" {
+			continue
+		}
+
+		if !hasSymbolUse(refHits, name) {
+			unused = append(unused, UnusedImport{
+				File:       file.Path,
+				Language:   file.Language,
+				Module:     imp.Module,
+				Alias:      imp.Alias,
+				Location:   imp.Location,
+				Confidence: "medium",
+			})
+		}
+	}
+
+	return unused
+}
+
+func importReferenceName(language string, imp parser.Import) string {
+	if imp.Alias != "" {
+		return imp.Alias
+	}
+	if imp.Module == "" {
+		return ""
+	}
+
+	if language == "go" {
+		parts := strings.Split(imp.Module, "/")
+		return parts[len(parts)-1]
+	}
+
+	parts := strings.Split(imp.Module, ".")
+	return parts[len(parts)-1]
+}
+
+func hasSymbolUse(refHits map[string]int, symbol string) bool {
+	if refHits[symbol] > 0 {
+		return true
+	}
+	prefix := symbol + "."
+	for ref := range refHits {
+		if strings.HasPrefix(ref, prefix) {
+			return true
+		}
+	}
+	return false
 }
 
 func (r *Resolver) findUnresolvedInFile(file *parser.File) []UnresolvedReference {

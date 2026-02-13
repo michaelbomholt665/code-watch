@@ -3,6 +3,7 @@ package graph
 
 import (
 	"circular/internal/parser"
+	"sort"
 	"sync"
 )
 
@@ -36,6 +37,12 @@ type ImportEdge struct {
 	To         string
 	ImportedBy string // File path
 	Location   parser.Location
+}
+
+type ModuleMetrics struct {
+	Depth  int
+	FanIn  int
+	FanOut int
 }
 
 func NewGraph() *Graph {
@@ -268,6 +275,90 @@ func (g *Graph) GetImports() map[string]map[string]*ImportEdge {
 	return res
 }
 
+func (g *Graph) ComputeModuleMetrics() map[string]ModuleMetrics {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	moduleNames := make([]string, 0, len(g.modules))
+	for name := range g.modules {
+		moduleNames = append(moduleNames, name)
+	}
+	sort.Strings(moduleNames)
+
+	adjacency := make(map[string][]string, len(moduleNames))
+	for _, name := range moduleNames {
+		targetSet := make(map[string]bool)
+		for to := range g.imports[name] {
+			if _, ok := g.modules[to]; ok {
+				targetSet[to] = true
+			}
+		}
+		targets := make([]string, 0, len(targetSet))
+		for to := range targetSet {
+			targets = append(targets, to)
+		}
+		sort.Strings(targets)
+		adjacency[name] = targets
+	}
+
+	fanIn := make(map[string]int, len(moduleNames))
+	fanOut := make(map[string]int, len(moduleNames))
+	for _, from := range moduleNames {
+		fanOut[from] = len(adjacency[from])
+		for _, to := range adjacency[from] {
+			fanIn[to]++
+		}
+	}
+
+	componentOf, components := stronglyConnectedComponents(moduleNames, adjacency)
+	componentEdges := make(map[int]map[int]bool, len(components))
+	for _, from := range moduleNames {
+		fromComp := componentOf[from]
+		for _, to := range adjacency[from] {
+			toComp := componentOf[to]
+			if fromComp == toComp {
+				continue
+			}
+			if componentEdges[fromComp] == nil {
+				componentEdges[fromComp] = make(map[int]bool)
+			}
+			componentEdges[fromComp][toComp] = true
+		}
+	}
+
+	depthByComp := make(map[int]int, len(components))
+	var computeDepth func(int) int
+	computeDepth = func(comp int) int {
+		if depth, ok := depthByComp[comp]; ok {
+			return depth
+		}
+		maxDepth := 0
+		for next := range componentEdges[comp] {
+			candidate := 1 + computeDepth(next)
+			if candidate > maxDepth {
+				maxDepth = candidate
+			}
+		}
+		depthByComp[comp] = maxDepth
+		return maxDepth
+	}
+
+	for comp := range components {
+		computeDepth(comp)
+	}
+
+	metrics := make(map[string]ModuleMetrics, len(moduleNames))
+	for _, name := range moduleNames {
+		metrics[name] = ModuleMetrics{
+			Depth:  depthByComp[componentOf[name]],
+			FanIn:  fanIn[name],
+			FanOut: fanOut[name],
+		}
+	}
+
+	return metrics
+}
+
 func (g *Graph) MarkDirty(paths []string) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -329,4 +420,64 @@ func cloneImportEdge(edge *ImportEdge) *ImportEdge {
 	}
 	c := *edge
 	return &c
+}
+
+func stronglyConnectedComponents(nodes []string, adjacency map[string][]string) (map[string]int, [][]string) {
+	index := 0
+	stack := make([]string, 0, len(nodes))
+	onStack := make(map[string]bool, len(nodes))
+	indexByNode := make(map[string]int, len(nodes))
+	lowLink := make(map[string]int, len(nodes))
+	componentOf := make(map[string]int, len(nodes))
+	components := make([][]string, 0)
+
+	var strongConnect func(string)
+	strongConnect = func(v string) {
+		indexByNode[v] = index
+		lowLink[v] = index
+		index++
+
+		stack = append(stack, v)
+		onStack[v] = true
+
+		for _, w := range adjacency[v] {
+			if _, seen := indexByNode[w]; !seen {
+				strongConnect(w)
+				if lowLink[w] < lowLink[v] {
+					lowLink[v] = lowLink[w]
+				}
+			} else if onStack[w] && indexByNode[w] < lowLink[v] {
+				lowLink[v] = indexByNode[w]
+			}
+		}
+
+		if lowLink[v] != indexByNode[v] {
+			return
+		}
+
+		component := make([]string, 0)
+		for {
+			last := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+			onStack[last] = false
+			component = append(component, last)
+			if last == v {
+				break
+			}
+		}
+		sort.Strings(component)
+		compID := len(components)
+		components = append(components, component)
+		for _, n := range component {
+			componentOf[n] = compID
+		}
+	}
+
+	for _, node := range nodes {
+		if _, seen := indexByNode[node]; !seen {
+			strongConnect(node)
+		}
+	}
+
+	return componentOf, components
 }

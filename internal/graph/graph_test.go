@@ -226,3 +226,121 @@ func TestGraph_AddFile_ReplacesExistingContributions(t *testing.T) {
 		t.Fatal("expected definition NewFunc")
 	}
 }
+
+func TestGraph_ComputeModuleMetrics(t *testing.T) {
+	g := NewGraph()
+
+	// A -> B -> C -> A (cycle), D -> B, E isolated
+	g.AddFile(&parser.File{Path: "a.go", Module: "A", Imports: []parser.Import{{Module: "B"}}})
+	g.AddFile(&parser.File{Path: "b.go", Module: "B", Imports: []parser.Import{{Module: "C"}}})
+	g.AddFile(&parser.File{Path: "c.go", Module: "C", Imports: []parser.Import{{Module: "A"}}})
+	g.AddFile(&parser.File{Path: "d.go", Module: "D", Imports: []parser.Import{{Module: "B"}}})
+	g.AddFile(&parser.File{Path: "e.go", Module: "E"})
+
+	metrics := g.ComputeModuleMetrics()
+
+	if len(metrics) != 5 {
+		t.Fatalf("Expected metrics for 5 modules, got %d", len(metrics))
+	}
+
+	// Cycle members should have same depth and fan-out 1.
+	depthA := metrics["A"].Depth
+	if metrics["B"].Depth != depthA || metrics["C"].Depth != depthA {
+		t.Fatalf("Expected equal cycle depths, got A=%d B=%d C=%d", metrics["A"].Depth, metrics["B"].Depth, metrics["C"].Depth)
+	}
+	if metrics["A"].FanOut != 1 || metrics["B"].FanOut != 1 || metrics["C"].FanOut != 1 {
+		t.Fatalf("Expected fan-out 1 for cycle nodes, got A=%d B=%d C=%d", metrics["A"].FanOut, metrics["B"].FanOut, metrics["C"].FanOut)
+	}
+	if metrics["B"].FanIn != 2 {
+		t.Fatalf("Expected B fan-in 2 (A and D), got %d", metrics["B"].FanIn)
+	}
+
+	// D depends on the cycle and should be one layer deeper.
+	if metrics["D"].Depth != depthA+1 {
+		t.Fatalf("Expected D depth %d, got %d", depthA+1, metrics["D"].Depth)
+	}
+	if metrics["D"].FanIn != 0 || metrics["D"].FanOut != 1 {
+		t.Fatalf("Expected D fan-in 0 / fan-out 1, got in=%d out=%d", metrics["D"].FanIn, metrics["D"].FanOut)
+	}
+
+	// Isolated module should be a leaf.
+	if metrics["E"].Depth != 0 || metrics["E"].FanIn != 0 || metrics["E"].FanOut != 0 {
+		t.Fatalf("Expected E as isolated leaf, got depth=%d in=%d out=%d", metrics["E"].Depth, metrics["E"].FanIn, metrics["E"].FanOut)
+	}
+}
+
+func TestGraph_FindImportChain(t *testing.T) {
+	g := NewGraph()
+
+	// A -> B -> D
+	// A -> C -> D
+	// E isolated
+	g.AddFile(&parser.File{Path: "a.go", Module: "A", Imports: []parser.Import{{Module: "B"}, {Module: "C"}}})
+	g.AddFile(&parser.File{Path: "b.go", Module: "B", Imports: []parser.Import{{Module: "D"}}})
+	g.AddFile(&parser.File{Path: "c.go", Module: "C", Imports: []parser.Import{{Module: "D"}}})
+	g.AddFile(&parser.File{Path: "d.go", Module: "D"})
+	g.AddFile(&parser.File{Path: "e.go", Module: "E"})
+
+	tests := []struct {
+		name   string
+		from   string
+		to     string
+		ok     bool
+		expect []string
+	}{
+		{
+			name:   "shortest path found",
+			from:   "A",
+			to:     "D",
+			ok:     true,
+			expect: []string{"A", "B", "D"},
+		},
+		{
+			name:   "same module",
+			from:   "A",
+			to:     "A",
+			ok:     true,
+			expect: []string{"A"},
+		},
+		{
+			name: "no path",
+			from: "D",
+			to:   "A",
+			ok:   false,
+		},
+		{
+			name: "missing source module",
+			from: "missing",
+			to:   "A",
+			ok:   false,
+		},
+		{
+			name: "missing target module",
+			from: "A",
+			to:   "missing",
+			ok:   false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			path, ok := g.FindImportChain(tc.from, tc.to)
+			if ok != tc.ok {
+				t.Fatalf("expected ok=%v, got %v (path=%v)", tc.ok, ok, path)
+			}
+
+			if !tc.ok {
+				return
+			}
+
+			if len(path) != len(tc.expect) {
+				t.Fatalf("expected path len %d, got %d: %v", len(tc.expect), len(path), path)
+			}
+			for i := range tc.expect {
+				if path[i] != tc.expect[i] {
+					t.Fatalf("expected path %v, got %v", tc.expect, path)
+				}
+			}
+		})
+	}
+}

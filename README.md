@@ -5,6 +5,8 @@
 It scans source files, builds a module import graph, then reports:
 - circular imports
 - unresolved symbol references ("hallucinations")
+- unused imports
+- dependency depth/fan-in/fan-out metrics
 
 It can run once (`--once`) or watch continuously with optional terminal UI mode (`--ui`).
 
@@ -14,6 +16,9 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 - Builds and updates a module-level dependency graph
 - Detects import cycles across internal modules
 - Detects unresolved references using local symbols, imports, stdlib, and builtins
+- Detects unused imports and appends findings to TSV output
+- Computes module dependency metrics (depth, fan-in, fan-out)
+- Traces shortest import chain between modules (`--trace`)
 - Emits outputs:
   - Graphviz DOT (`graph.dot` by default)
   - TSV edge list (`dependencies.tsv` by default)
@@ -23,9 +28,9 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 ## Install / Build
 
 Requirements:
-- Go `1.24.2+` supported
+- Go `1.24.9+` supported
 - Go `1.23` is not supported by current dependencies
-- `go.mod` currently pins `go 1.25.7`
+- `go.mod` pins `go 1.24.9`
 
 Build:
 
@@ -73,6 +78,7 @@ Flags:
 - `--config` path to TOML config (default `./circular.toml`)
 - `--once` run one scan and exit
 - `--ui` start terminal UI mode
+- `--trace` print shortest import chain from one module to another, then exit
 - `--verbose` enable debug logs
 - `--version` print version and exit
 
@@ -113,6 +119,10 @@ terminal = true
 - DOT graph (default `graph.dot`) for visual inspection in Graphviz tools
 - TSV import edges (default `dependencies.tsv`) with columns:
   - `From`, `To`, `File`, `Line`, `Column`
+- TSV unused import rows appended when findings exist:
+  - `Type`, `File`, `Language`, `Module`, `Alias`, `Item`, `Line`, `Column`, `Confidence`
+- DOT module labels may include metrics:
+  - `d=<depth> in=<fan-in> out=<fan-out>`
 
 ## Documentation
 
@@ -120,6 +130,7 @@ Full documentation is in `docs/documentation/`:
 - `docs/documentation/README.md`
 - `docs/documentation/cli.md`
 - `docs/documentation/configuration.md`
+- `docs/documentation/output.md`
 - `docs/documentation/architecture.md`
 - `docs/documentation/packages.md`
 - `docs/documentation/limitations.md`

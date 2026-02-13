@@ -1,6 +1,8 @@
 // # internal/graph/detect.go
 package graph
 
+import "sort"
+
 func (g *Graph) DetectCycles() [][]string {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
@@ -44,6 +46,67 @@ func (g *Graph) findCycles(curr string, visited, onStack map[string]bool, path [
 	}
 
 	onStack[curr] = false
+}
+
+func (g *Graph) FindImportChain(from, to string) ([]string, bool) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+
+	if _, ok := g.modules[from]; !ok {
+		return nil, false
+	}
+	if _, ok := g.modules[to]; !ok {
+		return nil, false
+	}
+	if from == to {
+		return []string{from}, true
+	}
+
+	queue := []string{from}
+	visited := map[string]bool{from: true}
+	prev := make(map[string]string)
+
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		neighbors := make([]string, 0, len(g.imports[curr]))
+		for next := range g.imports[curr] {
+			if _, ok := g.modules[next]; !ok {
+				continue
+			}
+			neighbors = append(neighbors, next)
+		}
+		sort.Strings(neighbors)
+
+		for _, next := range neighbors {
+			if visited[next] {
+				continue
+			}
+			visited[next] = true
+			prev[next] = curr
+
+			if next == to {
+				path := []string{to}
+				for node := to; node != from; {
+					p, ok := prev[node]
+					if !ok {
+						return nil, false
+					}
+					path = append(path, p)
+					node = p
+				}
+				for i, j := 0, len(path)-1; i < j; i, j = i+1, j-1 {
+					path[i], path[j] = path[j], path[i]
+				}
+				return path, true
+			}
+
+			queue = append(queue, next)
+		}
+	}
+
+	return nil, false
 }
 
 func (g *Graph) InvalidateTransitive(changedFile string) []string {

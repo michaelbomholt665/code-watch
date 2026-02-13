@@ -212,3 +212,50 @@ func TestResolver_FindUnresolvedForPaths(t *testing.T) {
 		t.Fatalf("Expected unresolved reference from a.go, got %s", unresolved[0].File)
 	}
 }
+
+func TestResolver_FindUnusedImports(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "sample.py",
+		Language: "python",
+		Module:   "sample",
+		Imports: []parser.Import{
+			{Module: "auth", Alias: "a", Location: parser.Location{File: "sample.py", Line: 1, Column: 1}},
+			{Module: "math", Items: []string{"sqrt", "pow"}, Location: parser.Location{File: "sample.py", Line: 2, Column: 1}},
+		},
+		References: []parser.Reference{
+			{Name: "a.login"},
+			{Name: "sqrt"},
+		},
+	})
+
+	g.AddFile(&parser.File{
+		Path:     "sample.go",
+		Language: "go",
+		Module:   "samplego",
+		Imports: []parser.Import{
+			{Module: "fmt", Location: parser.Location{File: "sample.go", Line: 1, Column: 1}},
+			{Module: "log/slog", Alias: "_", Location: parser.Location{File: "sample.go", Line: 2, Column: 1}},
+		},
+		References: []parser.Reference{
+			{Name: "fmt.Println"},
+		},
+	})
+
+	r := NewResolver(g, nil)
+	unused := r.FindUnusedImports([]string{"sample.py", "sample.go"})
+	if len(unused) != 1 {
+		t.Fatalf("Expected 1 unused import finding, got %d", len(unused))
+	}
+
+	if unused[0].File != "sample.py" {
+		t.Fatalf("Expected unused import in sample.py, got %s", unused[0].File)
+	}
+	if unused[0].Module != "math" || unused[0].Item != "pow" {
+		t.Fatalf("Expected unused item math.pow, got module=%s item=%s", unused[0].Module, unused[0].Item)
+	}
+	if unused[0].Confidence != "high" {
+		t.Fatalf("Expected high confidence for from-import item, got %s", unused[0].Confidence)
+	}
+}
