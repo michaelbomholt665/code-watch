@@ -4,11 +4,14 @@ package app
 import (
 	"circular/internal/config"
 	"circular/internal/graph"
+	"circular/internal/history"
 	"circular/internal/parser"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestApp(t *testing.T) {
@@ -335,6 +338,40 @@ func TestApp_TraceImportChain_Errors(t *testing.T) {
 				t.Fatalf("expected error to contain %q, got %q", tc.errContain, err.Error())
 			}
 		})
+	}
+}
+
+type historyStoreStub struct {
+	snapshots []history.Snapshot
+}
+
+func (h historyStoreStub) LoadSnapshots(since time.Time) ([]history.Snapshot, error) {
+	out := make([]history.Snapshot, 0, len(h.snapshots))
+	for _, snapshot := range h.snapshots {
+		if !since.IsZero() && snapshot.Timestamp.Before(since) {
+			continue
+		}
+		out = append(out, snapshot)
+	}
+	return out, nil
+}
+
+func TestApp_BuildQueryService(t *testing.T) {
+	app := &App{Graph: graph.NewGraph()}
+	app.Graph.AddFile(&parser.File{Path: "a.go", Module: "A"})
+
+	svc := app.BuildQueryService(historyStoreStub{
+		snapshots: []history.Snapshot{
+			{Timestamp: time.Date(2026, 2, 10, 0, 0, 0, 0, time.UTC), ModuleCount: 1},
+		},
+	})
+
+	modules, err := svc.ListModules(context.Background(), "", 0)
+	if err != nil {
+		t.Fatalf("list modules: %v", err)
+	}
+	if len(modules) != 1 || modules[0].Name != "A" {
+		t.Fatalf("unexpected modules: %+v", modules)
 	}
 }
 

@@ -3,8 +3,10 @@ package app
 import (
 	"circular/internal/config"
 	"circular/internal/graph"
+	"circular/internal/history"
 	"circular/internal/output"
 	"circular/internal/parser"
+	"circular/internal/query"
 	"circular/internal/resolver"
 	"circular/internal/watcher"
 	"fmt"
@@ -665,6 +667,12 @@ func (a *App) AnalyzeImpact(path string) (graph.ImpactReport, error) {
 
 func (a *App) ArchitectureViolations() []graph.ArchitectureViolation {
 	return a.archEngine.Validate(a.Graph)
+}
+
+func (a *App) BuildQueryService(historyStore interface {
+	LoadSnapshots(since time.Time) ([]history.Snapshot, error)
+}) *query.Service {
+	return query.NewService(a.Graph, historyStore)
 }
 
 func (a *App) PrintSummary(

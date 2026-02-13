@@ -8,8 +8,11 @@
 
 - parses CLI flags/options (`cli.go`)
 - applies mode constraints and config fallback (`runtime.go`)
+- exposes query-service command surface (`--query-*`) for module/details/trace/trend reads
 - configures slog targets/levels (`runtime.go`)
 - runs Bubble Tea UI loop and update plumbing (`run_ui.go`, `ui.go`)
+- provides issue + module-explorer UI panels backed by query read models
+- supports module drill-down, trend overlays, and source-jump actions (`ui_actions.go`, `ui_panels.go`)
 
 ## `internal/app`
 
@@ -20,6 +23,18 @@
 - computes metrics/hotspots/architecture violations
 - supports trace and impact commands
 - writes DOT/TSV outputs
+
+## `internal/history`
+
+- local SQLite snapshot persistence with schema migration/version checks
+- optional git metadata enrichment for snapshots
+- deterministic trend report generation (deltas + moving averages + module growth and fan-in/fan-out drift)
+
+## `internal/query`
+
+- shared read/query service over graph/history state
+- deterministic module listing, module details, dependency trace, and trend slices
+- context-aware APIs for cancellation-safe calls
 
 ## `internal/config`
 
@@ -87,3 +102,6 @@
 - dependency edges
 - optional unused-import section
 - optional architecture-violation section
+- trend renderers emit additive advanced outputs:
+- `RenderTrendTSV(...)`
+- `RenderTrendJSON(...)`

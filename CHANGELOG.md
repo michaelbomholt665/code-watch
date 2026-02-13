@@ -21,6 +21,16 @@ All notable changes to this project will be documented in this file.
 - `output:` Added PlantUML graph generation (`output.plantuml`) with component/package rendering and cycle/violation edge annotations.
 - `output:` Added marker-based Markdown diagram injection via `[[output.update_markdown]]` and `<!-- circular:<marker>:start/end -->` blocks.
 - `config:` Added `output.paths.root` and `output.paths.diagrams_dir` for root-aware output path resolution.
+- `history:` Added `internal/history` phase-1 snapshot persistence (`.circular/history.jsonl`) and optional git commit metadata capture.
+- `cli:` Added `--history` and `--since` flags for opt-in historical trend analysis.
+- `output:` Added trend report exporters `--history-tsv` and `--history-json` with new `internal/output` renderers.
+- `query:` Added `internal/query` shared read service with deterministic module listing, module details, dependency traces, and history trend slices.
+- `ui:` Added module explorer panel in terminal UI (`tab` to switch between issues and modules).
+- `history:` Added SQLite-backed snapshot storage at `.circular/history.db` with schema migrations, version drift checks, and lock-retry policy.
+- `cli:` Added `--history-window` for configurable trend moving windows.
+- `cli:` Added query-service command flags `--query-modules`, `--query-filter`, `--query-module`, `--query-trace`, `--query-trends`, and `--query-limit`.
+- `ui:` Added module detail drill-down, dependency cursor navigation, trend overlay toggle, and `$EDITOR` source-jump action.
+- `history:` Added benchmark coverage (`BenchmarkStore_SaveSnapshot`, `BenchmarkStore_LoadSnapshots`) for persistence performance guardrails.
 
 ### Changed
 - `runtime:` Lowered module minimum Go version in `go.mod` from `1.25.x` to `1.24`.
@@ -33,10 +43,15 @@ All notable changes to this project will be documented in this file.
 - `output:` Relative output paths now resolve from auto-detected project root (`go.mod`/`.git`/`circular.toml`), and filename-only Mermaid/PlantUML paths resolve under `docs/diagrams/` by default.
 - `output:` Improved Mermaid/PlantUML readability with increased spacing defaults and expanded legends explaining node metric fields (`d`, `in`, `out`, `cx`) and edge labels.
 - `app:` Initial scan root handling now normalizes/deduplicates relative and absolute watch roots to prevent duplicate file ingestion and inflated metrics.
+- `runtime:` Single-scan and watch startup flow now optionally records one history snapshot and prints a trend summary when `--history` is enabled.
+- `runtime:` UI update pipeline now uses query-service-backed module summaries for explorer rendering.
+- `history:` Snapshot/trend models now include fan-in/fan-out aggregate metrics and drift deltas for richer trend reporting.
+- `runtime:` History persistence backend changed from JSONL to SQLite while preserving opt-in behavior behind `--history`.
 
 ### Fixed
 - `compatibility:` Restored `GOTOOLCHAIN=go1.24 go test ./...` compatibility by aligning the module Go directive.
 - `watcher:` Serialized debounced callbacks to avoid overlapping update handlers during bursty filesystem activity.
+- `history:` Improved corrupt-database handling with explicit SQLite initialization/ping failures and drift-safe schema validation.
 
 ### Removed
 - None.
@@ -49,3 +64,7 @@ All notable changes to this project will be documented in this file.
 - Documented Mermaid/PlantUML output configuration and markdown marker usage in `docs/documentation/configuration.md` and `docs/documentation/output.md`.
 - Updated `circular.example.toml` and `README.md` output examples to include Mermaid/PlantUML and markdown injection configuration.
 - Clarified output metric interpretation in `docs/documentation/output.md`, including practical `cx` severity guidance (`>=80` high, `>=100` very high).
+- Added `docs/documentation/advanced.md` for phase-1 history/trend workflows and updated CLI/package docs for new history flags and outputs.
+- Updated advanced roadmap docs with explicit implemented vs pending high-complexity tasks and current T3/T4 partial status.
+- Updated `docs/plans/high-complexity-feature-plan.md` with a task-by-task implemented-vs-missing status snapshot.
+- Updated advanced docs and CLI/package references for SQLite history backend, query command surface, TUI drill-down flows, and benchmark guidance.

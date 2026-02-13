@@ -12,6 +12,10 @@ dependencies.tsv
 coverage.out
 xdot.png
 
+# Local runtime/cache state
+.cache/
+.circular/
+
 # Local config overrides
 circular.toml
 

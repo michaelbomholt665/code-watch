@@ -7,6 +7,7 @@ This folder contains implementation-level documentation for `circular`.
 - `cli.md`: CLI flags, mode semantics, argument rules, and logging behavior
 - `configuration.md`: TOML schema, defaults, fallbacks, and architecture validation rules
 - `output.md`: DOT and TSV schemas, appended sections, and ordering guarantees
+- `advanced.md`: phase-1 historical snapshots and trend-report workflows
 - `architecture.md`: scan/update pipeline, data model, and subsystem boundaries
 - `packages.md`: package-level ownership and key entrypoints
 - `limitations.md`: known behavior constraints and tradeoffs

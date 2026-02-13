@@ -1,7 +1,8 @@
-// # cmd/circular/ui.go
 package cliapp
 
 import (
+	"circular/internal/history"
+	"circular/internal/query"
 	"circular/internal/resolver"
 	"fmt"
 	"strings"
@@ -47,19 +48,44 @@ func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title + i.desc }
 
 type model struct {
-	list           list.Model
+	issueList      list.Model
+	moduleList     list.Model
+	mode           panelMode
+	querySvc       *query.Service
+	trendReport    *history.TrendReport
+	showTrend      bool
 	cycles         [][]string
 	hallucinations []resolver.UnresolvedReference
+	modules        []query.ModuleSummary
 	lastUpdate     time.Time
 	moduleCount    int
 	fileCount      int
+
+	moduleDetails    query.ModuleDetails
+	hasModuleDetails bool
+	moduleDetailsErr string
+	selectedDepIndex int
+	sourceJumpStatus string
 }
+
+type panelMode int
+
+const (
+	panelIssues panelMode = iota
+	panelModules
+)
 
 type updateMsg struct {
 	cycles         [][]string
 	hallucinations []resolver.UnresolvedReference
+	modules        []query.ModuleSummary
 	moduleCount    int
 	fileCount      int
+}
+
+type sourceJumpResultMsg struct {
+	target string
+	err    error
 }
 
 func (m model) Init() tea.Cmd {
@@ -69,18 +95,24 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" || msg.String() == "q" {
-			return m, tea.Quit
-		}
+		return handleKeyActions(msg, m)
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v-4)
+		width := msg.Width - h
+		height := msg.Height - v - 8
+		if height < 5 {
+			height = 5
+		}
+		m.issueList.SetSize(width, height)
+		m.moduleList.SetSize(width, height)
 	case updateMsg:
 		m.cycles = msg.cycles
 		m.hallucinations = msg.hallucinations
+		m.modules = msg.modules
 		m.moduleCount = msg.moduleCount
 		m.fileCount = msg.fileCount
 		m.lastUpdate = time.Now()
+		m.moduleDetailsErr = ""
 
 		items := []list.Item{}
 		for _, c := range m.cycles {
@@ -95,11 +127,39 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				desc:  fmt.Sprintf("%s in %s:%d", h.Reference.Name, h.File, h.Reference.Location.Line),
 			})
 		}
-		m.list.SetItems(items)
+		m.issueList.SetItems(items)
+
+		moduleItems := make([]list.Item, 0, len(m.modules))
+		for _, module := range m.modules {
+			moduleItems = append(moduleItems, item{
+				title: module.Name,
+				desc: fmt.Sprintf(
+					"files=%d exports=%d deps=%d imported_by=%d",
+					module.FileCount,
+					module.ExportCount,
+					module.DependencyCount,
+					module.ReverseDependencyCount,
+				),
+			})
+		}
+		m.moduleList.SetItems(moduleItems)
+		if m.hasModuleDetails {
+			m, _ = refreshModuleDetails(m)
+		}
+	case sourceJumpResultMsg:
+		if msg.err != nil {
+			m.sourceJumpStatus = statusStyle.Render(fmt.Sprintf("Source jump failed: %v", msg.err))
+		} else {
+			m.sourceJumpStatus = statusStyle.Render(fmt.Sprintf("Opened source: %s", msg.target))
+		}
 	}
 
 	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
+	if m.mode == panelIssues {
+		m.issueList, cmd = m.issueList.Update(msg)
+	} else {
+		m.moduleList, cmd = m.moduleList.Update(msg)
+	}
 	return m, cmd
 }
 
@@ -109,25 +169,48 @@ func (m model) View() string {
 
 	var summary string
 	if len(m.cycles) == 0 && len(m.hallucinations) == 0 {
-		summary = successStyle.Render("✅ System Clean")
+		summary = successStyle.Render("System Clean")
 	} else {
-		summary = fmt.Sprintf("⚠️  %s | %s",
-			cycleStyle.Render(fmt.Sprintf("%d Cycles", len(m.cycles))),
-			hallucinationStyle.Render(fmt.Sprintf("%d Unresolved", len(m.hallucinations))))
+		summary = fmt.Sprintf("%s | %s",
+			cycleStyle.Render(fmt.Sprintf("%d cycles", len(m.cycles))),
+			hallucinationStyle.Render(fmt.Sprintf("%d unresolved", len(m.hallucinations))))
 	}
 
 	header := fmt.Sprintf("%s\n%s | %s\n", titleStyle("Circular Dependency Monitor"), status, summary)
-	return docStyle.Render(header + "\n" + m.list.View())
+	help := renderHelp(m)
+
+	body := m.issueList.View()
+	if m.mode == panelModules {
+		body = renderModulePanel(m)
+	}
+	if m.showTrend {
+		body += "\n\n" + renderTrendOverlay(m.trendReport)
+	}
+	if m.sourceJumpStatus != "" {
+		body += "\n\n" + m.sourceJumpStatus
+	}
+
+	return docStyle.Render(header + "\n" + help + "\n\n" + body)
 }
 
-func initialModel() model {
-	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
-	l.Title = "Detected Issues"
-	l.SetShowStatusBar(false)
-	l.SetFilteringEnabled(true)
+func initialModel(service *query.Service, trendReport *history.TrendReport) model {
+	issueList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	issueList.Title = "Detected Issues"
+	issueList.SetShowStatusBar(false)
+	issueList.SetFilteringEnabled(true)
+
+	moduleList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
+	moduleList.Title = "Module Explorer"
+	moduleList.SetShowStatusBar(false)
+	moduleList.SetFilteringEnabled(true)
 
 	return model{
-		list:       l,
-		lastUpdate: time.Now(),
+		issueList:        issueList,
+		moduleList:       moduleList,
+		mode:             panelIssues,
+		querySvc:         service,
+		trendReport:      trendReport,
+		lastUpdate:       time.Now(),
+		selectedDepIndex: 0,
 	}
 }
