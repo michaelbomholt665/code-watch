@@ -1,0 +1,342 @@
+# MCP POC Runtime
+
+This repository ships a POC MCP runtime that exposes a single tool (`circular`) over stdio. The protocol is intentionally minimal and designed for local agent integration.
+When `mcp.openapi_spec_path` or `mcp.openapi_spec_url` is configured, startup loads and validates the OpenAPI document with `kin-openapi`, converts operations to descriptors, and applies the MCP operation allowlist.
+
+## Transport Protocol
+
+- Transport: stdio
+- Encoding: JSON (one object per line)
+- One request -> one response
+
+### Request Envelope
+
+```json
+{"id":"1","tool":"circular","args":{"operation":"scan.run","params":{"paths":["./internal","./cmd"]}}}
+```
+
+Fields:
+- `id` (string, optional): echoed back in the response
+- `tool` (string): tool name; defaults to `circular` unless `mcp.exposed_tool_name` is set
+- `args` (object): tool arguments
+  - `operation` (string): operation identifier
+  - `params` (object): operation-specific fields
+
+### Response Envelope
+
+Success:
+```json
+{"id":"1","ok":true,"result":{"version":"v1","operation":"scan.run","result":{"files_scanned":120,"modules":23,"duration_ms":84}}}
+```
+
+Error:
+```json
+{"id":"1","ok":false,"error":{"code":"invalid_argument","message":"operation is required"}}
+```
+
+## Operations
+
+All operations are dispatched through the single tool. Operation IDs are allowlisted via `mcp.operation_allowlist`.
+
+### `scan.run`
+
+Runs a scan against current watch paths (or explicit `paths`).
+
+Params:
+- `paths` (`[]string`, optional)
+- `config_path` (`string`, optional)
+- `project_root` (`string`, optional)
+
+Result:
+- `files_scanned` (`int`)
+- `modules` (`int`)
+- `duration_ms` (`int`)
+- `warnings` (`[]string`, optional)
+
+### `graph.cycles`
+
+Params:
+- `limit` (`int`, optional)
+
+Result:
+- `cycle_count` (`int`)
+- `cycles` (`[][]string`, optional)
+
+### `query.modules`
+
+Params:
+- `filter` (`string`, optional)
+- `limit` (`int`, optional)
+
+Result:
+- `modules` (`[]ModuleSummary`)
+
+### `query.module_details`
+
+Params:
+- `module` (`string`)
+
+Result:
+- `module` (`ModuleDetails`)
+
+### `query.trace`
+
+Params:
+- `from_module` (`string`)
+- `to_module` (`string`)
+- `max_depth` (`int`, optional)
+
+Result:
+- `found` (`bool`)
+- `path` (`[]string`, optional)
+- `depth` (`int`, optional)
+
+### `query.trends`
+
+Params:
+- `since` (`string`, optional, RFC3339 or YYYY-MM-DD)
+- `limit` (`int`, optional)
+
+Result:
+- `since` (`string`, optional)
+- `until` (`string`, optional)
+- `scan_count` (`int`)
+- `snapshots` (`[]TrendSnapshot`)
+
+Notes:
+- Requires DB/history enabled (`[db].enabled = true`).
+
+### `system.sync_outputs`
+
+Writes configured DOT/TSV/Mermaid/PlantUML outputs and optional markdown injections.
+
+Params:
+- `formats` (`[]string`, optional, values: `dot|tsv|mermaid|plantuml`)
+
+Result:
+- `written` (`[]string`)
+
+Notes:
+- Requires `mcp.allow_mutations=true`.
+
+### `system.sync_config`
+
+Writes active config to the configured MCP config path.
+
+Result:
+- `synced` (`bool`)
+- `target` (`string`, optional)
+
+Notes:
+- Requires `mcp.allow_mutations=true`.
+
+### `system.select_project`
+
+Switches active project context.
+
+Params:
+- `name` (`string`)
+
+Result:
+- `project` (`ProjectSummary`)
+
+Notes:
+- Requires `mcp.allow_mutations=true`.
+- Project switch updates history namespace; scan/watch roots are not reloaded automatically in this POC.
+
+## Allowlist Notes
+
+`mcp.operation_allowlist` entries should use operation IDs above. Legacy aliases are accepted:
+- `scan_once` -> `scan.run`
+- `detect_cycles` -> `graph.cycles`
+- `trace_import_chain` -> `query.trace`
+- `generate_reports` -> `system.sync_outputs`
+
+When OpenAPI conversion is enabled, allowlist filtering is applied to converted descriptors at startup and startup fails if no operations remain after filtering.
+
+## Error Codes
+
+- `invalid_argument`
+- `not_found`
+- `unavailable`
+- `internal`
+
+## Quick Example
+
+```bash
+cat <<'JSON' | go run ./cmd/circular --config data/config/circular.toml
+{"id":"1","tool":"circular","args":{"operation":"query.modules","params":{"limit":5}}}
+JSON
+```
+
+## Socket-Activated (systemd --user)
+
+If you want multiple tools to connect without keeping a long-lived stdio process, use a socket-activated user service.
+Each connection spawns a new MCP instance over the UNIX socket.
+
+Create the socket unit at `~/.config/systemd/user/circular-mcp.socket`:
+
+```ini
+[Unit]
+Description=Circular MCP socket
+
+[Socket]
+ListenStream=%t/circular-mcp.sock
+SocketMode=0600
+Accept=yes
+
+[Install]
+WantedBy=sockets.target
+```
+
+Create the service template at `~/.config/systemd/user/circular-mcp@.service`:
+
+```ini
+[Unit]
+Description=Circular MCP connection handler
+
+[Service]
+Type=simple
+WorkingDirectory=/path/to/code-watch
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+ExecStart=/usr/bin/env bash -lc 'cd /path/to/code-watch && go run ./cmd/circular --config /path/to/code-watch/data/config/circular.toml'
+```
+
+Enable the socket:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now circular-mcp.socket
+```
+
+Use a small stdio-to-socket bridge as the MCP client command (example `~/.local/bin/circular-mcp-client`):
+
+```python
+#!/usr/bin/env python3
+import os
+import selectors
+import socket
+import sys
+
+runtime_dir = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+sock_path = os.environ.get("CIRCULAR_MCP_SOCK", os.path.join(runtime_dir, "circular-mcp.sock"))
+
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect(sock_path)
+s.setblocking(False)
+
+sel = selectors.DefaultSelector()
+sel.register(sys.stdin, selectors.EVENT_READ)
+sel.register(s, selectors.EVENT_READ)
+
+while True:
+    for key, _ in sel.select():
+        if key.fileobj is sys.stdin:
+            data = sys.stdin.buffer.read1(4096)
+            if not data:
+                sys.exit(0)
+            s.sendall(data)
+        else:
+            data = s.recv(4096)
+            if not data:
+                sys.exit(0)
+            sys.stdout.buffer.write(data)
+            sys.stdout.buffer.flush()
+```
+
+Point your MCP client config at that bridge:
+
+```json
+{
+  "mcpServers": {
+    "circular": {
+      "command": "/home/you/.local/bin/circular-mcp-client",
+      "args": [],
+      "env": {}
+    }
+  }
+}
+```
+
+Notes:
+- Each connection runs a new process. For faster startup, build a binary and use it in `ExecStart`.
+- The socket path is `%t/circular-mcp.sock` (typically `/run/user/<uid>/circular-mcp.sock`).
+
+## Client Config Schemas
+
+Use these client-side configs to connect local tools to this MCP server over stdio.
+
+### VS Code (`.vscode/mcp.json`)
+
+```json
+{
+  "servers": {
+    "circular": {
+      "type": "stdio",
+      "command": "go",
+      "args": ["run", "./cmd/circular", "--config", "data/config/circular.toml"],
+      "env": {}
+    }
+  }
+}
+```
+
+### Antigravity (`mcp_config.json`)
+
+Antigravity no longer relies on the old MCP enable toggle in recent builds; use **Agent Panel -> ... -> Manage MCP Servers -> View raw config** and edit `mcp_config.json`.
+
+```json
+{
+  "mcpServers": {
+    "circular": {
+      "command": "go",
+      "args": ["run", "./cmd/circular", "--config", "data/config/circular.toml"],
+      "env": {}
+    }
+  }
+}
+```
+
+### Gemini CLI (`~/.gemini/settings.json` or `./.gemini/settings.json`)
+
+```json
+{
+  "mcpServers": {
+    "circular": {
+      "command": "go",
+      "args": ["run", "./cmd/circular", "--config", "data/config/circular.toml"],
+      "cwd": ".",
+      "env": {}
+    }
+  }
+}
+```
+
+### Kilo Code (`~/.kilocode/mcp_settings.json` or `./.kilocode/mcp.json`)
+
+```json
+{
+  "mcpServers": {
+    "circular": {
+      "type": "stdio",
+      "command": "go",
+      "args": ["run", "./cmd/circular", "--config", "data/config/circular.toml"],
+      "cwd": ".",
+      "env": {},
+      "disabled": false
+    }
+  }
+}
+```
+
+### Codex
+
+Codex CLI MCP config is **TOML**, not JSON. Configure `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.circular]
+command = "go"
+args = ["run", "./cmd/circular", "--config", "data/config/circular.toml"]
+```

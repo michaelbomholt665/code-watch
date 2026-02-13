@@ -48,6 +48,10 @@ All notable changes to this project will be documented in this file.
 - `mcp:` Added MCP runtime bootstrap scaffolding and project-context resolution for config-driven MCP startup.
 - `config:` Added MCP POC configuration fields for server metadata, tool exposure policy, response limits, and auto-sync controls.
 - `config:` Added per-project `config_file` support and enforced unique `db_namespace` values for SQLite isolation.
+- `config:` Added MCP OpenAPI spec source keys (`mcp.openapi_spec_path`, `mcp.openapi_spec_url`) with mutual exclusivity validation and path resolution.
+- `mcp:` Added stdio JSON request/response protocol with single-tool operation dispatch (`circular`) and allowlist enforcement.
+- `mcp:` Added adapter + handler packages for scan/query/graph/system operations with bounded outputs.
+- `docs:` Added `docs/documentation/mcp.md` covering MCP protocol, operations, and examples.
 
 ### Changed
 - `architecture:` Reorganized internal packages into pillar paths: `internal/core/{app,config,watcher}`, `internal/engine/{parser,resolver,graph}`, `internal/data/{history,query}`, and `internal/ui/{cli,report}`.
@@ -86,6 +90,7 @@ All notable changes to this project will be documented in this file.
 - `config:` Expanded example exclude guidance to cover project-specific symbol/import suppression.
 - `runtime:` MCP mode now starts from TOML config and enforces CLI incompatibility checks when enabled.
 - `docs:` Updated configuration/CLI/README docs and MCP examples to align with the expanded MCP config contract.
+- `docs:` Updated MCP allowlist examples to use operation IDs (`scan.run`, `graph.cycles`, `system.sync_outputs`) with legacy alias mapping.
 
 ### Fixed
 - `compatibility:` Restored `GOTOOLCHAIN=go1.24 go test ./...` compatibility by aligning the module Go directive.
@@ -125,3 +130,6 @@ All notable changes to this project will be documented in this file.
 - Corrected README and configuration examples to place `grammars_path`/`watch_paths` at TOML top-level and documented `exclude.imports` for unused-import suppression.
 - Documented `--include-tests` default behavior (tests excluded unless flag is enabled).
 - Documented example exclude lists for project-specific symbol/import suppression in configuration docs.
+- Documented MCP OpenAPI spec source configuration in `README.md` and `docs/documentation/cli.md`.
+- Documented MCP stdio protocol and operation surface in `docs/documentation/mcp.md`.
+- Documented systemd socket-activation and stdio bridge setup for MCP clients in `docs/documentation/mcp.md`.
