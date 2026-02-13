@@ -16,13 +16,13 @@ All notable changes to this project will be documented in this file.
 - `skills:` Added `changelog-maintainer` skill for maintaining root `CHANGELOG.md`.
 
 ### Changed
-- `runtime:` Lowered module minimum Go version in `go.mod` from `1.25.7` to `1.24.9`.
+- `runtime:` Lowered module minimum Go version in `go.mod` from `1.25.x` to `1.24`.
 - `docs:` Clarified semantic versioning policy in `AGENTS.md` and `README.md`.
 - `config:` Extended `circular.toml` schema with `[architecture]`, `[[architecture.layers]]`, and `[[architecture.rules]]`.
 - `summary:` Terminal summary now includes architecture violations and top complexity hotspots.
 
 ### Fixed
-- `compatibility:` Restored `GOTOOLCHAIN=go1.24.9 go test ./...` compatibility by aligning the module Go directive.
+- `compatibility:` Restored `GOTOOLCHAIN=go1.24 go test ./...` compatibility by aligning the module Go directive.
 
 ### Removed
 - None.

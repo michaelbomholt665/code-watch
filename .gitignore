@@ -19,3 +19,4 @@ circular.toml
 .DS_Store
 .idea/
 .vscode/
+.coderabbit.yaml

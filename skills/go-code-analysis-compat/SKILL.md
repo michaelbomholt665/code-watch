@@ -1,6 +1,6 @@
 ---
 name: go-code-analysis-compat
-description: Build and maintain Go code analysis and code-watching tooling with idiomatic Go conventions, stable graph/report outputs, and strict documentation hygiene. Use when implementing or reviewing Go analyzers, file watchers, dependency graphs, and output generators, especially when developing on Go 1.25.7 while enforcing compatibility with Go 1.24.x.
+description: Build and maintain Go code analysis and code-watching tooling with idiomatic Go conventions, stable graph/report outputs, and strict documentation hygiene. Use when implementing or reviewing Go analyzers, file watchers, dependency graphs, and output generators, especially when developing on Go 1.25.x while enforcing compatibility with Go 1.24.x.
 ---
 
 # Go Code Analysis Compat
@@ -13,19 +13,19 @@ Execute repository changes for Go-based code watching and static analysis system
 2. Implement behavior in the owning package without leaking responsibilities.
 3. Write or update tests before finalizing code.
 4. Update inline code docs and project docs in `docs/documentation/`.
-5. Validate on Go 1.25.7 and compatibility-check on Go 1.24.x (minimum 1.24.9).
+5. Validate on Go 1.25.x and compatibility-check on Go 1.24.x (minimum 1.24).
 
 ## Enforce Go Version Policy
 
-- Develop with Go `1.25.7`.
+- Develop with Go `1.25.x`.
 - Keep syntax/APIs compatible with Go `1.24.*`.
-- Treat Go `1.24.9` as the compatibility floor in CI/local checks.
+- Treat Go `1.24` as the compatibility floor in CI/local checks.
 
 Run:
 
 ```bash
 go test ./...
-GOTOOLCHAIN=go1.24.9 go test ./...
+GOTOOLCHAIN=go1.24 go test ./...
 ```
 
 If incompatibility appears, remove post-1.24 usage and prefer stable alternatives.
@@ -81,7 +81,7 @@ Don't:
 
 ```bash
 go test ./...
-GOTOOLCHAIN=go1.24.9 go test ./...
+GOTOOLCHAIN=go1.24 go test ./...
 go test ./... -coverprofile=coverage.out
 ```
 

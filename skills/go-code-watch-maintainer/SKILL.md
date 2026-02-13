@@ -1,6 +1,6 @@
 ---
 name: go-code-watch-maintainer
-description: Maintain and extend the Code Dependency Monitor project in Go with parser/graph/resolver/watcher/output boundaries, production-safe refactors, and test-first changes. Use when implementing features, fixing bugs, reviewing architecture, or planning upgrades in this repository, especially when developing on Go 1.25.7 while preserving compatibility with Go 1.24.9.
+description: Maintain and extend the Code Dependency Monitor project in Go with parser/graph/resolver/watcher/output boundaries, production-safe refactors, and test-first changes. Use when implementing features, fixing bugs, reviewing architecture, or planning upgrades in this repository, especially when developing on Go 1.25.x while preserving compatibility with Go 1.24.
 ---
 
 # Go Code Watch Maintainer
@@ -18,13 +18,13 @@ Execute changes for this repository with strict package boundaries, reproducible
 
 ## Enforce Go Version Policy
 
-Develop using Go `1.25.7`, but preserve runtime/build compatibility with `1.24.9`.
+Develop using Go `1.25.x`, but preserve runtime/build compatibility with `1.24`.
 
 Use this command order:
 
 ```bash
 go test ./...
-GOTOOLCHAIN=go1.24.9 go test ./...
+GOTOOLCHAIN=go1.24 go test ./...
 ```
 
 If compatibility fails:
@@ -94,7 +94,7 @@ Do:
 - Add clear benchmarks or complexity notes for expensive traversals.
 - Preserve existing config defaults and output compatibility.
 - Keep capability parity between CLI/app and MCP tools/resources.
-- Run both default and Go 1.24.9 compatibility test passes.
+- Run both default and Go 1.24 compatibility test passes.
 
 Don't:
 - Introduce cross-package coupling that bypasses pipeline boundaries.
@@ -110,7 +110,7 @@ Before finalizing:
 
 ```bash
 go test ./...
-GOTOOLCHAIN=go1.24.9 go test ./...
+GOTOOLCHAIN=go1.24 go test ./...
 go test ./... -coverprofile=coverage.out
 ```
 
@@ -123,4 +123,4 @@ If a command cannot run (toolchain missing, environment limits), state it explic
 - CLI/config/output docs are updated when applicable.
 - App capability changes include explicit MCP sync/parity decision.
 - Capability registry and MCP contracts are updated when surfaces change.
-- Go 1.24.9 compatibility was verified or clearly called out as unverified.
+- Go 1.24 compatibility was verified or clearly called out as unverified.

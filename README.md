@@ -34,9 +34,9 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 ## Install / Build
 
 Requirements:
-- Go `1.24.9+` supported
+- Go `1.24+` supported
 - Go `1.23` is not supported by current dependencies
-- `go.mod` pins `go 1.24.9`
+- `go.mod` pins `go 1.24`
 
 Build:
 

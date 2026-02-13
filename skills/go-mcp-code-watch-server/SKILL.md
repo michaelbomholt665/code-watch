@@ -47,15 +47,15 @@ Implement prompt templates:
 
 ## Go and Compatibility Rules
 
-- Develop with Go `1.25.7`.
-- Keep compatibility with Go `1.24.x` (floor `1.24.9`).
+- Develop with Go `1.25.x`.
+- Keep compatibility with Go `1.24.x` (floor `1.24`).
 - Avoid new APIs/syntax not available in Go 1.24.x.
 
 Verify:
 
 ```bash
 go test ./...
-GOTOOLCHAIN=go1.24.9 go test ./...
+GOTOOLCHAIN=go1.24 go test ./...
 ```
 
 ## Interface and Contract Rules
