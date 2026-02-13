@@ -203,6 +203,164 @@ allow = ["core"]
   - `d=<depth> in=<fan-in> out=<fan-out>`
   - `cx=<top-complexity-score-in-module>`
 
+## Dependency Diagrams
+
+Mermaid:
+
+<!-- circular:deps-mermaid:start -->
+```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
+flowchart LR
+  circular_cmd_circular["circular/cmd/circular\n(0 funcs, 1 files)\n(d=6 in=0 out=1)"]
+  circular_internal_app["circular/internal/app\n(34 funcs, 3 files)\n(d=4 in=1 out=8)"]
+  circular_internal_cliapp["circular/internal/cliapp\n(20 funcs, 8 files)\n(d=5 in=1 out=8)"]
+  circular_internal_config["circular/internal/config\n(18 funcs, 2 files)\n(d=0 in=2 out=0)\n(cx=101)"]
+  circular_internal_graph["circular/internal/graph\n(49 funcs, 6 files)\n(d=1 in=5 out=1)"]
+  circular_internal_history["circular/internal/history\n(21 funcs, 7 files)\n(d=0 in=4 out=0)"]
+  circular_internal_output["circular/internal/output\n(32 funcs, 8 files)\n(d=3 in=2 out=4)\n(cx=123)"]
+  circular_internal_parser["circular/internal/parser\n(21 funcs, 7 files)\n(d=0 in=6 out=0)\n(cx=80)"]
+  circular_internal_query["circular/internal/query\n(14 funcs, 3 files)\n(d=2 in=2 out=3)"]
+  circular_internal_resolver["circular/internal/resolver\n(25 funcs, 6 files)\n(d=2 in=3 out=2)"]
+  circular_internal_watcher["circular/internal/watcher\n(7 funcs, 2 files)\n(d=0 in=1 out=0)"]
+  __external_aggregate__["External/Stdlib\n(31 modules)"]
+
+  classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px;
+  class circular_cmd_circular,circular_internal_app,circular_internal_cliapp,circular_internal_config,circular_internal_graph,circular_internal_history,circular_internal_output,circular_internal_parser,circular_internal_query,circular_internal_resolver,circular_internal_watcher internalNode;
+  classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3;
+  class __external_aggregate__ externalNode;
+  classDef hotspotNode stroke:#8a4f00,stroke-width:2px;
+  class circular_internal_config,circular_internal_output,circular_internal_parser hotspotNode;
+
+  circular_cmd_circular --> circular_internal_cliapp
+  circular_internal_app --> circular_internal_config
+  circular_internal_app --> circular_internal_graph
+  circular_internal_app --> circular_internal_history
+  circular_internal_app --> circular_internal_output
+  circular_internal_app --> circular_internal_parser
+  circular_internal_app --> circular_internal_query
+  circular_internal_app --> circular_internal_resolver
+  circular_internal_app --> circular_internal_watcher
+  circular_internal_cliapp --> circular_internal_app
+  circular_internal_cliapp --> circular_internal_config
+  circular_internal_cliapp --> circular_internal_graph
+  circular_internal_cliapp --> circular_internal_history
+  circular_internal_cliapp --> circular_internal_output
+  circular_internal_cliapp --> circular_internal_parser
+  circular_internal_cliapp --> circular_internal_query
+  circular_internal_cliapp --> circular_internal_resolver
+  circular_internal_graph --> circular_internal_parser
+  circular_internal_output --> circular_internal_graph
+  circular_internal_output --> circular_internal_history
+  circular_internal_output --> circular_internal_parser
+  circular_internal_output --> circular_internal_resolver
+  circular_internal_query --> circular_internal_graph
+  circular_internal_query --> circular_internal_history
+  circular_internal_query --> circular_internal_parser
+  circular_internal_resolver --> circular_internal_graph
+  circular_internal_resolver --> circular_internal_parser
+  circular_cmd_circular -->|ext:1| __external_aggregate__
+  circular_internal_app -->|ext:12| __external_aggregate__
+  circular_internal_cliapp -->|ext:13| __external_aggregate__
+  circular_internal_config -->|ext:7| __external_aggregate__
+  circular_internal_graph -->|ext:8| __external_aggregate__
+  circular_internal_history -->|ext:13| __external_aggregate__
+  circular_internal_output -->|ext:9| __external_aggregate__
+  circular_internal_parser -->|ext:11| __external_aggregate__
+  circular_internal_query -->|ext:6| __external_aggregate__
+  circular_internal_resolver -->|ext:7| __external_aggregate__
+  circular_internal_watcher -->|ext:10| __external_aggregate__
+
+  linkStyle 27,28,29,30,31,32,33,34,35,36,37 stroke:#777777,stroke-dasharray:4 3;
+
+  subgraph legend_info["Legend"]
+    legend_metrics["Node line 1: module\nline 2: funcs/files\n(d=depth in=fan-in out=fan-out)\n(cx=complexity hotspot score)"]
+    legend_edges["Edge labels: CYCLE=import cycle, VIOLATION=architecture rule violation, ext:N=external dependency count"]
+  end
+  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px;
+  class legend_metrics,legend_edges legendNode;
+```
+<!-- circular:deps-mermaid:end -->
+
+PlantUML:
+
+<!-- circular:deps-plantuml:start -->
+```plantuml
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+left to right direction
+
+component "circular/cmd/circular\n(0 funcs, 1 files)\n(d=6 in=0 out=1)" as circular_cmd_circular
+component "circular/internal/app\n(34 funcs, 3 files)\n(d=4 in=1 out=8)" as circular_internal_app
+component "circular/internal/cliapp\n(20 funcs, 8 files)\n(d=5 in=1 out=8)" as circular_internal_cliapp
+component "circular/internal/config\n(18 funcs, 2 files)\n(d=0 in=2 out=0)\n(cx=101)" as circular_internal_config
+component "circular/internal/graph\n(49 funcs, 6 files)\n(d=1 in=5 out=1)" as circular_internal_graph
+component "circular/internal/history\n(21 funcs, 7 files)\n(d=0 in=4 out=0)" as circular_internal_history
+component "circular/internal/output\n(32 funcs, 8 files)\n(d=3 in=2 out=4)\n(cx=123)" as circular_internal_output
+component "circular/internal/parser\n(21 funcs, 7 files)\n(d=0 in=6 out=0)\n(cx=80)" as circular_internal_parser
+component "circular/internal/query\n(14 funcs, 3 files)\n(d=2 in=2 out=3)" as circular_internal_query
+component "circular/internal/resolver\n(25 funcs, 6 files)\n(d=2 in=3 out=2)" as circular_internal_resolver
+component "circular/internal/watcher\n(7 funcs, 2 files)\n(d=0 in=1 out=0)" as circular_internal_watcher
+component "External/Stdlib\n(31 modules)" as __external_aggregate__ #DDDDDD
+
+circular_cmd_circular --> circular_internal_cliapp
+circular_internal_app --> circular_internal_config
+circular_internal_app --> circular_internal_graph
+circular_internal_app --> circular_internal_history
+circular_internal_app --> circular_internal_output
+circular_internal_app --> circular_internal_parser
+circular_internal_app --> circular_internal_query
+circular_internal_app --> circular_internal_resolver
+circular_internal_app --> circular_internal_watcher
+circular_internal_cliapp --> circular_internal_app
+circular_internal_cliapp --> circular_internal_config
+circular_internal_cliapp --> circular_internal_graph
+circular_internal_cliapp --> circular_internal_history
+circular_internal_cliapp --> circular_internal_output
+circular_internal_cliapp --> circular_internal_parser
+circular_internal_cliapp --> circular_internal_query
+circular_internal_cliapp --> circular_internal_resolver
+circular_internal_graph --> circular_internal_parser
+circular_internal_output --> circular_internal_graph
+circular_internal_output --> circular_internal_history
+circular_internal_output --> circular_internal_parser
+circular_internal_output --> circular_internal_resolver
+circular_internal_query --> circular_internal_graph
+circular_internal_query --> circular_internal_history
+circular_internal_query --> circular_internal_parser
+circular_internal_resolver --> circular_internal_graph
+circular_internal_resolver --> circular_internal_parser
+circular_cmd_circular -[#777777,dashed]-> __external_aggregate__ : ext:1
+circular_internal_app -[#777777,dashed]-> __external_aggregate__ : ext:12
+circular_internal_cliapp -[#777777,dashed]-> __external_aggregate__ : ext:13
+circular_internal_config -[#777777,dashed]-> __external_aggregate__ : ext:7
+circular_internal_graph -[#777777,dashed]-> __external_aggregate__ : ext:8
+circular_internal_history -[#777777,dashed]-> __external_aggregate__ : ext:13
+circular_internal_output -[#777777,dashed]-> __external_aggregate__ : ext:9
+circular_internal_parser -[#777777,dashed]-> __external_aggregate__ : ext:11
+circular_internal_query -[#777777,dashed]-> __external_aggregate__ : ext:6
+circular_internal_resolver -[#777777,dashed]-> __external_aggregate__ : ext:7
+circular_internal_watcher -[#777777,dashed]-> __external_aggregate__ : ext:10
+
+legend right
+|= Item |= Meaning |
+|Node line 1|Module name|
+|Node line 2|Function/export count and file count|
+|d|Dependency depth|
+|in|Fan-in (number of internal modules importing this module)|
+|out|Fan-out (number of internal modules this module imports)|
+|cx|Top complexity hotspot score in the module|
+|<color:#DDDDDD>Component</color>|External module|
+|ext:N|Count of external dependencies from that module (aggregated mode)|
+endlegend
+
+@enduml
+```
+<!-- circular:deps-plantuml:end -->
+
 ## Documentation
 
 Full documentation is in `docs/documentation/`:
