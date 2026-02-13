@@ -44,6 +44,18 @@ Run tests:
 go test ./...
 ```
 
+## Versioning
+
+This project follows Semantic Versioning: `MAJOR.MINOR.PATCH`.
+
+- `PATCH`: backward-compatible bug fixes and internal improvements with no public contract change.
+- `MINOR`: backward-compatible features (for example new CLI flags, additive config fields, additive output fields).
+- `MAJOR`: breaking changes to CLI behavior/flags, config schema, or output formats that downstream tooling relies on.
+
+Before a version bump/release:
+- Update root `CHANGELOG.md` with user-facing changes.
+- Keep docs in `docs/documentation/` aligned with released behavior.
+
 ## Quick Start
 
 1. Copy example config:

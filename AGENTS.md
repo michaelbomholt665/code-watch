@@ -38,6 +38,19 @@ Use `circular.example.toml` as the starting config:
 - Keep commits focused; avoid mixing refactors with behavior changes.
 - PRs should include: purpose, key design choices, test evidence (`go test ./...` output), and sample output changes (`graph.dot`/`dependencies.tsv`) when relevant.
 
+## Versioning Guidelines
+- Use Semantic Versioning: `MAJOR.MINOR.PATCH`.
+- Increment `PATCH` for backward-compatible bug fixes and internal improvements that do not change public behavior/contracts.
+- Increment `MINOR` for backward-compatible new features (new flags, additive config fields, additive DOT/TSV fields, new analysis modes).
+- Increment `MAJOR` for breaking changes:
+- CLI flag removals/renames or behavior changes that break existing workflows.
+- Config schema changes that require user config updates.
+- Output format changes that break existing parsers/integrations.
+- Before release/version bump:
+- Update `CHANGELOG.md` with user-facing notes.
+- Keep docs in `docs/documentation/` aligned with the versioned behavior.
+- Keep additive changes preferred; avoid breaking contracts unless major version bump is intentional.
+
 ## Security & Configuration Tips
 - Do not commit local paths or private project roots in `circular.toml`.
 - Keep `exclude` patterns updated to avoid scanning large generated/vendor directories.

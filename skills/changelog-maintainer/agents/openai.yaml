@@ -1,0 +1,4 @@
+interface:
+  display_name: "Changelog Maintainer"
+  short_description: "Maintain root CHANGELOG entries"
+  default_prompt: "Use $changelog-maintainer to update the root CHANGELOG.md with concise, user-facing notes for this change set."
