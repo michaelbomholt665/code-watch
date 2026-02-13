@@ -11,10 +11,14 @@ graph.dot
 dependencies.tsv
 coverage.out
 xdot.png
+docs/reports/
+out/
+docs/fix.md
 
 # Local runtime/cache state
 .cache/
 .circular/
+data/database/
 
 # Local config overrides
 circular.toml
@@ -24,3 +28,7 @@ circular.toml
 .idea/
 .vscode/
 .coderabbit.yaml
+
+# Local skills (non-project-specific)
+skills/small-function-utility-consolidator/
+skills/universal-skill-router/
