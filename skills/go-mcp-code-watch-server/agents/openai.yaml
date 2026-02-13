@@ -1,0 +1,4 @@
+interface:
+  display_name: "Go MCP Code Watch"
+  short_description: "Build MCP server for dependency analysis"
+  default_prompt: "Use $go-mcp-code-watch-server to build a Go MCP server that exposes this project's scan and dependency analysis capabilities to AI agents."
