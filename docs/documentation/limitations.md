@@ -2,28 +2,31 @@
 
 ## Parsing and Language Coverage
 
-- only `.go` and `.py` files are parsed
-- language detection is extension-based only
-- parser uses bundled Tree-sitter Go/Python grammars, not dynamic grammar loading
+- default runtime coverage is `.go` and `.py`
+- additional languages can be enabled via `[languages.<id>]`; profile-driven extractors currently cover `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`
+- language detection is registry-driven (extensions + optional exact filename routes)
+- grammar artifacts are verified via `grammars/manifest.toml` when `grammar_verification.enabled=true`
 
 ## Resolver Heuristics
 
 - unresolved-reference detection is heuristic and not compiler/type-checker accurate
-- imported symbol resolution is best-effort for aliases, module prefixes, and `from ... import ...`
+- imported symbol resolution is best-effort for aliases/module prefixes and language-specific module naming:
+- `go` (path base), `python` (dot modules), `javascript`/`typescript`/`tsx` (package/path base), `java` (package class), `rust` (`::` module base)
 - `exclude.symbols` can hide false positives and true positives
-- stdlib/builtin lists are static snapshots
+- stdlib/builtin lists are static snapshots and language-scoped
 
 ## Graph Granularity
 
 - dependency graph is module-level, not symbol-level edges
 - cycle detection and import-chain tracing operate on module graph only
 - unused import detection is reference-name based, not full semantic usage analysis
+- unused import detection is intentionally disabled for metadata/markup languages (for example `html`, `css`, `gomod`, `gosum`)
 
 ## Watch Semantics
 
 - behavior depends on fsnotify event delivery semantics per platform/filesystem
 - update batches are debounced and serialized, so high-frequency churn can delay analysis visibility
-- test files (`*_test.go`, `*_test.py`) are ignored by watcher event processing
+- watcher filtering uses enabled language extension/filename routes plus language-specific test suffixes
 
 ## Output Ordering
 
@@ -31,7 +34,7 @@
 
 ## Configuration Constraints
 
-- only default config path (`./circular.toml`) has fallback to `./circular.example.toml`
+- default config discovery starts at `./data/config/circular.toml` and includes legacy root fallbacks during migration
 - strict architecture isolation via empty `allow=[]` is not supported; at least one allowed layer is required
 
 ## UI/Logging

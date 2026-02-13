@@ -259,3 +259,93 @@ func TestResolver_FindUnusedImports(t *testing.T) {
 		t.Fatalf("Expected high confidence for from-import item, got %s", unused[0].Confidence)
 	}
 }
+
+func TestResolver_ImportReferenceNameByLanguage(t *testing.T) {
+	tests := []struct {
+		name     string
+		language string
+		imp      parser.Import
+		want     string
+	}{
+		{
+			name:     "go module base",
+			language: "go",
+			imp:      parser.Import{Module: "log/slog"},
+			want:     "slog",
+		},
+		{
+			name:     "python module base",
+			language: "python",
+			imp:      parser.Import{Module: "urllib.request"},
+			want:     "request",
+		},
+		{
+			name:     "javascript scoped package base",
+			language: "javascript",
+			imp:      parser.Import{Module: "@scope/pkg/sub"},
+			want:     "sub",
+		},
+		{
+			name:     "java package base",
+			language: "java",
+			imp:      parser.Import{Module: "java.util"},
+			want:     "util",
+		},
+		{
+			name:     "rust path base",
+			language: "rust",
+			imp:      parser.Import{Module: "std::io"},
+			want:     "io",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := importReferenceName(tc.language, tc.imp)
+			if got != tc.want {
+				t.Fatalf("importReferenceName(%q, %q) = %q, want %q", tc.language, tc.imp.Module, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolver_FindUnusedImportsUnsupportedLanguage(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:     "page.html",
+		Language: "html",
+		Module:   "page",
+		Imports: []parser.Import{
+			{Module: "header", Location: parser.Location{File: "page.html", Line: 1, Column: 1}},
+		},
+	})
+
+	r := NewResolver(g, nil)
+	unused := r.FindUnusedImports([]string{"page.html"})
+	if len(unused) != 0 {
+		t.Fatalf("expected no unused import findings for unsupported language, got %d", len(unused))
+	}
+}
+
+func TestResolver_StdlibIsLanguageScoped(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "main.js",
+		Language: "javascript",
+		Module:   "web",
+		References: []parser.Reference{
+			{Name: "fs.readFile"},
+			{Name: "fmt.Println"},
+		},
+	})
+
+	r := NewResolver(g, nil)
+	unresolved := r.FindUnresolvedForPaths([]string{"main.js"})
+	if len(unresolved) != 1 {
+		t.Fatalf("expected exactly one unresolved reference, got %d", len(unresolved))
+	}
+	if unresolved[0].Reference.Name != "fmt.Println" {
+		t.Fatalf("expected fmt.Println unresolved for javascript file, got %s", unresolved[0].Reference.Name)
+	}
+}

@@ -76,9 +76,26 @@ func TestApplyModeOptions_QueryTrendsRequiresHistory(t *testing.T) {
 	}
 }
 
+func TestApplyModeOptions_VerifyGrammarsRejectsPositionalArgs(t *testing.T) {
+	opts := &cliOptions{verifyGrammars: true, args: []string{"./src"}}
+	cfg := &config.Config{}
+
+	err := applyModeOptions(opts, cfg)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "does not accept positional") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestNormalizeGrammarsPath_MakesRelativePathAbsolute(t *testing.T) {
 	cfg := &config.Config{GrammarsPath: "./grammars"}
-	if err := normalizeGrammarsPath(cfg); err != nil {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := normalizeGrammarsPath(cfg, cwd); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if !filepath.IsAbs(cfg.GrammarsPath) {
@@ -164,7 +181,13 @@ func TestRunHistoryMode_SQLiteIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	store, err := openHistoryStoreIfEnabled(true)
+	cfg := &config.Config{DB: config.Database{Enabled: true, Path: "history.db"}}
+	paths, err := config.ResolvePaths(cfg, tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store, err := openHistoryStoreIfEnabled(true, cfg, paths)
 	if err != nil {
 		t.Fatalf("open store: %v", err)
 	}
@@ -176,6 +199,7 @@ func TestRunHistoryMode_SQLiteIntegration(t *testing.T) {
 	report, err := runHistoryMode(
 		cliOptions{history: true, historyWindow: "24h"},
 		app,
+		config.ActiveProject{Name: "default", Root: tmpDir, Key: "default"},
 		map[string]graph.ModuleMetrics{"app/a": {FanIn: 1, FanOut: 2}},
 		nil,
 		0,
@@ -191,7 +215,7 @@ func TestRunHistoryMode_SQLiteIntegration(t *testing.T) {
 		t.Fatalf("expected report with snapshots, got %+v", report)
 	}
 
-	snapshots, err := store.LoadSnapshots(time.Time{})
+	snapshots, err := store.LoadSnapshots("default", time.Time{})
 	if err != nil {
 		t.Fatalf("load snapshots: %v", err)
 	}
@@ -200,5 +224,82 @@ func TestRunHistoryMode_SQLiteIntegration(t *testing.T) {
 	}
 	if snapshots[0].AvgFanOut != 2 {
 		t.Fatalf("expected saved fan-out metric, got %+v", snapshots[0])
+	}
+}
+
+func TestLoadConfig_DefaultDiscoveryOrder(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(tmpDir, "data", "config"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfgPath := filepath.Join(tmpDir, "data", "config", "circular.toml")
+	if err := os.WriteFile(cfgPath, []byte("grammars_path = \"./grammars\"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := loadConfig(defaultConfigPath, tmpDir)
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.GrammarsPath != "./grammars" {
+		t.Fatalf("unexpected config payload: %+v", cfg)
+	}
+}
+
+func TestLoadConfig_CustomPathNoFallback(t *testing.T) {
+	tmpDir := t.TempDir()
+	custom := filepath.Join(tmpDir, "custom.toml")
+
+	_, err := loadConfig(custom, tmpDir)
+	if err == nil {
+		t.Fatal("expected missing custom config error")
+	}
+	if !os.IsNotExist(err) {
+		t.Fatalf("expected not-exist error, got %v", err)
+	}
+}
+
+func TestOpenHistoryStore_UsesConfiguredDBPath(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := &config.Config{
+		Paths: config.Paths{
+			ProjectRoot: tmpDir,
+			DatabaseDir: filepath.Join(tmpDir, "db"),
+		},
+		DB: config.Database{
+			Enabled: true,
+			Path:    "nested/history.db",
+		},
+	}
+	configPath, err := config.ResolvePaths(cfg, tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store, err := openHistoryStoreIfEnabled(true, cfg, configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	if store.Path() != filepath.Join(tmpDir, "db", "nested", "history.db") {
+		t.Fatalf("unexpected history path: %q", store.Path())
+	}
+}
+
+func TestOpenHistoryStore_DBDisabled(t *testing.T) {
+	tmpDir := t.TempDir()
+	cfg := &config.Config{DB: config.Database{Enabled: false}}
+	paths, err := config.ResolvePaths(cfg, tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	store, err := openHistoryStoreIfEnabled(true, cfg, paths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if store != nil {
+		t.Fatal("expected nil store when db disabled")
 	}
 }

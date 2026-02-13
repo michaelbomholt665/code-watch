@@ -3,28 +3,29 @@ package cliapp
 import "flag"
 
 const versionString = "1.0.0"
-const defaultConfigPath = "./circular.toml"
+const defaultConfigPath = "./data/config/circular.toml"
 
 type cliOptions struct {
-	configPath    string
-	once          bool
-	ui            bool
-	trace         bool
-	impact        string
-	history       bool
-	since         string
-	historyWindow string
-	historyTSV    string
-	historyJSON   string
-	queryModules  bool
-	queryFilter   string
-	queryModule   string
-	queryTrace    string
-	queryTrends   bool
-	queryLimit    int
-	verbose       bool
-	version       bool
-	args          []string
+	configPath     string
+	once           bool
+	ui             bool
+	trace          bool
+	impact         string
+	history        bool
+	since          string
+	historyWindow  string
+	historyTSV     string
+	historyJSON    string
+	queryModules   bool
+	queryFilter    string
+	queryModule    string
+	queryTrace     string
+	queryTrends    bool
+	queryLimit     int
+	verifyGrammars bool
+	verbose        bool
+	version        bool
+	args           []string
 }
 
 func parseOptions(args []string) (cliOptions, error) {
@@ -47,6 +48,7 @@ func parseOptions(args []string) (cliOptions, error) {
 	fs.StringVar(&opts.queryTrace, "query-trace", "", "Print dependency trace from shared query service (<from>:<to>)")
 	fs.BoolVar(&opts.queryTrends, "query-trends", false, "Print historical trend slice from shared query service (requires --history)")
 	fs.IntVar(&opts.queryLimit, "query-limit", 0, "Optional limit/depth control for query modes")
+	fs.BoolVar(&opts.verifyGrammars, "verify-grammars", false, "Verify grammar artifacts against grammars/manifest.toml and exit")
 	fs.BoolVar(&opts.verbose, "verbose", false, "Enable verbose logging")
 	fs.BoolVar(&opts.version, "version", false, "Print version and exit")
 

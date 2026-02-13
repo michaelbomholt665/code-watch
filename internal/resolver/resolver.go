@@ -23,16 +23,16 @@ type UnusedImport struct {
 }
 
 type Resolver struct {
-	graph           *graph.Graph
-	stdlib          map[string]bool
-	ExcludedSymbols []string
+	graph            *graph.Graph
+	stdlibByLanguage map[string]map[string]bool
+	ExcludedSymbols  []string
 }
 
 func NewResolver(g *graph.Graph, excluded []string) *Resolver {
 	return &Resolver{
-		graph:           g,
-		stdlib:          getMergedStdlib(),
-		ExcludedSymbols: excluded,
+		graph:            g,
+		stdlibByLanguage: getStdlibByLanguage(),
+		ExcludedSymbols:  excluded,
 	}
 }
 
@@ -90,6 +90,10 @@ func (r *Resolver) FindUnusedImports(paths []string) []UnusedImport {
 }
 
 func (r *Resolver) findUnusedInFile(file *parser.File) []UnusedImport {
+	if !supportsUnusedImport(file.Language) {
+		return nil
+	}
+
 	unused := make([]UnusedImport, 0)
 	refHits := make(map[string]int, len(file.References))
 	for _, ref := range file.References {
@@ -131,6 +135,12 @@ func (r *Resolver) findUnusedInFile(file *parser.File) []UnusedImport {
 			continue
 		}
 
+		// JavaScript/TypeScript module imports can be side-effect-only and do not
+		// always bind a symbol that can be tracked by reference matching.
+		if isLikelySideEffectOnlyImport(file.Language, imp) {
+			continue
+		}
+
 		if !hasSymbolUse(refHits, name) {
 			unused = append(unused, UnusedImport{
 				File:       file.Path,
@@ -155,12 +165,23 @@ func importReferenceName(language string, imp parser.Import) string {
 	}
 
 	if language == "go" {
-		parts := strings.Split(imp.Module, "/")
+		return NewGoResolver().ModuleBaseName(imp.Module)
+	}
+	if language == "python" {
+		parts := strings.Split(imp.Module, ".")
 		return parts[len(parts)-1]
 	}
+	if language == "javascript" || language == "typescript" || language == "tsx" {
+		return NewJavaScriptResolver().ResolveModuleName(imp.Module)
+	}
+	if language == "java" {
+		return NewJavaResolver().ResolveModuleName(imp.Module)
+	}
+	if language == "rust" {
+		return NewRustResolver().ResolveModuleName(imp.Module)
+	}
 
-	parts := strings.Split(imp.Module, ".")
-	return parts[len(parts)-1]
+	return ""
 }
 
 func hasSymbolUse(refHits map[string]int, symbol string) bool {
@@ -229,16 +250,7 @@ func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) boo
 
 		// Handle: import auth -> auth.login()
 		// Determine the base name of the module (e.g. log/slog -> slog)
-		modBase := imp.Module
-		if file.Language == "go" {
-			if parts := strings.Split(imp.Module, "/"); len(parts) > 0 {
-				modBase = parts[len(parts)-1]
-			}
-		} else if file.Language == "python" {
-			if parts := strings.Split(imp.Module, "."); len(parts) > 0 {
-				modBase = parts[len(parts)-1]
-			}
-		}
+		modBase := moduleReferenceBase(file.Language, imp.Module)
 
 		if strings.HasPrefix(ref.Name, modBase+".") {
 			symbolName := strings.TrimPrefix(ref.Name, modBase+".")
@@ -254,7 +266,7 @@ func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) boo
 	}
 
 	// 3. Check stdlib
-	if r.stdlib[ref.Name] || r.isStdlibCall(ref.Name) {
+	if r.isStdlibSymbol(file.Language, ref.Name) || r.isStdlibCall(file.Language, ref.Name) {
 		return true
 	}
 
@@ -319,21 +331,62 @@ func (r *Resolver) checkModule(moduleName, symbolName string, allowUnexported bo
 	return false
 }
 
-func (r *Resolver) isStdlibCall(name string) bool {
+func (r *Resolver) isStdlibCall(language, name string) bool {
 	parts := strings.Split(name, ".")
 	if len(parts) == 0 {
 		return false
 	}
-	return r.stdlib[parts[0]]
+	return r.isStdlibSymbol(language, parts[0])
 }
 
-func getMergedStdlib() map[string]bool {
-	merged := make(map[string]bool)
-	for k := range pythonStdlib {
-		merged[k] = true
+func (r *Resolver) isStdlibSymbol(language, name string) bool {
+	langStdlib, ok := r.stdlibByLanguage[language]
+	if !ok {
+		return false
 	}
-	for k := range goStdlib {
-		merged[k] = true
+	return langStdlib[name]
+}
+
+func moduleReferenceBase(language, module string) string {
+	if module == "" {
+		return ""
 	}
-	return merged
+	if language == "go" {
+		return NewGoResolver().ModuleBaseName(module)
+	}
+	if language == "python" {
+		parts := strings.Split(module, ".")
+		return parts[len(parts)-1]
+	}
+	if language == "javascript" || language == "typescript" || language == "tsx" {
+		return NewJavaScriptResolver().ResolveModuleName(module)
+	}
+	if language == "java" {
+		return NewJavaResolver().ResolveModuleName(module)
+	}
+	if language == "rust" {
+		return NewRustResolver().ResolveModuleName(module)
+	}
+	return module
+}
+
+func supportsUnusedImport(language string) bool {
+	switch language {
+	case "go", "python", "javascript", "typescript", "tsx", "java", "rust":
+		return true
+	default:
+		return false
+	}
+}
+
+func isLikelySideEffectOnlyImport(language string, imp parser.Import) bool {
+	if len(imp.Items) > 0 || imp.Alias != "" {
+		return false
+	}
+	switch language {
+	case "javascript", "typescript", "tsx":
+		return true
+	default:
+		return false
+	}
 }

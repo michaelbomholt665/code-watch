@@ -4,7 +4,7 @@ This document covers the implemented advanced feature set from `docs/plans/high-
 
 ## Capability Summary
 
-- SQLite-backed history persistence at `.circular/history.db`
+- SQLite-backed history persistence at `data/database/history.db`
 - versioned schema bootstrap/migrations (`internal/history/schema.go`)
 - lock-aware write/read retry policy for transient SQLite contention
 - trend reports with configurable moving window (`--history-window`)
@@ -67,7 +67,7 @@ Each history snapshot includes:
 - module/file/cycle/unresolved/unused-import/violation/hotspot counters
 - average and max fan-in/fan-out metrics
 
-Duplicate rows (same timestamp + commit hash) are upserted.
+Duplicate rows (same project key + timestamp + commit hash) are upserted.
 
 ## TUI Explorer Flows
 

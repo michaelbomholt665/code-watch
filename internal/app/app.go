@@ -55,14 +55,19 @@ type goModuleCacheEntry struct {
 }
 
 func New(cfg *config.Config) (*App, error) {
-	loader, err := parser.NewGrammarLoader(cfg.GrammarsPath)
+	registry, err := buildParserRegistry(cfg)
+	if err != nil {
+		return nil, err
+	}
+	loader, err := parser.NewGrammarLoaderWithRegistry(cfg.GrammarsPath, registry, cfg.GrammarVerification.IsEnabled())
 	if err != nil {
 		return nil, err
 	}
 
 	p := parser.NewParser(loader)
-	p.RegisterExtractor("python", &parser.PythonExtractor{})
-	p.RegisterExtractor("go", &parser.GoExtractor{})
+	if err := p.RegisterDefaultExtractors(); err != nil {
+		return nil, err
+	}
 
 	return &App{
 		Config:           cfg,
@@ -73,6 +78,18 @@ func New(cfg *config.Config) (*App, error) {
 		unresolvedByFile: make(map[string][]resolver.UnresolvedReference),
 		unusedByFile:     make(map[string][]resolver.UnusedImport),
 	}, nil
+}
+
+func buildParserRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, error) {
+	overrides := make(map[string]parser.LanguageOverride, len(cfg.Languages))
+	for lang, languageCfg := range cfg.Languages {
+		overrides[lang] = parser.LanguageOverride{
+			Enabled:    languageCfg.Enabled,
+			Extensions: append([]string(nil), languageCfg.Extensions...),
+			Filenames:  append([]string(nil), languageCfg.Filenames...),
+		}
+	}
+	return parser.BuildLanguageRegistry(overrides)
 }
 
 func (a *App) SetUpdateHandler(handler func(Update)) {
@@ -178,8 +195,7 @@ func (a *App) ScanDirectories(paths []string, excludeDirs, excludeFiles []string
 				return nil
 			}
 
-			ext := filepath.Ext(path)
-			if ext != ".py" && ext != ".go" {
+			if !a.Parser.IsSupportedPath(path) {
 				return nil
 			}
 
@@ -267,6 +283,9 @@ func (a *App) HandleChanges(paths []string) {
 	for _, path := range paths {
 		if filepath.Base(path) == "go.mod" {
 			a.goModCache = make(map[string]goModuleCacheEntry)
+		}
+		if !a.Parser.IsSupportedPath(path) && filepath.Base(path) != "go.mod" {
+			continue
 		}
 
 		for _, f := range a.Graph.InvalidateTransitive(path) {
@@ -526,10 +545,16 @@ type outputTargets struct {
 }
 
 func (a *App) resolveOutputTargets() (outputTargets, error) {
-	root, err := resolveOutputRoot(a.Config.Output.Paths.Root, a.Config.WatchPaths)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return outputTargets{}, err
+	}
+
+	paths, err := config.ResolvePaths(a.Config, cwd)
 	if err != nil {
 		return outputTargets{}, fmt.Errorf("resolve output root: %w", err)
 	}
+	root := paths.OutputRoot
 
 	diagramsDir := strings.TrimSpace(a.Config.Output.Paths.DiagramsDir)
 	if diagramsDir == "" {
@@ -546,60 +571,6 @@ func (a *App) resolveOutputTargets() (outputTargets, error) {
 		PlantUML: resolveDiagramPath(strings.TrimSpace(a.Config.Output.PlantUML), root, diagramsDir),
 	}
 	return targets, nil
-}
-
-func resolveOutputRoot(configuredRoot string, watchPaths []string) (string, error) {
-	if strings.TrimSpace(configuredRoot) != "" {
-		if filepath.IsAbs(configuredRoot) {
-			return filepath.Clean(configuredRoot), nil
-		}
-		abs, err := filepath.Abs(configuredRoot)
-		if err != nil {
-			return "", err
-		}
-		return abs, nil
-	}
-	return detectProjectRoot(watchPaths)
-}
-
-func detectProjectRoot(watchPaths []string) (string, error) {
-	candidates := make([]string, 0, len(watchPaths)+1)
-	candidates = append(candidates, watchPaths...)
-	if cwd, err := os.Getwd(); err == nil {
-		candidates = append(candidates, cwd)
-	}
-
-	for _, candidate := range candidates {
-		abs, err := filepath.Abs(candidate)
-		if err != nil {
-			continue
-		}
-		root := abs
-		if info, err := os.Stat(abs); err == nil && !info.IsDir() {
-			root = filepath.Dir(abs)
-		}
-		for {
-			if pathExists(filepath.Join(root, "go.mod")) || pathExists(filepath.Join(root, ".git")) || pathExists(filepath.Join(root, "circular.toml")) {
-				return root, nil
-			}
-			parent := filepath.Dir(root)
-			if parent == root {
-				break
-			}
-			root = parent
-		}
-	}
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	return cwd, nil
-}
-
-func pathExists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
 }
 
 func resolveOutputPath(path, root string) string {
@@ -670,9 +641,9 @@ func (a *App) ArchitectureViolations() []graph.ArchitectureViolation {
 }
 
 func (a *App) BuildQueryService(historyStore interface {
-	LoadSnapshots(since time.Time) ([]history.Snapshot, error)
-}) *query.Service {
-	return query.NewService(a.Graph, historyStore)
+	LoadSnapshots(projectKey string, since time.Time) ([]history.Snapshot, error)
+}, projectKey string) *query.Service {
+	return query.NewService(a.Graph, historyStore, projectKey)
 }
 
 func (a *App) PrintSummary(
@@ -768,6 +739,11 @@ func (a *App) StartWatcher() error {
 	if err != nil {
 		return err
 	}
+	w.SetLanguageFilters(
+		a.Parser.SupportedExtensions(),
+		a.Parser.SupportedFilenames(),
+		a.Parser.SupportedTestFileSuffixes(),
+	)
 	return w.Watch(a.Config.WatchPaths)
 }
 

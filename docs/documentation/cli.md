@@ -11,8 +11,12 @@ circular [flags] [path]
 ## Flags
 
 - `--config string`
-- default: `./circular.toml`
-- if default config load fails, runtime retries with `./circular.example.toml`
+- default: `./data/config/circular.toml`
+- default discovery order:
+  - `./data/config/circular.toml`
+  - `./circular.toml` (deprecated fallback with warning)
+  - `./data/config/circular.example.toml`
+  - `./circular.example.toml`
 - `--once`
 - run initial scan and exit
 - `--ui`
@@ -26,9 +30,14 @@ circular [flags] [path]
 - usage: `circular --impact <file-path-or-module>`
 - prints direct importers, transitive importers, and externally used exported symbols
 - cannot be combined with `--trace`
+- `--verify-grammars`
+- verifies enabled-language grammar artifacts against `grammars/manifest.toml` and exits
+- language enablement is controlled by `[languages.<id>]` in config (defaults keep only `go`/`python` enabled)
+- cannot be combined with `--trace`, `--impact`, or `--query-*`
 - `--history`
 - enables local history snapshot capture and trend reporting
-- writes snapshots to `.circular/history.db` (SQLite) in the current working directory
+- writes snapshots to configured `db.path` (default resolved path: `data/database/history.db`)
+- snapshots are isolated by active project key
 - `--since string`
 - optional history lower-bound filter used with `--history`
 - accepted formats: RFC3339 or `YYYY-MM-DD`
@@ -70,24 +79,21 @@ circular [flags] [path]
 
 For all modes except `--version`, runtime performs:
 1. parse flags
-2. load config
-3. normalize `grammars_path` to absolute path when relative
-4. initialize app
-5. run initial scan
+2. discover/load config
+3. resolve runtime paths and active project
+4. normalize `grammars_path` to absolute path when relative
+5. initialize app
+6. run initial scan
 
 Then mode-specific behavior:
+- verify mode: run grammar manifest verification and exit
 - trace mode: run shortest-chain query and exit
 - impact mode: run impact analysis and exit
 - query modes: run query-service read operation and exit
-- history mode: append a snapshot and print trend summary (plus optional TSV/JSON exports)
+- history mode: append a project-scoped snapshot and print trend summary (plus optional TSV/JSON exports)
 - once mode: run analyses/output generation and exit
 - default watch mode: start watcher and process incremental updates forever
 - UI mode: same watch pipeline, plus interactive issue/module explorer
- - UI panels:
- - Issues panel: cycles + unresolved references
- - Module Explorer panel: module summaries + detail drill-down (`tab` to switch, `enter` to drill down)
- - Trend overlay: press `t` in UI
- - Source jump: press `o` in module details (opens `$EDITOR`)
 
 ## Logging
 

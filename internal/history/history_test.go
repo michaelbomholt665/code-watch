@@ -46,17 +46,17 @@ func TestStore_OpenInitializesSchemaAndSaveLoad(t *testing.T) {
 		MaxFanOut:       5,
 	}
 
-	if err := store.SaveSnapshot(first); err != nil {
+	if err := store.SaveSnapshot("project-a", first); err != nil {
 		t.Fatalf("save first snapshot: %v", err)
 	}
-	if err := store.SaveSnapshot(dup); err != nil {
+	if err := store.SaveSnapshot("project-a", dup); err != nil {
 		t.Fatalf("save duplicate snapshot: %v", err)
 	}
-	if err := store.SaveSnapshot(second); err != nil {
+	if err := store.SaveSnapshot("project-a", second); err != nil {
 		t.Fatalf("save second snapshot: %v", err)
 	}
 
-	got, err := store.LoadSnapshots(base.Add(1 * time.Hour))
+	got, err := store.LoadSnapshots("project-a", base.Add(1*time.Hour))
 	if err != nil {
 		t.Fatalf("load snapshots: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestStore_OpenInitializesSchemaAndSaveLoad(t *testing.T) {
 	}
 
 	// Duplicate key should have upserted the first timestamp.
-	all, err := store.LoadSnapshots(time.Time{})
+	all, err := store.LoadSnapshots("project-a", time.Time{})
 	if err != nil {
 		t.Fatalf("load all snapshots: %v", err)
 	}
@@ -146,7 +146,7 @@ func TestBuildTrendReport(t *testing.T) {
 		{Timestamp: base.Add(25 * time.Hour), ModuleCount: 7, FileCount: 9, CycleCount: 3, UnresolvedCount: 1, AvgFanIn: 2.5, AvgFanOut: 2.1},
 	}
 
-	report, err := BuildTrendReport(snapshots, 24*time.Hour)
+	report, err := BuildTrendReport("project-a", snapshots, 24*time.Hour)
 	if err != nil {
 		t.Fatalf("build report: %v", err)
 	}
@@ -170,5 +170,37 @@ func TestBuildTrendReport(t *testing.T) {
 func TestIsCorruptError(t *testing.T) {
 	if !IsCorruptError(errors.New("database disk image is malformed")) {
 		t.Fatal("expected malformed sqlite message to be treated as corrupt")
+	}
+}
+
+func TestStore_SaveLoadSnapshots_ProjectIsolation(t *testing.T) {
+	store, err := Open(filepath.Join(t.TempDir(), "history.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+
+	base := time.Date(2026, 2, 13, 10, 0, 0, 0, time.UTC)
+	if err := store.SaveSnapshot("project-a", Snapshot{Timestamp: base, ModuleCount: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.SaveSnapshot("project-b", Snapshot{Timestamp: base, ModuleCount: 2}); err != nil {
+		t.Fatal(err)
+	}
+
+	aRows, err := store.LoadSnapshots("project-a", time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(aRows) != 1 || aRows[0].ModuleCount != 1 {
+		t.Fatalf("unexpected project-a rows: %+v", aRows)
+	}
+
+	bRows, err := store.LoadSnapshots("project-b", time.Time{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(bRows) != 1 || bRows[0].ModuleCount != 2 {
+		t.Fatalf("unexpected project-b rows: %+v", bRows)
 	}
 }

@@ -1,0 +1,10 @@
+# data/config/projects.example.toml
+[[entries]]
+name = "default"
+root = "."
+db_namespace = "default"
+
+[[entries]]
+name = "tools"
+root = "tools"
+db_namespace = "tools"

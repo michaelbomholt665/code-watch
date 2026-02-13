@@ -31,6 +31,19 @@ All notable changes to this project will be documented in this file.
 - `cli:` Added query-service command flags `--query-modules`, `--query-filter`, `--query-module`, `--query-trace`, `--query-trends`, and `--query-limit`.
 - `ui:` Added module detail drill-down, dependency cursor navigation, trend overlay toggle, and `$EDITOR` source-jump action.
 - `history:` Added benchmark coverage (`BenchmarkStore_SaveSnapshot`, `BenchmarkStore_LoadSnapshots`) for persistence performance guardrails.
+- `config:` Added versioned schema blocks for `version`, `[paths]`, `[config]`, `[db]`, `[projects]`, and `[mcp]` with validation/defaulting in `internal/config`.
+- `config:` Added centralized runtime path resolver (`internal/config/paths.go`) for project root, config/state/cache/database directories, DB path, MCP config path, and output root.
+- `config:` Added project registry and active-project resolution helpers in `internal/config/projects.go`.
+- `history:` Added project-key-aware snapshot model/storage/query semantics and schema migration to schema version `2`.
+- `config:` Added canonical templates `data/config/circular.example.toml` and `data/config/projects.example.toml`.
+- `parser:` Added grammar provenance manifest support (`grammars/manifest.toml`) with checksum and AIB version verification helpers.
+- `cli:` Added `--verify-grammars` mode to validate enabled-language grammar artifacts and exit.
+- `parser:` Added language registry model (`internal/parser/language_registry.go`) with default rollout states and override merge/validation.
+- `config:` Added `[grammar_verification]` and `[languages.<id>]` configuration sections for verification control and language routing overrides.
+- `resolver:` Added language-specific module-name heuristics for `javascript`/`typescript`/`tsx`, `java`, and `rust`.
+- `resolver:` Added language-scoped stdlib catalogs in `internal/resolver/stdlib/{javascript,java,rust}.txt` and wired them into unresolved reference checks.
+- `parser:` Added consolidated profile-driven extractor registry in `internal/parser/profile_extractors.go` and default extractor auto-registration for all enabled languages.
+- `parser:` Added multi-language parser matrix coverage for `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`.
 
 ### Changed
 - `runtime:` Lowered module minimum Go version in `go.mod` from `1.25.x` to `1.24`.
@@ -47,6 +60,20 @@ All notable changes to this project will be documented in this file.
 - `runtime:` UI update pipeline now uses query-service-backed module summaries for explorer rendering.
 - `history:` Snapshot/trend models now include fan-in/fan-out aggregate metrics and drift deltas for richer trend reporting.
 - `runtime:` History persistence backend changed from JSONL to SQLite while preserving opt-in behavior behind `--history`.
+- `cli:` Changed default config path to `./data/config/circular.toml` with explicit fallback chain to legacy root paths.
+- `runtime:` Reworked config loading to keep explicit `--config` strict while default discovery uses ordered fallbacks and warns on deprecated `./circular.toml`.
+- `runtime:` History DB open path now uses config/path resolver (`db.path` under `paths.database_dir`) instead of hard-coded `.circular/history.db`.
+- `runtime:` Query/history flows now scope snapshots to the resolved active project key.
+- `output:` Output root resolution in `internal/app` now uses the centralized config path resolver.
+- `config:` Updated root `circular.example.toml` as a transitional compatibility template pointing to `data/config`.
+- `app:` Startup now builds a parser language registry from config, enforces grammar verification by default, and passes registry-aware filters into scan/watch paths.
+- `parser:` File language detection now uses registry-driven extension/filename routing instead of hardcoded `.go`/`.py` switches.
+- `watcher:` Event filtering now supports registry-driven extension/filename filters plus configurable test-file suffix sets.
+- `resolver:` Unused-import analysis now runs only for supported languages and skips unsupported/metadata languages to reduce false positives.
+- `resolver:` Stdlib matching is now scoped per file language instead of a merged cross-language namespace.
+- `parser:` Grammar loader now initializes runtime grammars for registry-enabled `css`, `html`, `java`, `javascript`, `rust`, `tsx`, and `typescript`.
+- `parser:` `gomod` and `gosum` parsing now uses raw-text extraction paths that do not require runtime tree-sitter bindings.
+- `app:` App startup now registers default extractors from the language registry instead of hardcoding Go/Python extractor wiring.
 
 ### Fixed
 - `compatibility:` Restored `GOTOOLCHAIN=go1.24 go test ./...` compatibility by aligning the module Go directive.
@@ -54,7 +81,7 @@ All notable changes to this project will be documented in this file.
 - `history:` Improved corrupt-database handling with explicit SQLite initialization/ping failures and drift-safe schema validation.
 
 ### Removed
-- None.
+- `parser:` Removed language-specific extractor files `internal/parser/{javascript,typescript,tsx,java,rust,html,css,gomod,gosum}.go` after profile parity migration.
 
 ### Docs
 - Documented trace-mode CLI behavior and runtime mode flow in `docs/documentation/cli.md`.
@@ -68,3 +95,11 @@ All notable changes to this project will be documented in this file.
 - Updated advanced roadmap docs with explicit implemented vs pending high-complexity tasks and current T3/T4 partial status.
 - Updated `docs/plans/high-complexity-feature-plan.md` with a task-by-task implemented-vs-missing status snapshot.
 - Updated advanced docs and CLI/package references for SQLite history backend, query command surface, TUI drill-down flows, and benchmark guidance.
+- Updated README quickstart/CLI/config examples to use `data/config/circular.toml` and document default discovery order.
+- Updated docs for config schema v2 pathing/project/MCP blocks, DB default path (`data/database/history.db`), and migration behavior.
+- Updated `docs/plans/config-expansion-pathing-plan.md` task checklist to mark T1-T8 complete.
+- Updated README, CLI/config/package/limitations documentation, and grammar expansion plan status to reflect manifest verification, language registry controls, and `--verify-grammars`.
+- Updated grammar expansion plan checklist to mark T6 (resolver/stdlib strategy) complete.
+- Updated README/configuration/packages/limitations docs to describe language-scoped resolver policies and unsupported-language unused-import behavior.
+- Updated README and docs (`architecture.md`, `cli.md`, `configuration.md`, `packages.md`, `limitations.md`) to reflect profile-driven multi-language extraction and registry-based rollout controls.
+- Updated `docs/plans/grammar-expansion-aib14-aib15-plan.md` to mark T5/T7/T8/T9 complete and record the simplified profile implementation approach.

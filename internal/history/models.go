@@ -2,10 +2,11 @@ package history
 
 import "time"
 
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 type Snapshot struct {
 	SchemaVersion     int       `json:"schema_version"`
+	ProjectKey        string    `json:"project_key"`
 	Timestamp         time.Time `json:"timestamp"`
 	CommitHash        string    `json:"commit_hash,omitempty"`
 	CommitTimestamp   time.Time `json:"commit_timestamp,omitempty"`
@@ -52,6 +53,7 @@ type TrendPoint struct {
 
 type TrendReport struct {
 	SchemaVersion int          `json:"schema_version"`
+	ProjectKey    string       `json:"project_key"`
 	Since         time.Time    `json:"since"`
 	Until         time.Time    `json:"until"`
 	Window        string       `json:"window"`

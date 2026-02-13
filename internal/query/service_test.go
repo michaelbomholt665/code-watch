@@ -13,9 +13,11 @@ import (
 type fakeHistoryStore struct {
 	snapshots []history.Snapshot
 	err       error
+	lastKey   string
 }
 
-func (f fakeHistoryStore) LoadSnapshots(since time.Time) ([]history.Snapshot, error) {
+func (f *fakeHistoryStore) LoadSnapshots(projectKey string, since time.Time) ([]history.Snapshot, error) {
+	f.lastKey = projectKey
 	if f.err != nil {
 		return nil, f.err
 	}
@@ -59,7 +61,7 @@ func seedGraph() *graph.Graph {
 }
 
 func TestService_ListModules(t *testing.T) {
-	svc := NewService(seedGraph(), nil)
+	svc := NewService(seedGraph(), nil, "default")
 	got, err := svc.ListModules(context.Background(), "app/", 0)
 	if err != nil {
 		t.Fatalf("list modules: %v", err)
@@ -73,7 +75,7 @@ func TestService_ListModules(t *testing.T) {
 }
 
 func TestService_ModuleDetails(t *testing.T) {
-	svc := NewService(seedGraph(), nil)
+	svc := NewService(seedGraph(), nil, "default")
 	details, err := svc.ModuleDetails(context.Background(), "app/b")
 	if err != nil {
 		t.Fatalf("module details: %v", err)
@@ -87,7 +89,7 @@ func TestService_ModuleDetails(t *testing.T) {
 }
 
 func TestService_DependencyTrace(t *testing.T) {
-	svc := NewService(seedGraph(), nil)
+	svc := NewService(seedGraph(), nil, "default")
 	trace, err := svc.DependencyTrace(context.Background(), "app/a", "app/c", 4)
 	if err != nil {
 		t.Fatalf("dependency trace: %v", err)
@@ -103,7 +105,7 @@ func TestService_DependencyTrace(t *testing.T) {
 
 func TestService_TrendSlice(t *testing.T) {
 	base := time.Date(2026, 2, 13, 12, 0, 0, 0, time.UTC)
-	store := fakeHistoryStore{
+	store := &fakeHistoryStore{
 		snapshots: []history.Snapshot{
 			{Timestamp: base.Add(-48 * time.Hour), ModuleCount: 2},
 			{Timestamp: base.Add(-12 * time.Hour), ModuleCount: 3},
@@ -111,7 +113,7 @@ func TestService_TrendSlice(t *testing.T) {
 		},
 	}
 
-	svc := NewService(seedGraph(), store)
+	svc := NewService(seedGraph(), store, "team-alpha")
 	slice, err := svc.TrendSlice(context.Background(), base.Add(-24*time.Hour), 1)
 	if err != nil {
 		t.Fatalf("trend slice: %v", err)
@@ -121,5 +123,8 @@ func TestService_TrendSlice(t *testing.T) {
 	}
 	if slice.Snapshots[0].ModuleCount != 4 {
 		t.Fatalf("unexpected snapshot payload: %+v", slice.Snapshots[0])
+	}
+	if store.lastKey != "team-alpha" {
+		t.Fatalf("expected project key team-alpha, got %q", store.lastKey)
 	}
 }

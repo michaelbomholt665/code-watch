@@ -18,6 +18,9 @@ type Watcher struct {
 	debounce     time.Duration
 	excludeDirs  []glob.Glob
 	excludeFiles []glob.Glob
+	extFilters   map[string]bool
+	nameFilters  map[string]bool
+	testSuffixes []string
 	onChange     func([]string)
 	callbackMu   sync.Mutex
 
@@ -59,12 +62,52 @@ func NewWatcher(debounce time.Duration, excludeDirs, excludeFiles []string, onCh
 		debounce:  debounce,
 		onChange:  onChange,
 		pending:   make(map[string]time.Time),
+		extFilters: map[string]bool{
+			".go": true,
+			".py": true,
+		},
+		testSuffixes: []string{"_test.go", "_test.py"},
 	}
 
 	w.excludeDirs = compiledDirs
 	w.excludeFiles = compiledFiles
 
 	return w, nil
+}
+
+func (w *Watcher) SetLanguageFilters(extensions, filenames, testSuffixes []string) {
+	extFilter := make(map[string]bool, len(extensions))
+	for _, ext := range extensions {
+		normalized := strings.ToLower(strings.TrimSpace(ext))
+		if normalized == "" {
+			continue
+		}
+		extFilter[normalized] = true
+	}
+
+	nameFilter := make(map[string]bool, len(filenames))
+	for _, name := range filenames {
+		normalized := strings.ToLower(strings.TrimSpace(name))
+		if normalized == "" {
+			continue
+		}
+		nameFilter[normalized] = true
+	}
+
+	suffixFilter := make([]string, 0, len(testSuffixes))
+	for _, suffix := range testSuffixes {
+		normalized := strings.ToLower(strings.TrimSpace(suffix))
+		if normalized == "" {
+			continue
+		}
+		suffixFilter = append(suffixFilter, normalized)
+	}
+
+	w.extFilters = extFilter
+	w.nameFilters = nameFilter
+	if len(suffixFilter) > 0 {
+		w.testSuffixes = suffixFilter
+	}
 }
 
 func (w *Watcher) Watch(paths []string) error {
@@ -179,10 +222,23 @@ func (w *Watcher) shouldExcludeDir(path string) bool {
 }
 
 func (w *Watcher) shouldExcludeFile(path string) bool {
-	base := filepath.Base(path)
+	base := strings.ToLower(filepath.Base(path))
 
-	if strings.HasSuffix(base, "_test.go") || strings.HasSuffix(base, "_test.py") {
-		return true
+	for _, suffix := range w.testSuffixes {
+		if strings.HasSuffix(base, suffix) {
+			return true
+		}
+	}
+
+	if len(w.extFilters) > 0 || len(w.nameFilters) > 0 {
+		if w.nameFilters[base] {
+			// Explicit file-name routes such as go.mod/go.sum.
+		} else {
+			ext := strings.ToLower(filepath.Ext(base))
+			if !w.extFilters[ext] {
+				return true
+			}
+		}
 	}
 
 	for _, g := range w.excludeFiles {

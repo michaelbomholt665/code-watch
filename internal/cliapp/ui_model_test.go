@@ -67,7 +67,7 @@ func TestModel_ModuleDrillDownAndTrendToggle(t *testing.T) {
 		Module: "app/b",
 	})
 
-	m := initialModel(query.NewService(g, nil), nil)
+	m := initialModel(query.NewService(g, nil, "default"), nil)
 	updated, _ := m.Update(updateMsg{
 		modules: []query.ModuleSummary{
 			{Name: "app/a", FileCount: 1, ExportCount: 1, DependencyCount: 1},

@@ -5,7 +5,55 @@ Config is decoded from TOML in `internal/config`.
 ## Full Schema
 
 ```toml
+version = 2
+
+[paths]
+project_root = ""
+config_dir = "data/config"
+state_dir = "data/state"
+cache_dir = "data/cache"
+database_dir = "data/database"
+
+[config]
+active_file = "circular.toml"
+includes = []
+
+[db]
+enabled = true
+driver = "sqlite"
+path = "history.db"
+busy_timeout = "5s"
+project_mode = "multi"
+
+[projects]
+active = ""
+registry_file = "projects.toml"
+
+[[projects.entries]]
+name = "default"
+root = "."
+db_namespace = "default"
+
+[mcp]
+enabled = false
+mode = "embedded"
+transport = "stdio"
+address = "127.0.0.1:8765"
+config_path = ""
+
 grammars_path = "./grammars"
+[grammar_verification]
+enabled = true
+
+[languages]
+# Optional per-language overrides.
+# Defaults: go=true, python=true, others=false.
+
+# [languages.javascript]
+# enabled = true
+# extensions = [".js", ".cjs", ".mjs"]
+# filenames = []
+
 watch_paths = ["."]
 
 [exclude]
@@ -43,96 +91,93 @@ terminal = true
 [architecture]
 enabled = false
 top_complexity = 5
-
-[[architecture.layers]]
-name = "api"
-paths = ["internal/api", "cmd"]
-
-[[architecture.layers]]
-name = "core"
-paths = ["internal/core", "internal/graph", "internal/parser", "internal/resolver"]
-
-[[architecture.rules]]
-name = "api-to-core-only"
-from = "api"
-allow = ["core"]
 ```
 
 ## Field Semantics
 
+- `version` (`int`)
+- supported values: `1`, `2`
+- `paths.*` (`string`)
+- centralized relative-path roots; non-absolute values resolve under detected project root
+- `config.active_file` (`string`)
+- active config file name under `paths.config_dir` when using layered workflows
+- `config.includes` (`[]string`)
+- reserved additive overlays
+- `db.enabled` (`bool`)
+- enables/disables history store opening even when `--history` is set
+- `db.driver` (`string`)
+- currently only `sqlite` is supported
+- `db.path` (`string`)
+- DB file path; relative values resolve under `paths.database_dir`
+- `db.busy_timeout` (`duration`)
+- default `5s`
+- `db.project_mode` (`string`)
+- `single` or `multi`
+- `projects.active` (`string`)
+- explicit active project name when `projects.entries` is present
+- `projects.registry_file` (`string`)
+- optional registry source under `paths.config_dir` (`data/config/projects.toml` by default)
+- `projects.entries` (`[]table`)
+- per-project `name`, `root`, and optional `db_namespace`
+- `mcp.enabled` (`bool`)
+- additive MCP config contract, runtime wiring still disabled
+- `mcp.mode` (`string`)
+- `embedded` or `server`
+- `mcp.transport` (`string`)
+- `stdio` or `http` (reserved)
+- `mcp.address` (`string`)
+- required when `mcp.transport=http`
+- `mcp.config_path` (`string`)
+- optional path resolved under `paths.config_dir`
 - `grammars_path` (`string`)
-- parser grammars are compiled into the binary
-- this path is still accepted by config and normalized to absolute path at runtime
-- startup fails only if the path exists and is not a directory
+- normalized to absolute path at runtime relative to resolved project root
+- `grammar_verification.enabled` (`bool`, default `true`)
+- verifies enabled language grammar artifacts against `grammars/manifest.toml` at startup
+- set to `false` to skip startup checksum/AIB verification
+- `languages` (`map[string]table`)
+- optional per-language rollout controls
+- `languages.<id>.enabled` (`bool`)
+- enables/disables a language in parse/scan/watch routing
+- parser extraction is profile-driven for enabled non-Go/Python languages (`javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, `gosum`)
+- resolver heuristics currently include language-specific stdlib/module policy for:
+- `go`, `python`, `javascript`/`typescript`/`tsx`, `java`, `rust`
+- `languages.<id>.extensions` (`[]string`)
+- override extension ownership for a language
+- `languages.<id>.filenames` (`[]string`)
+- optional exact-file routing (for example `go.mod`, `go.sum`)
 - `watch_paths` (`[]string`)
-- root directories scanned recursively and watched in watch mode
-- defaults to `["."]` when empty or omitted
-- `exclude.dirs` (`[]string`)
-- glob patterns matched against directory base name
-- applied during initial scan and recursive watcher registration
-- invalid glob patterns fail startup
-- `exclude.files` (`[]string`)
-- glob patterns matched against file base name
-- applied during scan and watch events
-- invalid glob patterns fail startup
-- `exclude.symbols` (`[]string`)
-- prefix-style exclusions for unresolved-reference checks
+- defaults to `["."]`
 - `watch.debounce` (`duration`)
-- debounce window for batching fsnotify events
-- defaults to `500ms` when unset
-- `output.dot` (`string`)
-- DOT output file path; empty disables DOT generation
-- `output.tsv` (`string`)
-- TSV output file path; empty disables TSV generation
-- `output.mermaid` (`string`)
-- Mermaid output file path; empty disables Mermaid file generation
-- when value is filename-only (for example `graph.mmd`), it resolves under `<output.paths.root>/<output.paths.diagrams_dir>/`
-- `output.plantuml` (`string`)
-- PlantUML output file path; empty disables PlantUML file generation
-- when value is filename-only (for example `graph.puml`), it resolves under `<output.paths.root>/<output.paths.diagrams_dir>/`
-- `output.paths.root` (`string`)
-- optional root override for relative output paths
-- when empty, root is auto-detected by walking up from `watch_paths`/cwd and selecting the first directory containing `go.mod`, `.git`, or `circular.toml`
-- `output.paths.diagrams_dir` (`string`)
-- default `docs/diagrams`; base directory for filename-only Mermaid/PlantUML paths
-- `output.update_markdown` (`[]table`)
-- optional marker-based markdown updates; each table requires:
-- `file` target markdown file path
-- `marker` marker name used with `<!-- circular:<marker>:start -->` and `<!-- circular:<marker>:end -->`
-- `format` one of `mermaid` or `plantuml`
-- `alerts.beep` (`bool`)
-- emits terminal bell on updates containing issues (cycles, unresolved, unused imports, architecture violations)
-- `alerts.terminal` (`bool`)
-- enables summary printing to terminal
-- `architecture.enabled` (`bool`)
-- enables layer-rule validation
-- `architecture.top_complexity` (`int`)
-- number of hotspots used in output/summary
-- coerced to `5` when unset or `<= 0`
-- `architecture.layers` (`[]table`)
-- layer name + one or more path patterns
-- `architecture.rules` (`[]table`)
-- exactly one rule per `from` layer
-- `allow` must contain at least one target layer
+- defaults to `500ms`
+- `output.*`, `alerts.*`, `architecture.*`
+- unchanged semantics from prior versions
 
-## Defaults and Fallbacks
+## Defaults and Discovery
 
-- missing `./circular.toml` triggers fallback load attempt of `./circular.example.toml`
-- custom `--config` paths do not fallback
-- empty `watch_paths` becomes `["."]`
-- zero `watch.debounce` becomes `500ms`
-- `architecture.top_complexity <= 0` becomes `5`
-- unset Mermaid/PlantUML/markdown output keys keep existing DOT/TSV-only behavior unchanged
-- empty `output.paths.diagrams_dir` becomes `docs/diagrams`
+- CLI default config path is `./data/config/circular.toml`
+- default discovery order:
+  - `./data/config/circular.toml`
+  - `./circular.toml` (legacy fallback, emits deprecation warning)
+  - `./data/config/circular.example.toml`
+  - `./circular.example.toml`
+- custom `--config <path>` is strict (no fallback chain)
+- default DB path resolves to `data/database/history.db`
 
-## Architecture Validation
+## Validation Rules
 
-When `architecture.enabled=true`, config loading fails if:
-- no layers are defined
-- layer names are duplicated
-- layer path patterns are duplicated across layers
-- layer path patterns overlap (literal/literal, wildcard/literal, or wildcard/wildcard overlap checks)
-- rule names are duplicated
-- multiple rules are defined for one `from` layer
-- rules reference unknown layers
-- a rule has an empty `allow` list
+Config load fails when:
+- `version` is outside supported range
+- `db.driver != sqlite`
+- `db.project_mode` is not `single|multi`
+- `projects.active` references a missing project
+- duplicate `projects.entries.name` values exist
+- MCP mode/transport combinations are invalid
+- output markdown targets are malformed
+- architecture rules violate layer/rule constraints
+- `languages.*.extensions` or `languages.*.filenames` include empty values
+
+## Migration Notes
+
+- Existing v1-style configs still load without immediate edits.
+- Root-level `./circular.toml` remains supported as a deprecated fallback during transition.
+- History storage now defaults to `data/database/history.db`; legacy `.circular/history.db` is no longer the default.

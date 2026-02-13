@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type GoResolver struct {
@@ -70,4 +71,13 @@ func (r *GoResolver) GetModuleName(filePath string) string {
 	}
 
 	return r.moduleName + "/" + dir
+}
+
+func (r *GoResolver) ModuleBaseName(modulePath string) string {
+	modulePath = strings.TrimSpace(modulePath)
+	if modulePath == "" {
+		return ""
+	}
+	parts := strings.Split(modulePath, "/")
+	return parts[len(parts)-1]
 }

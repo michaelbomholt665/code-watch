@@ -16,47 +16,32 @@ func (e *PythonExtractor) Extract(root *sitter.Node, source []byte, filePath str
 		ParsedAt: time.Now(),
 	}
 
-	e.walk(root, source, file)
+	ctx := &ExtractionContext{Source: source, File: file}
+	engine := NewExtractorEngine(map[string]NodeHandler{
+		"import_statement":      e.extractImport,
+		"import_from_statement": e.extractFromImport,
+		"function_definition":   e.extractFunction,
+		"class_definition":      e.extractClass,
+		"assignment":            e.extractAssignment,
+		"augmented_assignment":  e.extractAssignment,
+		"for_statement":         e.extractFor,
+		"call":                  e.extractCall,
+	})
+	engine.Walk(ctx, root)
 
 	return file, nil
 }
 
-func (e *PythonExtractor) walk(node *sitter.Node, source []byte, file *File) {
-	nodeKind := node.Kind()
-
-	switch nodeKind {
-	case "import_statement":
-		e.extractImport(node, source, file)
-	case "import_from_statement":
-		e.extractFromImport(node, source, file)
-	case "function_definition":
-		e.extractFunction(node, source, file)
-	case "class_definition":
-		e.extractClass(node, source, file)
-	case "assignment", "augmented_assignment":
-		e.extractAssignment(node, source, file)
-	case "for_statement":
-		e.extractFor(node, source, file)
-	case "call":
-		e.extractCall(node, source, file)
-	}
-
-	for i := uint(0); i < node.ChildCount(); i++ {
-		child := node.Child(i)
-		e.walk(child, source, file)
-	}
-}
-
-func (e *PythonExtractor) extractImport(node *sitter.Node, source []byte, file *File) {
+func (e *PythonExtractor) extractImport(ctx *ExtractionContext, node *sitter.Node) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 
 		if child.Kind() == "dotted_name" || child.Kind() == "identifier" {
-			module := e.getText(child, source)
-			file.Imports = append(file.Imports, Import{
+			module := ctx.Text(child)
+			ctx.File.Imports = append(ctx.File.Imports, Import{
 				Module:    module,
 				RawImport: module,
-				Location:  e.getLocation(child, file.Path),
+				Location:  ctx.Location(child),
 			})
 		} else if child.Kind() == "aliased_import" {
 			var module, alias string
@@ -64,23 +49,23 @@ func (e *PythonExtractor) extractImport(node *sitter.Node, source []byte, file *
 				sub := child.Child(j)
 				if sub.Kind() == "dotted_name" || sub.Kind() == "identifier" {
 					if module == "" {
-						module = e.getText(sub, source)
+						module = ctx.Text(sub)
 					} else {
-						alias = e.getText(sub, source)
+						alias = ctx.Text(sub)
 					}
 				}
 			}
-			file.Imports = append(file.Imports, Import{
+			ctx.File.Imports = append(ctx.File.Imports, Import{
 				Module:    module,
 				RawImport: module,
 				Alias:     alias,
-				Location:  e.getLocation(child, file.Path),
+				Location:  ctx.Location(child),
 			})
 		}
 	}
 }
 
-func (e *PythonExtractor) extractFromImport(node *sitter.Node, source []byte, file *File) {
+func (e *PythonExtractor) extractFromImport(ctx *ExtractionContext, node *sitter.Node) {
 	var module string
 	var items []string
 	isRelative := false
@@ -91,16 +76,14 @@ func (e *PythonExtractor) extractFromImport(node *sitter.Node, source []byte, fi
 		switch child.Kind() {
 		case "relative_import":
 			isRelative = true
-			relText := e.getText(child, source)
+			relText := ctx.Text(child)
 			module = strings.TrimLeft(relText, ".")
-
 		case "dotted_name", "identifier":
 			if !isRelative {
-				module = e.getText(child, source)
+				module = ctx.Text(child)
 			}
-
 		case "import_list", "aliased_import":
-			e.collectItems(child, source, &items)
+			e.collectItems(ctx, child, &items)
 		}
 	}
 
@@ -113,40 +96,40 @@ func (e *PythonExtractor) extractFromImport(node *sitter.Node, source []byte, fi
 				continue
 			}
 			if foundImport && (child.Kind() == "identifier" || child.Kind() == "dotted_name") {
-				items = append(items, e.getText(child, source))
+				items = append(items, ctx.Text(child))
 			}
 		}
 	}
 
-	file.Imports = append(file.Imports, Import{
+	ctx.File.Imports = append(ctx.File.Imports, Import{
 		Module:     module,
 		RawImport:  module,
 		Items:      items,
 		IsRelative: isRelative,
-		Location:   e.getLocation(node, file.Path),
+		Location:   ctx.Location(node),
 	})
 }
 
-func (e *PythonExtractor) collectItems(node *sitter.Node, source []byte, items *[]string) {
+func (e *PythonExtractor) collectItems(ctx *ExtractionContext, node *sitter.Node, items *[]string) {
 	kind := node.Kind()
 	if kind == "identifier" || kind == "dotted_name" {
-		*items = append(*items, e.getText(node, source))
+		*items = append(*items, ctx.Text(node))
 		return
 	}
 	for i := uint(0); i < node.ChildCount(); i++ {
-		e.collectItems(node.Child(i), source, items)
+		e.collectItems(ctx, node.Child(i), items)
 	}
 }
 
-func (e *PythonExtractor) extractFunction(node *sitter.Node, source []byte, file *File) {
-	name := e.getChildText(node, "identifier", source)
+func (e *PythonExtractor) extractFunction(ctx *ExtractionContext, node *sitter.Node) {
+	name := ctx.ChildText(node, "identifier")
 	if name == "" {
 		return
 	}
 
 	params := node.ChildByFieldName("parameters")
 	if params != nil {
-		e.collectLocalSymbols(params, source, file)
+		ctx.AppendLocalIdentifiers(params)
 	}
 
 	paramCount := e.countPythonParameters(params)
@@ -161,9 +144,14 @@ func (e *PythonExtractor) extractFunction(node *sitter.Node, source []byte, file
 	}
 
 	exported := !strings.HasPrefix(name, "_")
-	file.Definitions = append(file.Definitions, Definition{
+	fullName := name
+	if ctx.File.Module != "" {
+		fullName = ctx.File.Module + "." + name
+	}
+
+	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
 		Name:            name,
-		FullName:        file.Module + "." + name,
+		FullName:        fullName,
 		Kind:            KindFunction,
 		Exported:        exported,
 		ParameterCount:  paramCount,
@@ -171,7 +159,7 @@ func (e *PythonExtractor) extractFunction(node *sitter.Node, source []byte, file
 		NestingDepth:    nesting,
 		LOC:             loc,
 		ComplexityScore: score,
-		Location:        e.getLocation(node, file.Path),
+		Location:        ctx.Location(node),
 	})
 }
 
@@ -236,77 +224,49 @@ func (e *PythonExtractor) computePythonComplexity(node *sitter.Node, depth int) 
 	return branches, maxDepth
 }
 
-func (e *PythonExtractor) extractAssignment(node *sitter.Node, source []byte, file *File) {
+func (e *PythonExtractor) extractAssignment(ctx *ExtractionContext, node *sitter.Node) {
 	left := node.ChildByFieldName("left")
 	if left != nil {
-		e.collectLocalSymbols(left, source, file)
+		ctx.AppendLocalIdentifiers(left)
 	}
 }
 
-func (e *PythonExtractor) extractFor(node *sitter.Node, source []byte, file *File) {
+func (e *PythonExtractor) extractFor(ctx *ExtractionContext, node *sitter.Node) {
 	left := node.ChildByFieldName("left")
 	if left != nil {
-		e.collectLocalSymbols(left, source, file)
+		ctx.AppendLocalIdentifiers(left)
 	}
 }
 
-func (e *PythonExtractor) collectLocalSymbols(node *sitter.Node, source []byte, file *File) {
-	if node.Kind() == "identifier" {
-		file.LocalSymbols = append(file.LocalSymbols, e.getText(node, source))
-		return
-	}
-	for i := uint(0); i < node.ChildCount(); i++ {
-		e.collectLocalSymbols(node.Child(i), source, file)
-	}
-}
-
-func (e *PythonExtractor) extractClass(node *sitter.Node, source []byte, file *File) {
-	name := e.getChildText(node, "identifier", source)
+func (e *PythonExtractor) extractClass(ctx *ExtractionContext, node *sitter.Node) {
+	name := ctx.ChildText(node, "identifier")
 	if name == "" {
 		return
 	}
 
 	exported := !strings.HasPrefix(name, "_")
-	file.Definitions = append(file.Definitions, Definition{
+	fullName := name
+	if ctx.File.Module != "" {
+		fullName = ctx.File.Module + "." + name
+	}
+
+	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
 		Name:     name,
-		FullName: file.Module + "." + name,
+		FullName: fullName,
 		Kind:     KindClass,
 		Exported: exported,
-		Location: e.getLocation(node, file.Path),
+		Location: ctx.Location(node),
 	})
 }
 
-func (e *PythonExtractor) extractCall(node *sitter.Node, source []byte, file *File) {
+func (e *PythonExtractor) extractCall(ctx *ExtractionContext, node *sitter.Node) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 		if child.Kind() == "attribute" || child.Kind() == "identifier" {
-			name := e.getText(child, source)
-			file.References = append(file.References, Reference{
-				Name:     name,
-				Location: e.getLocation(child, file.Path),
+			ctx.File.References = append(ctx.File.References, Reference{
+				Name:     ctx.Text(child),
+				Location: ctx.Location(child),
 			})
 		}
 	}
-}
-
-func (e *PythonExtractor) getChildText(node *sitter.Node, kind string, source []byte) string {
-	for i := uint(0); i < node.ChildCount(); i++ {
-		child := node.Child(i)
-		if child.Kind() == kind {
-			return e.getText(child, source)
-		}
-	}
-	return ""
-}
-
-func (e *PythonExtractor) getLocation(node *sitter.Node, filePath string) Location {
-	return Location{
-		File:   filePath,
-		Line:   int(node.StartPosition().Row) + 1,
-		Column: int(node.StartPosition().Column) + 1,
-	}
-}
-
-func (e *PythonExtractor) getText(node *sitter.Node, source []byte) string {
-	return string(source[node.StartByte():node.EndByte()])
 }

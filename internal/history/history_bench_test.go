@@ -27,7 +27,7 @@ func BenchmarkStore_SaveSnapshot(b *testing.B) {
 			MaxFanIn:        9,
 			MaxFanOut:       12,
 		}
-		if err := store.SaveSnapshot(s); err != nil {
+		if err := store.SaveSnapshot("bench", s); err != nil {
 			b.Fatalf("save snapshot: %v", err)
 		}
 	}
@@ -42,7 +42,7 @@ func BenchmarkStore_LoadSnapshots(b *testing.B) {
 
 	base := time.Date(2026, 2, 13, 0, 0, 0, 0, time.UTC)
 	for i := 0; i < 2500; i++ {
-		if err := store.SaveSnapshot(Snapshot{
+		if err := store.SaveSnapshot("bench", Snapshot{
 			Timestamp:       base.Add(time.Duration(i) * time.Minute),
 			ModuleCount:     30 + i%17,
 			FileCount:       90 + i%19,
@@ -56,7 +56,7 @@ func BenchmarkStore_LoadSnapshots(b *testing.B) {
 	since := base.Add(24 * time.Hour)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		snapshots, err := store.LoadSnapshots(since)
+		snapshots, err := store.LoadSnapshots("bench", since)
 		if err != nil {
 			b.Fatalf("load snapshots: %v", err)
 		}

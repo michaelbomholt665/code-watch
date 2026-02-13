@@ -146,3 +146,26 @@ func TestWatcher_RenameTriggersChange(t *testing.T) {
 		}
 	}
 }
+
+func TestWatcher_LanguageFilters(t *testing.T) {
+	changedFiles := make(chan []string, 1)
+	w, err := NewWatcher(10*time.Millisecond, nil, nil, func(paths []string) {
+		changedFiles <- paths
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+
+	w.SetLanguageFilters([]string{".go"}, []string{"go.mod"}, []string{"_test.go"})
+
+	if w.shouldExcludeFile("main.py") == false {
+		t.Fatal("expected .py to be excluded when .go is the only enabled extension")
+	}
+	if w.shouldExcludeFile("go.mod") {
+		t.Fatal("expected go.mod to be included via filename filter")
+	}
+	if w.shouldExcludeFile("main_test.go") == false {
+		t.Fatal("expected _test.go files to be excluded")
+	}
+}

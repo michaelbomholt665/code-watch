@@ -5,6 +5,7 @@ This folder contains implementation-level documentation for `circular`.
 ## Documents
 
 - `cli.md`: CLI flags, mode semantics, argument rules, and logging behavior
+- `make.md`: Makefile targets for build/test/watch/UI/history/query workflows
 - `configuration.md`: TOML schema, defaults, fallbacks, and architecture validation rules
 - `output.md`: DOT and TSV schemas, appended sections, and ordering guarantees
 - `advanced.md`: phase-1 historical snapshots and trend-report workflows

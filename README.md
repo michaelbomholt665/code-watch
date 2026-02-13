@@ -1,6 +1,6 @@
 # circular
 
-`circular` is a Go-based dependency monitor for Go and Python codebases.
+`circular` is a Go-based dependency monitor for codebases parsed with Tree-sitter language grammars.
 
 It scans source files, builds a module import graph, then reports:
 - circular imports
@@ -15,11 +15,13 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 
 ## Features
 
-- Parses `.go` and `.py` files with Tree-sitter
+- Parses `.go` and `.py` files by default, with registry-based opt-in support for `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`
 - Builds and updates a module-level dependency graph
 - Detects import cycles across internal modules
 - Detects unresolved references using local symbols, imports, stdlib, and builtins
 - Detects unused imports and appends findings to TSV output
+- Applies language-scoped resolver policies for `go`, `python`, `javascript`/`typescript`/`tsx`, `java`, and `rust`
+- Disables unused-import checks for unsupported/metadata-only languages to reduce false positives
 - Computes module dependency metrics (depth, fan-in, fan-out)
 - Traces shortest import chain between modules (`--trace`)
 - Analyzes blast radius for a file/module (`--impact`)
@@ -33,6 +35,7 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
   - Marker-based Markdown diagram injection (optional)
 - Live filesystem watch mode with debounce
 - Optional Bubble Tea terminal UI for live issue monitoring
+- Grammar provenance manifest verification (`grammars/manifest.toml`) with `--verify-grammars`
 
 ## Runtime Modes
 
@@ -78,10 +81,11 @@ Before a version bump/release:
 1. Copy example config:
 
 ```bash
-cp circular.example.toml circular.toml
+mkdir -p data/config
+cp data/config/circular.example.toml data/config/circular.toml
 ```
 
-2. Update `watch_paths` in `circular.toml` to your project path.
+2. Update `watch_paths` in `data/config/circular.toml` to your project path.
 
 3. Run a one-time scan:
 
@@ -104,12 +108,17 @@ go run ./cmd/circular --ui
 ## CLI
 
 Flags:
-- `--config` path to TOML config (default `./circular.toml`)
-- if default config is missing, it falls back to `./circular.example.toml`
+- `--config` path to TOML config (default `./data/config/circular.toml`)
+- default discovery fallback order:
+  - `./data/config/circular.toml`
+  - `./circular.toml` (deprecated legacy)
+  - `./data/config/circular.example.toml`
+  - `./circular.example.toml`
 - `--once` run one scan and exit
 - `--ui` start terminal UI mode
 - `--trace` print shortest import chain from one module to another, then exit
 - `--impact` analyze direct/transitive impact for a file path or module, then exit
+- `--verify-grammars` verify enabled language grammar artifacts and exit
 - `--verbose` enable debug logs
 - `--version` print version and exit
 
@@ -123,10 +132,60 @@ Version in source: `1.0.0` (`internal/cliapp/cli.go`).
 
 Primary config file is TOML.
 
-Example (`circular.example.toml`):
+Example (`data/config/circular.example.toml`):
 
 ```toml
+version = 2
+
+[paths]
+project_root = ""
+config_dir = "data/config"
+state_dir = "data/state"
+cache_dir = "data/cache"
+database_dir = "data/database"
+
+[config]
+active_file = "circular.toml"
+includes = []
+
+[db]
+enabled = true
+driver = "sqlite"
+path = "history.db"
+busy_timeout = "5s"
+project_mode = "multi"
+
+[projects]
+active = ""
+registry_file = "projects.toml"
+
+[[projects.entries]]
+name = "default"
+root = "."
+db_namespace = "default"
+
+[mcp]
+enabled = false
+mode = "embedded"
+transport = "stdio"
+address = "127.0.0.1:8765"
+config_path = ""
+
 grammars_path = "./grammars"
+[grammar_verification]
+enabled = true
+
+[languages]
+# Optional per-language overrides. Go/Python are enabled by default.
+
+# [languages.javascript]
+# enabled = true
+# extensions = [".js", ".cjs", ".mjs"]
+# [languages.java]
+# enabled = true
+# [languages.rust]
+# enabled = true
+
 watch_paths = ["./src"]
 
 [exclude]

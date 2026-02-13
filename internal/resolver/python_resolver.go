@@ -22,7 +22,7 @@ func (r *PythonResolver) GetModuleName(filePath string) string {
 	}
 
 	parts := strings.Split(rel, string(os.PathSeparator))
-	
+
 	// Remove non-package prefixes (dirs without __init__.py)
 	packageStart := 0
 	for i := 0; i < len(parts)-1; i++ {
@@ -35,10 +35,10 @@ func (r *PythonResolver) GetModuleName(filePath string) string {
 	}
 
 	parts = parts[packageStart:]
-	
+
 	// Remove .py extension
 	parts[len(parts)-1] = strings.TrimSuffix(parts[len(parts)-1], ".py")
-	
+
 	// Special case: __init__.py
 	if parts[len(parts)-1] == "__init__" {
 		parts = parts[:len(parts)-1]

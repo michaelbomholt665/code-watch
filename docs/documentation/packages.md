@@ -17,7 +17,9 @@
 ## `internal/app`
 
 - central orchestrator over parser/graph/resolver/output/watcher
-- builds parser and registers Go/Python extractors
+- builds parser from language registry + config overrides
+- enforces optional grammar artifact verification at startup
+- registers available extractors for enabled languages
 - performs initial scan and incremental change handling
 - maintains incremental caches for unresolved refs and unused imports
 - computes metrics/hotspots/architecture violations
@@ -47,8 +49,11 @@
 
 ## `internal/parser`
 
-- `GrammarLoader` creates Tree-sitter Go/Python languages
-- `Parser` routes by file extension (`.go`, `.py`)
+- `GrammarLoader` creates enabled runtime languages and validates manifest-bound grammar artifacts
+- `Parser` routes by registry-defined extensions + filename matchers
+- language registry supports additive rollout (`go`/`python` default enabled; additional grammars default disabled)
+- `Parser.RegisterDefaultExtractors()` wires language extractors from registry-enabled languages
+- profile-driven extractor module (`profile_extractors.go`) covers `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`
 - Go extractor collects:
 - package/imports
 - definitions (functions, methods, types, interfaces)
@@ -59,6 +64,7 @@
 - definitions (functions, classes)
 - local symbols and call references
 - complexity metrics per callable
+- `gomod` and `gosum` use raw-text extractors (no runtime tree-sitter binding required)
 
 ## `internal/graph`
 
@@ -80,18 +86,19 @@
 - local symbols
 - same-module definitions
 - imported-module symbols/aliases/items
-- merged stdlib names (Go + Python)
+- language-scoped stdlib names (`go`, `python`, `javascript`/`typescript`/`tsx`, `java`, `rust`)
 - language builtins
 - user exclusion prefixes
 - path-scoped unresolved analysis for incremental updates
 - unused-import detection with confidence levels
+- unused-import checks disabled for unsupported languages to avoid noisy output
 
 ## `internal/watcher`
 
 - wraps fsnotify with:
 - recursive watch registration
 - create-time directory expansion
-- glob-based filtering
+- glob-based filtering plus language-aware file-name/extension filtering
 - debounce batching
 - serialized callback execution
 

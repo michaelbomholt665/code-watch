@@ -1,6 +1,55 @@
 # circular.example.toml
+# Deprecated location: prefer data/config/circular.example.toml and
+# use --config ./data/config/circular.toml (or keep default discovery).
+
+version = 2
+
+[paths]
+project_root = ""
+config_dir = "data/config"
+state_dir = "data/state"
+cache_dir = "data/cache"
+database_dir = "data/database"
+
+[config]
+active_file = "circular.toml"
+includes = []
+
+[db]
+enabled = true
+driver = "sqlite"
+path = "history.db"
+busy_timeout = "5s"
+project_mode = "multi"
+
+[projects]
+active = ""
+registry_file = "projects.toml"
+
+[[projects.entries]]
+name = "default"
+root = "."
+db_namespace = "default"
+
+[mcp]
+enabled = false
+mode = "embedded"
+transport = "stdio"
+address = "127.0.0.1:8765"
+config_path = ""
 
 grammars_path = "./grammars"
+[grammar_verification]
+enabled = true
+
+[languages]
+# Optional per-language rollout overrides.
+# Go and Python are enabled by default.
+
+# [languages.javascript]
+# enabled = true
+# extensions = [".js", ".cjs", ".mjs"]
+
 watch_paths = ["./src"]
 
 [exclude]
@@ -14,11 +63,10 @@ debounce = "1s"
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
-mermaid = "graph.mmd" # resolved to <root>/docs/diagrams/graph.mmd
-plantuml = "graph.puml" # resolved to <root>/docs/diagrams/graph.puml
+mermaid = "graph.mmd"
+plantuml = "graph.puml"
 
 [output.paths]
-# optional; when empty, root is auto-detected from go.mod/.git/circular.toml
 root = ""
 diagrams_dir = "docs/diagrams"
 

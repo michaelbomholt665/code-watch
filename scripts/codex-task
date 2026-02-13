@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/codex-task [--mode auto|go-dev|review|pm] [--dry-run] [--show-route] "<prompt>"
+
+Examples:
+  scripts/codex-task "fix unresolved import handling in resolver"
+  scripts/codex-task --mode review "review my latest changes for regressions"
+  scripts/codex-task --mode pm "plan migration to architecture rules v2"
+EOF
+}
+
+MODE="auto"
+DRY_RUN="false"
+SHOW_ROUTE="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --mode)
+      MODE="${2:-}"
+      shift 2
+      ;;
+    --dry-run)
+      DRY_RUN="true"
+      shift
+      ;;
+    --show-route)
+      SHOW_ROUTE="true"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ $# -lt 1 ]]; then
+  usage
+  exit 1
+fi
+
+USER_PROMPT="$*"
+
+infer_mode() {
+  local text
+  text="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+
+  if printf '%s' "$text" | grep -Eq '(^|[^[:alnum:]_])(review|audit|risk|regression|defect)([^[:alnum:]_]|$)'; then
+    echo "review"
+    return
+  fi
+
+  if printf '%s' "$text" | grep -Eq '(^|[^[:alnum:]_])(plan|roadmap|milestone|scope|project|migration)([^[:alnum:]_]|$)'; then
+    echo "pm"
+    return
+  fi
+
+  echo "go-dev"
+}
+
+if [[ "$MODE" == "auto" ]]; then
+  MODE="$(infer_mode "$USER_PROMPT")"
+fi
+
+PROFILE=""
+PERSONALITY="pragmatic"
+SKILL_TAG=""
+PERSONA_FILE=""
+
+case "$MODE" in
+  go-dev)
+    PROFILE="build"
+    SKILL_TAG='$go-code-watch-maintainer'
+    PERSONA_FILE=".codex/persona-go-coder.md"
+    ;;
+  review)
+    PROFILE="review"
+    SKILL_TAG='$go-defect-reviewer'
+    PERSONA_FILE=".codex/persona-code-reviewer.md"
+    ;;
+  pm)
+    PROFILE="deep"
+    SKILL_TAG='$project-planner'
+    PERSONA_FILE=".codex/persona-project-manager.md"
+    ;;
+  *)
+    echo "Unknown mode: $MODE" >&2
+    echo "Expected one of: auto, go-dev, review, pm" >&2
+    exit 1
+    ;;
+esac
+
+if [[ ! -f "$PERSONA_FILE" ]]; then
+  echo "Missing persona file: $PERSONA_FILE" >&2
+  exit 1
+fi
+
+PERSONA_TEXT="$(cat "$PERSONA_FILE")"
+
+FINAL_PROMPT="$SKILL_TAG
+
+[Task Persona]
+$PERSONA_TEXT
+
+[User Task]
+$USER_PROMPT"
+
+CMD=(codex --profile "$PROFILE" -c "personality=\"$PERSONALITY\"" "$FINAL_PROMPT")
+
+print_route() {
+  echo "mode=$MODE"
+  echo "profile=$PROFILE"
+  echo "skill=$SKILL_TAG"
+  echo "persona=$PERSONA_FILE"
+}
+
+if [[ "$DRY_RUN" == "true" ]]; then
+  print_route
+  printf 'command='
+  printf '%q ' "${CMD[@]}"
+  echo
+  exit 0
+fi
+
+if [[ "$SHOW_ROUTE" == "true" ]]; then
+  print_route >&2
+fi
+
+exec "${CMD[@]}"

@@ -69,9 +69,14 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
-func (s *Store) SaveSnapshot(snapshot Snapshot) error {
+func (s *Store) SaveSnapshot(projectKey string, snapshot Snapshot) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	projectKey = strings.TrimSpace(projectKey)
+	if projectKey == "" {
+		projectKey = "default"
+	}
 
 	if snapshot.Timestamp.IsZero() {
 		snapshot.Timestamp = time.Now().UTC()
@@ -90,11 +95,11 @@ func (s *Store) SaveSnapshot(snapshot Snapshot) error {
 
 	query := `
 INSERT INTO snapshots (
-  schema_version, ts_utc, commit_hash, commit_ts_utc, module_count, file_count,
+  project_key, schema_version, ts_utc, commit_hash, commit_ts_utc, module_count, file_count,
   cycle_count, unresolved_count, unused_import_count, violation_count, hotspot_count,
   avg_fan_in, avg_fan_out, max_fan_in, max_fan_out
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-ON CONFLICT(ts_utc, commit_hash) DO UPDATE SET
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+ON CONFLICT(project_key, ts_utc, commit_hash) DO UPDATE SET
   schema_version=excluded.schema_version,
   commit_ts_utc=excluded.commit_ts_utc,
   module_count=excluded.module_count,
@@ -112,6 +117,7 @@ ON CONFLICT(ts_utc, commit_hash) DO UPDATE SET
 	return s.withRetry("save snapshot", func() error {
 		_, err := s.db.Exec(
 			query,
+			projectKey,
 			snapshot.SchemaVersion,
 			snapshot.Timestamp.UTC().Format(time.RFC3339Nano),
 			snapshot.CommitHash,
@@ -132,20 +138,27 @@ ON CONFLICT(ts_utc, commit_hash) DO UPDATE SET
 	})
 }
 
-func (s *Store) LoadSnapshots(since time.Time) ([]Snapshot, error) {
+func (s *Store) LoadSnapshots(projectKey string, since time.Time) ([]Snapshot, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	projectKey = strings.TrimSpace(projectKey)
+	if projectKey == "" {
+		projectKey = "default"
+	}
+
 	base := `
 SELECT
-  schema_version, ts_utc, commit_hash, commit_ts_utc, module_count, file_count,
+  project_key, schema_version, ts_utc, commit_hash, commit_ts_utc, module_count, file_count,
   cycle_count, unresolved_count, unused_import_count, violation_count, hotspot_count,
   avg_fan_in, avg_fan_out, max_fan_in, max_fan_out
 FROM snapshots
 `
-	args := make([]any, 0, 1)
+	base += " WHERE project_key = ?"
+	args := make([]any, 0, 2)
+	args = append(args, projectKey)
 	if !since.IsZero() {
-		base += " WHERE ts_utc >= ?"
+		base += " AND ts_utc >= ?"
 		args = append(args, since.UTC().Format(time.RFC3339Nano))
 	}
 	base += " ORDER BY ts_utc ASC, commit_hash ASC"
@@ -169,6 +182,7 @@ FROM snapshots
 			snapshot    Snapshot
 		)
 		if err := rows.Scan(
+			&snapshot.ProjectKey,
 			&snapshot.SchemaVersion,
 			&tsRaw,
 			&snapshot.CommitHash,

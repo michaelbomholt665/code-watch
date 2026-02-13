@@ -38,7 +38,7 @@ Main responsibilities:
 
 ## Data Flow
 
-1. `ScanDirectories` discovers `.go` and `.py` files (respecting excludes).
+1. `ScanDirectories` discovers registry-enabled files by extension/filename routes (respecting excludes).
 2. `ProcessFile` parses AST and normalizes a `parser.File`.
 3. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
 4. Analyses run against graph snapshots.

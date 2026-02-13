@@ -278,6 +278,45 @@ func TestUniqueScanRoots_DeduplicatesRelativeAndAbsolute(t *testing.T) {
 	}
 }
 
+func TestApp_ScanDirectories_UsesParserLanguageRegistry(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte("package main"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "main.py"), []byte("print('x')"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "readme.md"), []byte("# doc"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output:       config.Output{},
+	}
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	files, err := app.ScanDirectories([]string{tmpDir}, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	joined := strings.Join(files, ",")
+	if !strings.Contains(joined, "main.go") {
+		t.Fatalf("expected go file in scan result, got %v", files)
+	}
+	if !strings.Contains(joined, "main.py") {
+		t.Fatalf("expected python file in scan result, got %v", files)
+	}
+	if strings.Contains(joined, "readme.md") {
+		t.Fatalf("did not expect markdown file in scan result, got %v", files)
+	}
+}
+
 func TestApp_TraceImportChain(t *testing.T) {
 	app := &App{Graph: graph.NewGraph()}
 	app.Graph.AddFile(&parser.File{Path: "a.go", Module: "A", Imports: []parser.Import{{Module: "B"}}})
@@ -345,7 +384,7 @@ type historyStoreStub struct {
 	snapshots []history.Snapshot
 }
 
-func (h historyStoreStub) LoadSnapshots(since time.Time) ([]history.Snapshot, error) {
+func (h historyStoreStub) LoadSnapshots(projectKey string, since time.Time) ([]history.Snapshot, error) {
 	out := make([]history.Snapshot, 0, len(h.snapshots))
 	for _, snapshot := range h.snapshots {
 		if !since.IsZero() && snapshot.Timestamp.Before(since) {
@@ -364,7 +403,7 @@ func TestApp_BuildQueryService(t *testing.T) {
 		snapshots: []history.Snapshot{
 			{Timestamp: time.Date(2026, 2, 10, 0, 0, 0, 0, time.UTC), ModuleCount: 1},
 		},
-	})
+	}, "default")
 
 	modules, err := svc.ListModules(context.Background(), "", 0)
 	if err != nil {

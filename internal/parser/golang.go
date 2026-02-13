@@ -17,55 +17,39 @@ func (e *GoExtractor) Extract(root *sitter.Node, source []byte, filePath string)
 		ParsedAt: time.Now(),
 	}
 
-	e.walk(root, source, file)
+	ctx := &ExtractionContext{Source: source, File: file}
+	engine := NewExtractorEngine(map[string]NodeHandler{
+		"package_clause":        e.extractPackage,
+		"import_declaration":    e.extractImports,
+		"function_declaration":  e.extractFunction,
+		"type_declaration":      e.extractType,
+		"short_var_declaration": e.extractVarDecl,
+		"var_declaration":       e.extractVarDecl,
+		"const_declaration":     e.extractVarDecl,
+		"parameter_declaration": e.extractParam,
+		"method_declaration":    e.extractMethod,
+		"range_clause":          e.extractRange,
+		"call_expression":       e.extractCall,
+	})
+	engine.Walk(ctx, root)
 
 	return file, nil
 }
 
-func (e *GoExtractor) walk(node *sitter.Node, source []byte, file *File) {
-	nodeKind := node.Kind()
-
-	switch nodeKind {
-	case "package_clause":
-		e.extractPackage(node, source, file)
-	case "import_declaration":
-		e.extractImports(node, source, file)
-	case "function_declaration":
-		e.extractFunction(node, source, file)
-	case "type_declaration":
-		e.extractType(node, source, file)
-	case "short_var_declaration", "var_declaration", "const_declaration":
-		e.extractVarDecl(node, source, file)
-	case "parameter_declaration":
-		e.extractParam(node, source, file)
-	case "method_declaration":
-		e.extractMethod(node, source, file)
-	case "range_clause":
-		e.extractRange(node, source, file)
-	case "call_expression":
-		e.extractCall(node, source, file)
-	}
-
-	for i := uint(0); i < node.ChildCount(); i++ {
-		child := node.Child(i)
-		e.walk(child, source, file)
-	}
-}
-
-func (e *GoExtractor) extractPackage(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) extractPackage(ctx *ExtractionContext, node *sitter.Node) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 		if child.Kind() == "package_identifier" {
-			file.PackageName = e.getText(child, source)
+			ctx.File.PackageName = ctx.Text(child)
 		}
 	}
 }
 
-func (e *GoExtractor) extractImports(node *sitter.Node, source []byte, file *File) {
-	e.walkImports(node, source, file)
+func (e *GoExtractor) extractImports(ctx *ExtractionContext, node *sitter.Node) {
+	e.walkImports(ctx, node)
 }
 
-func (e *GoExtractor) walkImports(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) walkImports(ctx *ExtractionContext, node *sitter.Node) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 
@@ -76,48 +60,44 @@ func (e *GoExtractor) walkImports(node *sitter.Node, source []byte, file *File) 
 				spec := child.Child(j)
 
 				if spec.Kind() == "package_identifier" {
-					alias = e.getText(spec, source)
+					alias = ctx.Text(spec)
 				} else if spec.Kind() == "interpreted_string_literal" {
-					path = strings.Trim(e.getText(spec, source), "\"")
+					path = strings.Trim(ctx.Text(spec), "\"")
 				}
 			}
 
 			if path != "" {
-				file.Imports = append(file.Imports, Import{
+				ctx.File.Imports = append(ctx.File.Imports, Import{
 					Module:    path,
 					RawImport: path,
 					Alias:     alias,
-					Location: Location{
-						File:   file.Path,
-						Line:   int(child.StartPosition().Row) + 1,
-						Column: int(child.StartPosition().Column) + 1,
-					},
+					Location:  ctx.Location(child),
 				})
 			}
 		} else {
-			e.walkImports(child, source, file)
+			e.walkImports(ctx, child)
 		}
 	}
 }
 
-func (e *GoExtractor) extractFunction(node *sitter.Node, source []byte, file *File) {
-	e.extractCallable(node, source, file, KindFunction)
+func (e *GoExtractor) extractFunction(ctx *ExtractionContext, node *sitter.Node) {
+	e.extractCallable(ctx, node, KindFunction)
 }
 
-func (e *GoExtractor) extractMethod(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) extractMethod(ctx *ExtractionContext, node *sitter.Node) {
 	receiver := node.ChildByFieldName("receiver")
 	if receiver != nil {
-		e.extractParam(receiver, source, file)
+		e.extractParam(ctx, receiver)
 	}
-	e.extractCallable(node, source, file, KindMethod)
+	e.extractCallable(ctx, node, KindMethod)
 }
 
-func (e *GoExtractor) extractCallable(node *sitter.Node, source []byte, file *File, kind DefinitionKind) {
+func (e *GoExtractor) extractCallable(ctx *ExtractionContext, node *sitter.Node, kind DefinitionKind) {
 	nameNode := node.ChildByFieldName("name")
 	if nameNode == nil {
 		return
 	}
-	name := e.getText(nameNode, source)
+	name := ctx.Text(nameNode)
 	if name == "" {
 		return
 	}
@@ -134,11 +114,11 @@ func (e *GoExtractor) extractCallable(node *sitter.Node, source []byte, file *Fi
 		score = 1
 	}
 	fullName := name
-	if file.Module != "" {
-		fullName = file.Module + "." + name
+	if ctx.File.Module != "" {
+		fullName = ctx.File.Module + "." + name
 	}
 
-	file.Definitions = append(file.Definitions, Definition{
+	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
 		Name:            name,
 		FullName:        fullName,
 		Kind:            kind,
@@ -148,11 +128,7 @@ func (e *GoExtractor) extractCallable(node *sitter.Node, source []byte, file *Fi
 		NestingDepth:    nesting,
 		LOC:             loc,
 		ComplexityScore: score,
-		Location: Location{
-			File:   file.Path,
-			Line:   int(node.StartPosition().Row) + 1,
-			Column: int(node.StartPosition().Column) + 1,
-		},
+		Location:        ctx.Location(node),
 	})
 }
 
@@ -212,24 +188,24 @@ func (e *GoExtractor) computeGoComplexity(body *sitter.Node, depth int) (branche
 	return branches, maxDepth
 }
 
-func (e *GoExtractor) extractType(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) extractType(ctx *ExtractionContext, node *sitter.Node) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 		if child.Kind() == "type_spec" {
-			e.extractTypeSpec(child, source, file)
+			e.extractTypeSpec(ctx, child)
 		}
 	}
 }
 
-func (e *GoExtractor) extractTypeSpec(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) extractTypeSpec(ctx *ExtractionContext, node *sitter.Node) {
 	var name string
-	var kind DefinitionKind = KindType
+	kind := KindType
 
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 
 		if child.Kind() == "type_identifier" {
-			name = e.getText(child, source)
+			name = ctx.Text(child)
 		} else if child.Kind() == "interface_type" {
 			kind = KindInterface
 		}
@@ -240,85 +216,55 @@ func (e *GoExtractor) extractTypeSpec(node *sitter.Node, source []byte, file *Fi
 	}
 
 	exported := len(name) > 0 && unicode.IsUpper(rune(name[0]))
+	fullName := name
+	if ctx.File.Module != "" {
+		fullName = ctx.File.Module + "." + name
+	}
 
-	file.Definitions = append(file.Definitions, Definition{
+	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
 		Name:     name,
-		FullName: file.Module + "." + name,
+		FullName: fullName,
 		Kind:     kind,
 		Exported: exported,
-		Location: Location{
-			File:   file.Path,
-			Line:   int(node.StartPosition().Row) + 1,
-			Column: int(node.StartPosition().Column) + 1,
-		},
+		Location: ctx.Location(node),
 	})
 }
 
-func (e *GoExtractor) extractVarDecl(node *sitter.Node, source []byte, file *File) {
-	var findIdentifiers func(*sitter.Node)
-	findIdentifiers = func(n *sitter.Node) {
-		if n.Kind() == "identifier" {
-			file.LocalSymbols = append(file.LocalSymbols, e.getText(n, source))
-		}
-		for i := uint(0); i < n.ChildCount(); i++ {
-			findIdentifiers(n.Child(i))
-		}
-	}
-
+func (e *GoExtractor) extractVarDecl(ctx *ExtractionContext, node *sitter.Node) {
 	if node.Kind() == "short_var_declaration" {
 		left := node.ChildByFieldName("left")
 		if left != nil {
-			findIdentifiers(left)
+			ctx.AppendLocalIdentifiers(left)
 		}
-	} else {
-		findIdentifiers(node)
+		return
 	}
+	ctx.AppendLocalIdentifiers(node)
 }
 
-func (e *GoExtractor) extractParam(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) extractParam(ctx *ExtractionContext, node *sitter.Node) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 		if child.Kind() == "identifier" {
-			file.LocalSymbols = append(file.LocalSymbols, e.getText(child, source))
+			ctx.File.LocalSymbols = append(ctx.File.LocalSymbols, ctx.Text(child))
 		}
 	}
 }
 
-func (e *GoExtractor) extractRange(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) extractRange(ctx *ExtractionContext, node *sitter.Node) {
 	left := node.ChildByFieldName("left")
 	if left != nil {
-		var findIdentifiers func(*sitter.Node)
-		findIdentifiers = func(n *sitter.Node) {
-			if n.Kind() == "identifier" {
-				file.LocalSymbols = append(file.LocalSymbols, e.getText(n, source))
-			}
-			for i := uint(0); i < n.ChildCount(); i++ {
-				findIdentifiers(n.Child(i))
-			}
-		}
-		findIdentifiers(left)
+		ctx.AppendLocalIdentifiers(left)
 	}
 }
 
-func (e *GoExtractor) extractCall(node *sitter.Node, source []byte, file *File) {
+func (e *GoExtractor) extractCall(ctx *ExtractionContext, node *sitter.Node) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
-
 		if child.Kind() == "identifier" || child.Kind() == "selector_expression" {
-			name := e.getText(child, source)
-
-			file.References = append(file.References, Reference{
-				Name: name,
-				Location: Location{
-					File:   file.Path,
-					Line:   int(node.StartPosition().Row) + 1,
-					Column: int(node.StartPosition().Column) + 1,
-				},
+			ctx.File.References = append(ctx.File.References, Reference{
+				Name:     ctx.Text(child),
+				Location: ctx.Location(node),
 			})
 		}
 	}
-}
-
-func (e *GoExtractor) getText(node *sitter.Node, source []byte) string {
-	return string(source[node.StartByte():node.EndByte()])
 }

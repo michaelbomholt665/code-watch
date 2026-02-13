@@ -158,6 +158,107 @@ func Main() {
 	fmt.Println(os.Args)
 }
 
+func TestExtraction_MultiLanguage(t *testing.T) {
+	trueVal := true
+	registry, err := BuildLanguageRegistry(map[string]LanguageOverride{
+		"javascript": {Enabled: &trueVal},
+		"typescript": {Enabled: &trueVal},
+		"tsx":        {Enabled: &trueVal},
+		"java":       {Enabled: &trueVal},
+		"rust":       {Enabled: &trueVal},
+		"html":       {Enabled: &trueVal},
+		"css":        {Enabled: &trueVal},
+		"gomod":      {Enabled: &trueVal},
+		"gosum":      {Enabled: &trueVal},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	loader, err := NewGrammarLoaderWithRegistry("./grammars", registry, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewParser(loader)
+	if err := p.RegisterDefaultExtractors(); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name     string
+		path     string
+		code     string
+		language string
+	}{
+		{
+			name:     "javascript",
+			path:     "main.js",
+			code:     "import foo from 'pkg'; function run(a){ return foo(a) }",
+			language: "javascript",
+		},
+		{
+			name:     "typescript",
+			path:     "main.ts",
+			code:     "import {x} from 'pkg'; interface Runner{}; function run(a:number){ return x(a) }",
+			language: "typescript",
+		},
+		{
+			name:     "tsx",
+			path:     "main.tsx",
+			code:     "import React from 'react'; export function App(){ return <div/> }",
+			language: "tsx",
+		},
+		{
+			name:     "java",
+			path:     "Main.java",
+			code:     "package p; import java.util.List; class Main { void run(){} }",
+			language: "java",
+		},
+		{
+			name:     "rust",
+			path:     "main.rs",
+			code:     "use std::fmt; fn main(){ println!(\"hi\"); }",
+			language: "rust",
+		},
+		{
+			name:     "html",
+			path:     "index.html",
+			code:     "<html><head><script src=\"app.js\"></script></head><body class=\"hero\"></body></html>",
+			language: "html",
+		},
+		{
+			name:     "css",
+			path:     "site.css",
+			code:     "@import \"theme.css\"; .hero { color: red; }",
+			language: "css",
+		},
+		{
+			name:     "gomod",
+			path:     "go.mod",
+			code:     "module example.com/x\n\nrequire github.com/pkg/errors v0.9.1",
+			language: "gomod",
+		},
+		{
+			name:     "gosum",
+			path:     "go.sum",
+			code:     "github.com/pkg/errors v0.9.1 h1:abc\n",
+			language: "gosum",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			file, err := p.ParseFile(tc.path, []byte(tc.code))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if file.Language != tc.language {
+				t.Fatalf("expected language %q, got %q", tc.language, file.Language)
+			}
+		})
+	}
+}
+
 type MyStruct struct {
 	ID int
 }

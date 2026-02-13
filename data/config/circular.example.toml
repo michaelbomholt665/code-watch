@@ -1,0 +1,104 @@
+# data/config/circular.example.toml
+version = 2
+
+[paths]
+project_root = ""
+config_dir = "data/config"
+state_dir = "data/state"
+cache_dir = "data/cache"
+database_dir = "data/database"
+
+[config]
+active_file = "circular.toml"
+includes = []
+
+[db]
+enabled = true
+driver = "sqlite"
+path = "history.db"
+busy_timeout = "5s"
+project_mode = "multi"
+
+[projects]
+active = ""
+registry_file = "projects.toml"
+
+[[projects.entries]]
+name = "default"
+root = "."
+db_namespace = "default"
+
+[mcp]
+enabled = false
+mode = "embedded"
+transport = "stdio"
+address = "127.0.0.1:8765"
+config_path = ""
+
+grammars_path = "./grammars"
+[grammar_verification]
+enabled = true
+
+[languages]
+# Optional per-language rollout overrides.
+# Go and Python are enabled by default.
+
+# [languages.javascript]
+# enabled = true
+# extensions = [".js", ".cjs", ".mjs"]
+
+watch_paths = ["./src"]
+
+[exclude]
+dirs = [".git", "node_modules", "vendor", "__pycache__"]
+files = ["*.tmp", "*.log"]
+symbols = ["self", "ctx", "p", "log", "toml", "sitter", "tea", "fsnotify"]
+
+[watch]
+debounce = "1s"
+
+[output]
+dot = "graph.dot"
+tsv = "dependencies.tsv"
+mermaid = "graph.mmd"
+plantuml = "graph.puml"
+
+[output.paths]
+root = ""
+diagrams_dir = "docs/diagrams"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-mermaid"
+format = "mermaid"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-plantuml"
+format = "plantuml"
+
+[alerts]
+beep = true
+terminal = true
+
+[architecture]
+enabled = false
+top_complexity = 5
+
+[[architecture.layers]]
+name = "api"
+paths = ["internal/api", "cmd"]
+
+[[architecture.layers]]
+name = "core"
+paths = ["internal/core", "internal/graph", "internal/parser", "internal/resolver"]
+
+[[architecture.rules]]
+name = "api-to-core-only"
+from = "api"
+allow = ["core"]
+
+[[architecture.rules]]
+name = "core-self-only"
+from = "core"
+allow = ["core"]

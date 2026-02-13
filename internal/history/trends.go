@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func BuildTrendReport(snapshots []Snapshot, window time.Duration) (TrendReport, error) {
+func BuildTrendReport(projectKey string, snapshots []Snapshot, window time.Duration) (TrendReport, error) {
 	if len(snapshots) == 0 {
 		return TrendReport{}, fmt.Errorf("no snapshots available")
 	}
@@ -53,6 +53,7 @@ func BuildTrendReport(snapshots []Snapshot, window time.Duration) (TrendReport, 
 
 	return TrendReport{
 		SchemaVersion: SchemaVersion,
+		ProjectKey:    projectKey,
 		Since:         snapshots[0].Timestamp,
 		Until:         snapshots[len(snapshots)-1].Timestamp,
 		Window:        window.String(),

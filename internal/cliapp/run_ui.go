@@ -10,7 +10,7 @@ import (
 )
 
 func runUI(app *coreapp.App, report *history.TrendReport) error {
-	service := query.NewService(app.Graph, nil)
+	service := query.NewService(app.Graph, nil, "default")
 	m := initialModel(service, report)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 

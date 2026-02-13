@@ -1,0 +1,112 @@
+version = 1
+allowed_aib_versions = [14, 15]
+
+[[artifacts]]
+language = "css"
+aib_version = 15
+so_path = "css/css.so"
+so_sha256 = "708e7a4ef0bea181d84c93a8f928c0ebf43fd9685dcd262aeb5f2a07cf295201"
+node_types_path = "css/node-types.json"
+node_types_sha256 = "fbbf8d22d82608f6d2f61cfdb374e6758779754fb2f42643e9dc5af6ead0d5d2"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "go"
+aib_version = 15
+so_path = "go/go.so"
+so_sha256 = "a9658a49621bb7f0dcd3f520c9b94499b6070c6ed09f635c73d6f3859e68040f"
+node_types_path = "go/node-types.json"
+node_types_sha256 = "8d77e723df0f0dfccb66d4571a5c3c17ecfb6c90959044c0992146b21f383bff"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "gomod"
+aib_version = 15
+so_path = "gomod/gomod.so"
+so_sha256 = "963fe17d94957695fd15e426d77273cd4ca5f8be7030904dfabbcb04b4fc1a8d"
+node_types_path = "gomod/node-types.json"
+node_types_sha256 = "952684026c284fb540c2f916fd58bd98ce40a34d73afe871e269b809051d389e"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "gosum"
+aib_version = 15
+so_path = "gosum/gosum.so"
+so_sha256 = "4a95d0cd22aefcc7aa4e0be6e99fd3111a0b11237d6c8a8dfa8dac1ce58be6ff"
+node_types_path = "gosum/node-types.json"
+node_types_sha256 = "9bff1737eb143ff2a174aaaa2ec91d2351dd17988c2a640851f2ecfa3e271f97"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "html"
+aib_version = 15
+so_path = "html/html.so"
+so_sha256 = "4e329ef023e0ba04e7e90ba5e3adbb96e0eecade74be44a8af6006d2b9ad4366"
+node_types_path = "html/node-types.json"
+node_types_sha256 = "e04d0a6e667ee3773ceeb0751466ce314f29bafc9b1c7d2466414c39c3eda178"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "java"
+aib_version = 15
+so_path = "java/java.so"
+so_sha256 = "270d50b1a0111465b47ef1dd160b581abacaf24f2e674d60b3728cc7dc38b183"
+node_types_path = "java/node-types.json"
+node_types_sha256 = "19c46facc653381c337ff6cad75dd8b052524179a366c80825d6d0010520eef2"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "javascript"
+aib_version = 14
+so_path = "javascript/javascript.so"
+so_sha256 = "a94079918bf83b0e11577899274c4966eba18e2628ea82e34b49e1ec4b937aa3"
+node_types_path = "javascript/node-types.json"
+node_types_sha256 = "188a8baa97018edaf63bf7ece372c07bc0d74d1301004bc8f211eb7dee5a6e70"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "python"
+aib_version = 15
+so_path = "python/python.so"
+so_sha256 = "62260c811d974c1472f9768494bdab67f466e17cf4de30c9c3f8caa2e6f54b85"
+node_types_path = "python/node-types.json"
+node_types_sha256 = "a2456847bea3adff5b2222b2f7b03a870159470d8908622204e6eb29ee2fe45e"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "rust"
+aib_version = 15
+so_path = "rust/rust.so"
+so_sha256 = "6fa7f73a30886c9d29289cfa71a5852eef348020a938ce05c90efa2a6e1f1b06"
+node_types_path = "rust/node-types.json"
+node_types_sha256 = "7aa048da68d64014402935bec749d57e05b1fd0d7fee1d111edfffc537342e1b"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "tsx"
+aib_version = 14
+so_path = "tsx/tsx.so"
+so_sha256 = "a3b78fff3a1fee7a3ea7d4c9b2dedfd276bb9044b3b5941c947dde0bb211d592"
+node_types_path = "tsx/node-types.json"
+node_types_sha256 = "78b5789145286799a27a0a7ecc36cc1bcb151f94ec7fa631b248459867010c8c"
+source = "tree-sitter"
+approved_date = "2026-01-22"
+
+[[artifacts]]
+language = "typescript"
+aib_version = 14
+so_path = "typescript/typescript.so"
+so_sha256 = "e79af46945d1a32a7920dcfc6e77ab43d48b5a7ea8d4e9f06be06ff274079b8b"
+node_types_path = "typescript/node-types.json"
+node_types_sha256 = "c790a733fc756b54d4e54dceeb7d2d51e40d8b57136e70277753a75804cce3e3"
+source = "tree-sitter"
+approved_date = "2026-01-22"

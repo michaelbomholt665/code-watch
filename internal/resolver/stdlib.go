@@ -12,8 +12,20 @@ var pythonStdlibData string
 //go:embed stdlib/go.txt
 var goStdlibData string
 
+//go:embed stdlib/javascript.txt
+var javascriptStdlibData string
+
+//go:embed stdlib/java.txt
+var javaStdlibData string
+
+//go:embed stdlib/rust.txt
+var rustStdlibData string
+
 var pythonStdlib = map[string]bool{}
 var goStdlib = map[string]bool{}
+var javascriptStdlib = map[string]bool{}
+var javaStdlib = map[string]bool{}
+var rustStdlib = map[string]bool{}
 
 func init() {
 	for _, line := range strings.Split(pythonStdlibData, "\n") {
@@ -34,6 +46,44 @@ func init() {
 			parts := strings.Split(line, "/")
 			goStdlib[parts[len(parts)-1]] = true
 		}
+	}
+
+	for _, line := range strings.Split(javascriptStdlibData, "\n") {
+		registerStdlibLine(javascriptStdlib, line)
+	}
+	for _, line := range strings.Split(javaStdlibData, "\n") {
+		registerStdlibLine(javaStdlib, line)
+	}
+	for _, line := range strings.Split(rustStdlibData, "\n") {
+		registerStdlibLine(rustStdlib, line)
+	}
+}
+
+func registerStdlibLine(dst map[string]bool, line string) {
+	line = strings.TrimSpace(line)
+	if line == "" || strings.HasPrefix(line, "#") {
+		return
+	}
+	dst[line] = true
+	for _, part := range strings.FieldsFunc(line, func(r rune) bool {
+		return r == '/' || r == '.' || r == ':'
+	}) {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			dst[part] = true
+		}
+	}
+}
+
+func getStdlibByLanguage() map[string]map[string]bool {
+	return map[string]map[string]bool{
+		"go":         goStdlib,
+		"python":     pythonStdlib,
+		"javascript": javascriptStdlib,
+		"typescript": javascriptStdlib,
+		"tsx":        javascriptStdlib,
+		"java":       javaStdlib,
+		"rust":       rustStdlib,
 	}
 }
 

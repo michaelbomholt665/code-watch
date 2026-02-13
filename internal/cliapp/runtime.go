@@ -6,6 +6,7 @@ import (
 	"circular/internal/graph"
 	"circular/internal/history"
 	"circular/internal/output"
+	"circular/internal/parser"
 	"context"
 	"fmt"
 	"log/slog"
@@ -29,9 +30,21 @@ func Run(args []string) int {
 	cleanupLogs := configureLogging(opts.ui, opts.verbose)
 	defer cleanupLogs()
 
-	cfg, err := loadConfig(opts.configPath)
+	cwd, err := os.Getwd()
+	if err != nil {
+		slog.Error("failed to detect working directory", "error", err)
+		return 1
+	}
+
+	cfg, err := loadConfig(opts.configPath, cwd)
 	if err != nil {
 		slog.Error("failed to load config", "error", err)
+		return 1
+	}
+
+	paths, err := config.ResolvePaths(cfg, cwd)
+	if err != nil {
+		slog.Error("failed to resolve runtime paths", "error", err)
 		return 1
 	}
 
@@ -40,8 +53,45 @@ func Run(args []string) int {
 		return 1
 	}
 
-	if err := normalizeGrammarsPath(cfg); err != nil {
+	if err := validateModeCompatibility(opts, cfg); err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return 1
+	}
+
+	if err := normalizeGrammarsPath(cfg, paths.ProjectRoot); err != nil {
 		slog.Error("failed to normalize grammars path", "error", err, "grammarsPath", cfg.GrammarsPath)
+		return 1
+	}
+
+	if opts.verifyGrammars {
+		registry, err := buildGrammarRegistry(cfg)
+		if err != nil {
+			slog.Error("invalid language registry", "error", err)
+			return 1
+		}
+		if !cfg.GrammarVerification.IsEnabled() {
+			fmt.Println("Grammar verification is disabled in config (grammar_verification.enabled=false); no checks were run.")
+			return 0
+		}
+		issues, err := parser.VerifyLanguageRegistryArtifacts(cfg.GrammarsPath, registry)
+		if err != nil {
+			slog.Error("grammar verification failed", "error", err)
+			return 1
+		}
+		if len(issues) == 0 {
+			fmt.Println("Grammar verification passed: all enabled language artifacts match manifest checksums and allowed AIB versions.")
+			return 0
+		}
+		for _, issue := range issues {
+			fmt.Printf("%s: %s (%s)\n", issue.Language, issue.Reason, issue.ArtifactPath)
+		}
+		fmt.Printf("Grammar verification failed: %d issues detected.\n", len(issues))
+		return 1
+	}
+
+	activeProject, err := resolveRuntimeProject(cfg, paths, cwd)
+	if err != nil {
+		slog.Error("failed to resolve active project", "error", err)
 		return 1
 	}
 
@@ -60,7 +110,7 @@ func Run(args []string) int {
 		return code
 	}
 
-	queryHistoryStore, err := openHistoryStoreIfEnabled(opts.history)
+	queryHistoryStore, err := openHistoryStoreIfEnabled(opts.history, cfg, paths)
 	if err != nil {
 		slog.Error("history setup failed", "error", err)
 		return 1
@@ -82,6 +132,7 @@ func Run(args []string) int {
 	report, err := runHistoryMode(
 		opts,
 		app,
+		activeProject,
 		metrics,
 		cycles,
 		len(hallucinations),
@@ -95,7 +146,7 @@ func Run(args []string) int {
 		return 1
 	}
 
-	if stop, code := runQueryCommand(app, opts, queryHistoryStore); stop {
+	if stop, code := runQueryCommand(app, opts, queryHistoryStore, activeProject.Key); stop {
 		return code
 	}
 
@@ -147,12 +198,12 @@ func runSingleCommand(app *coreapp.App, opts cliOptions) (bool, int) {
 	return false, 0
 }
 
-func runQueryCommand(app *coreapp.App, opts cliOptions, historyStore *history.Store) (bool, int) {
+func runQueryCommand(app *coreapp.App, opts cliOptions, historyStore *history.Store, projectKey string) (bool, int) {
 	if !opts.queryModules && opts.queryModule == "" && opts.queryTrace == "" && !opts.queryTrends {
 		return false, 0
 	}
 
-	svc := app.BuildQueryService(historyStore)
+	svc := app.BuildQueryService(historyStore, projectKey)
 	ctx := context.Background()
 
 	switch {
@@ -233,24 +284,55 @@ func runQueryCommand(app *coreapp.App, opts cliOptions, historyStore *history.St
 	}
 }
 
-func loadConfig(path string) (*config.Config, error) {
-	cfg, err := config.Load(path)
-	if err == nil {
-		return cfg, nil
-	}
+func loadConfig(path, cwd string) (*config.Config, error) {
 	if path != defaultConfigPath {
+		return config.Load(path)
+	}
+
+	candidates, err := discoverDefaultConfig(cwd)
+	if err != nil {
 		return nil, err
 	}
 
-	cfg, fallbackErr := config.Load("./circular.example.toml")
-	if fallbackErr != nil {
-		return nil, fallbackErr
+	var lastErr error
+	for _, candidate := range candidates {
+		cfg, loadErr := config.Load(candidate)
+		if loadErr == nil {
+			if candidate == filepath.Clean(filepath.Join(cwd, "circular.toml")) {
+				fmt.Fprintln(os.Stderr, "warning: using deprecated config path ./circular.toml; migrate to ./data/config/circular.toml")
+			}
+			return cfg, nil
+		}
+		if os.IsNotExist(loadErr) {
+			lastErr = loadErr
+			continue
+		}
+		return nil, loadErr
 	}
-	return cfg, nil
+
+	if lastErr != nil {
+		return nil, lastErr
+	}
+	return nil, fmt.Errorf("no default config file found")
+}
+
+func discoverDefaultConfig(cwd string) ([]string, error) {
+	if strings.TrimSpace(cwd) == "" {
+		return nil, fmt.Errorf("cwd must not be empty")
+	}
+	return []string{
+		filepath.Clean(filepath.Join(cwd, "data/config/circular.toml")),
+		filepath.Clean(filepath.Join(cwd, "circular.toml")),
+		filepath.Clean(filepath.Join(cwd, "data/config/circular.example.toml")),
+		filepath.Clean(filepath.Join(cwd, "circular.example.toml")),
+	}, nil
 }
 
 func applyModeOptions(opts *cliOptions, cfg *config.Config) error {
 	modeCount := 0
+	if opts.verifyGrammars {
+		modeCount++
+	}
 	if opts.trace {
 		modeCount++
 	}
@@ -261,7 +343,14 @@ func applyModeOptions(opts *cliOptions, cfg *config.Config) error {
 		modeCount++
 	}
 	if modeCount > 1 {
-		return fmt.Errorf("--trace, --impact, and --query-* modes cannot be combined")
+		return fmt.Errorf("--verify-grammars, --trace, --impact, and --query-* modes cannot be combined")
+	}
+
+	if opts.verifyGrammars {
+		if len(opts.args) > 0 {
+			return fmt.Errorf("--verify-grammars does not accept positional path arguments")
+		}
+		return nil
 	}
 
 	if opts.trace {
@@ -295,15 +384,11 @@ func applyModeOptions(opts *cliOptions, cfg *config.Config) error {
 	return nil
 }
 
-func normalizeGrammarsPath(cfg *config.Config) error {
+func normalizeGrammarsPath(cfg *config.Config, base string) error {
 	if filepath.IsAbs(cfg.GrammarsPath) {
 		return nil
 	}
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	cfg.GrammarsPath = filepath.Join(cwd, cfg.GrammarsPath)
+	cfg.GrammarsPath = filepath.Join(base, cfg.GrammarsPath)
 	return nil
 }
 
@@ -326,14 +411,6 @@ func parseSince(value string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("--since must be RFC3339 or YYYY-MM-DD, got %q", value)
 }
 
-func resolveHistoryPath() (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(cwd, ".circular", "history.db"), nil
-}
-
 func writeBytes(path string, data []byte) error {
 	dir := filepath.Dir(path)
 	if dir != "" && dir != "." {
@@ -347,6 +424,7 @@ func writeBytes(path string, data []byte) error {
 func runHistoryMode(
 	opts cliOptions,
 	app *coreapp.App,
+	activeProject config.ActiveProject,
 	metrics map[string]graph.ModuleMetrics,
 	cycles [][]string,
 	hallucinations int,
@@ -374,7 +452,7 @@ func runHistoryMode(
 
 	projectRoot, rootErr := os.Getwd()
 	if rootErr != nil {
-		projectRoot = "."
+		projectRoot = activeProject.Root
 	}
 	commitHash, commitTime := history.ResolveGitMetadata(projectRoot)
 	avgFanIn, avgFanOut, maxFanIn, maxFanOut := summarizeFanMetrics(metrics)
@@ -394,11 +472,11 @@ func runHistoryMode(
 		MaxFanIn:          maxFanIn,
 		MaxFanOut:         maxFanOut,
 	}
-	if err := store.SaveSnapshot(snapshot); err != nil {
+	if err := store.SaveSnapshot(activeProject.Key, snapshot); err != nil {
 		return nil, fmt.Errorf("save history snapshot: %w", err)
 	}
 
-	snapshots, err := store.LoadSnapshots(since)
+	snapshots, err := store.LoadSnapshots(activeProject.Key, since)
 	if err != nil {
 		return nil, fmt.Errorf("load history snapshots: %w", err)
 	}
@@ -407,7 +485,7 @@ func runHistoryMode(
 		return nil, nil
 	}
 
-	report, err := history.BuildTrendReport(snapshots, window)
+	report, err := history.BuildTrendReport(activeProject.Key, snapshots, window)
 	if err != nil {
 		return nil, fmt.Errorf("build trend report: %w", err)
 	}
@@ -469,19 +547,67 @@ func parseHistoryWindow(value string) (time.Duration, error) {
 	return d, nil
 }
 
-func openHistoryStoreIfEnabled(enabled bool) (*history.Store, error) {
+func openHistoryStoreIfEnabled(enabled bool, cfg *config.Config, paths config.ResolvedPaths) (*history.Store, error) {
 	if !enabled {
 		return nil, nil
 	}
-	historyPath, err := resolveHistoryPath()
-	if err != nil {
-		return nil, fmt.Errorf("resolve history path: %w", err)
+	if !cfg.DB.Enabled {
+		return nil, nil
 	}
-	store, err := history.Open(historyPath)
+
+	store, err := history.Open(paths.DBPath)
 	if err != nil {
 		return nil, fmt.Errorf("open history store: %w", err)
 	}
 	return store, nil
+}
+
+func resolveRuntimeProject(cfg *config.Config, paths config.ResolvedPaths, cwd string) (config.ActiveProject, error) {
+	entries := cfg.Projects.Entries
+	if len(entries) == 0 && strings.TrimSpace(cfg.Projects.RegistryFile) != "" {
+		registryPath := config.ResolveRelative(paths.ConfigDir, cfg.Projects.RegistryFile)
+		if loaded, err := config.LoadProjectRegistry(registryPath); err == nil {
+			cfg.Projects.Entries = loaded
+		} else if !os.IsNotExist(err) {
+			return config.ActiveProject{}, fmt.Errorf("load projects registry %q: %w", registryPath, err)
+		}
+	}
+	for i := range cfg.Projects.Entries {
+		cfg.Projects.Entries[i].Root = config.ResolveRelative(paths.ProjectRoot, cfg.Projects.Entries[i].Root)
+	}
+	project, err := config.ResolveActiveProject(cfg, cwd)
+	if err != nil {
+		return config.ActiveProject{}, err
+	}
+	if strings.TrimSpace(project.Root) == "" {
+		project.Root = paths.ProjectRoot
+	}
+	if strings.TrimSpace(project.Key) == "" {
+		project.Key = "default"
+	}
+	return project, nil
+}
+
+func validateModeCompatibility(opts cliOptions, cfg *config.Config) error {
+	if opts.ui && cfg.MCP.Enabled {
+		return fmt.Errorf("--ui cannot be combined with mcp.enabled=true")
+	}
+	if cfg.MCP.Enabled && strings.EqualFold(cfg.MCP.Mode, "embedded") && strings.EqualFold(cfg.MCP.Transport, "http") {
+		return fmt.Errorf("mcp.mode=embedded does not support mcp.transport=http")
+	}
+	return nil
+}
+
+func buildGrammarRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, error) {
+	overrides := make(map[string]parser.LanguageOverride, len(cfg.Languages))
+	for lang, languageCfg := range cfg.Languages {
+		overrides[lang] = parser.LanguageOverride{
+			Enabled:    languageCfg.Enabled,
+			Extensions: append([]string(nil), languageCfg.Extensions...),
+			Filenames:  append([]string(nil), languageCfg.Filenames...),
+		}
+	}
+	return parser.BuildLanguageRegistry(overrides)
 }
 
 func parseQueryTrace(raw string) (string, string, error) {

@@ -1,0 +1,40 @@
+personality = "pragmatic"
+sandbox_mode = "danger-full-access"
+approval_policy = "never"
+
+# Default profile: balanced quality with controlled token spend.
+model = "gpt-5.2-codex"
+model_reasoning_effort = "medium"
+model_verbosity = "low"
+
+[features]
+steer = true
+use_linux_sandbox_bwrap = false
+collab = true
+
+# Fastest/cheapest for quick edits, shell work, and simple Q&A.
+[profiles.quick]
+model = "gpt-5-codex-mini"
+model_reasoning_effort = "low"
+model_verbosity = "low"
+
+# Day-to-day coding, refactors, and feature work.
+[profiles.build]
+model = "gpt-5.2-codex"
+model_reasoning_effort = "medium"
+model_verbosity = "low"
+
+# Bug hunts and code reviews: more reasoning, concise output.
+[profiles.review]
+model = "gpt-5.2-codex"
+model_reasoning_effort = "high"
+model_verbosity = "low"
+
+# Complex architecture/planning work without using max-tier models.
+[profiles.deep]
+model = "gpt-5.3-codex"
+model_reasoning_effort = "high"
+model_verbosity = "low"
+
+[tui]
+status_line = ["model-name", "project-root", "git-branch", "context-remaining", "context-used", "five-hour-limit", "weekly-limit"]

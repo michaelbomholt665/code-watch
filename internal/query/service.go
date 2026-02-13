@@ -11,18 +11,20 @@ import (
 )
 
 type snapshotReader interface {
-	LoadSnapshots(since time.Time) ([]history.Snapshot, error)
+	LoadSnapshots(projectKey string, since time.Time) ([]history.Snapshot, error)
 }
 
 type Service struct {
-	graph   *graph.Graph
-	history snapshotReader
+	graph      *graph.Graph
+	history    snapshotReader
+	projectKey string
 }
 
-func NewService(g *graph.Graph, h snapshotReader) *Service {
+func NewService(g *graph.Graph, h snapshotReader, projectKey string) *Service {
 	return &Service{
-		graph:   g,
-		history: h,
+		graph:      g,
+		history:    h,
+		projectKey: projectKey,
 	}
 }
 
@@ -166,7 +168,7 @@ func (s *Service) TrendSlice(ctx context.Context, since time.Time, limit int) (T
 		return TrendSlice{}, fmt.Errorf("history store unavailable")
 	}
 
-	snapshots, err := s.history.LoadSnapshots(since)
+	snapshots, err := s.history.LoadSnapshots(s.projectKey, since)
 	if err != nil {
 		return TrendSlice{}, err
 	}
