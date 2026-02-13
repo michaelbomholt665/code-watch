@@ -47,7 +47,7 @@ func (m *MermaidGenerator) SetComplexityHotspots(hotspots []graph.ComplexityHots
 
 func (m *MermaidGenerator) Generate(cycles [][]string, violations []graph.ArchitectureViolation, model graph.ArchitectureModel) (string, error) {
 	var b strings.Builder
-	b.WriteString("%%{init: {'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%\n")
+	b.WriteString("%%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%\n")
 	b.WriteString("flowchart LR\n")
 
 	modules := m.graph.Modules()
@@ -114,13 +114,13 @@ func (m *MermaidGenerator) Generate(cycles [][]string, violations []graph.Archit
 
 	b.WriteString("\n")
 	if len(moduleNames) > 0 {
-		b.WriteString("  classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px;\n")
+		b.WriteString("  classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;\n")
 		b.WriteString("  class ")
 		b.WriteString(strings.Join(toIDs(moduleNames, ids), ","))
 		b.WriteString(" internalNode;\n")
 	}
 	if len(externalNames) > 0 {
-		b.WriteString("  classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3;\n")
+		b.WriteString("  classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3,color:#000000;\n")
 		if aggregateExternal {
 			b.WriteString(fmt.Sprintf("  class %s externalNode;\n", ids[externalAggregateNodeID]))
 		} else {
@@ -132,7 +132,7 @@ func (m *MermaidGenerator) Generate(cycles [][]string, violations []graph.Archit
 	if len(cycleModules) > 0 {
 		cycleNames := intersectOrdered(moduleNames, cycleModules)
 		if len(cycleNames) > 0 {
-			b.WriteString("  classDef cycleNode fill:#ffecec,stroke:#cc0000,stroke-width:2px;\n")
+			b.WriteString("  classDef cycleNode fill:#ffecec,stroke:#cc0000,stroke-width:2px,color:#000000;\n")
 			b.WriteString("  class ")
 			b.WriteString(strings.Join(toIDs(cycleNames, ids), ","))
 			b.WriteString(" cycleNode;\n")
@@ -147,7 +147,7 @@ func (m *MermaidGenerator) Generate(cycles [][]string, violations []graph.Archit
 		}
 		sort.Strings(hotspotNames)
 		if len(hotspotNames) > 0 {
-			b.WriteString("  classDef hotspotNode stroke:#8a4f00,stroke-width:2px;\n")
+			b.WriteString("  classDef hotspotNode stroke:#8a4f00,stroke-width:2px,color:#000000;\n")
 			b.WriteString("  class ")
 			b.WriteString(strings.Join(toIDs(hotspotNames, ids), ","))
 			b.WriteString(" hotspotNode;\n")
@@ -208,7 +208,7 @@ func (m *MermaidGenerator) Generate(cycles [][]string, violations []graph.Archit
 	b.WriteString("    legend_metrics[\"Node line 1: module\\nline 2: funcs/files\\n(d=depth in=fan-in out=fan-out)\\n(cx=complexity hotspot score)\"]\n")
 	b.WriteString("    legend_edges[\"Edge labels: CYCLE=import cycle, VIOLATION=architecture rule violation, ext:N=external dependency count\"]\n")
 	b.WriteString("  end\n")
-	b.WriteString("  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px;\n")
+	b.WriteString("  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px,color:#000000;\n")
 	b.WriteString("  class legend_metrics,legend_edges legendNode;\n")
 
 	return b.String(), nil

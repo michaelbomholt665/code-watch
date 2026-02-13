@@ -1,4 +1,4 @@
-%%{init: {'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
 flowchart LR
   circular_cmd_circular["circular/cmd/circular\n(0 funcs, 1 files)\n(d=6 in=0 out=1)"]
   circular_internal_app["circular/internal/app\n(34 funcs, 3 files)\n(d=4 in=1 out=8)"]
@@ -13,11 +13,11 @@ flowchart LR
   circular_internal_watcher["circular/internal/watcher\n(7 funcs, 2 files)\n(d=0 in=1 out=0)"]
   __external_aggregate__["External/Stdlib\n(31 modules)"]
 
-  classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px;
+  classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
   class circular_cmd_circular,circular_internal_app,circular_internal_cliapp,circular_internal_config,circular_internal_graph,circular_internal_history,circular_internal_output,circular_internal_parser,circular_internal_query,circular_internal_resolver,circular_internal_watcher internalNode;
-  classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3;
+  classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3,color:#000000;
   class __external_aggregate__ externalNode;
-  classDef hotspotNode stroke:#8a4f00,stroke-width:2px;
+  classDef hotspotNode stroke:#8a4f00,stroke-width:2px,color:#000000;
   class circular_internal_config,circular_internal_output,circular_internal_parser hotspotNode;
 
   circular_cmd_circular --> circular_internal_cliapp
@@ -65,5 +65,5 @@ flowchart LR
     legend_metrics["Node line 1: module\nline 2: funcs/files\n(d=depth in=fan-in out=fan-out)\n(cx=complexity hotspot score)"]
     legend_edges["Edge labels: CYCLE=import cycle, VIOLATION=architecture rule violation, ext:N=external dependency count"]
   end
-  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px;
+  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px,color:#000000;
   class legend_metrics,legend_edges legendNode;
