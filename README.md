@@ -13,6 +13,10 @@ It scans source files, builds a module import graph, then reports:
 
 It can run once (`--once`) or watch continuously with optional terminal UI mode (`--ui`).
 
+## Disclaimer
+
+This codebase is 100% AI-generated. Use it at your own risk and responsibility.
+
 ## Features
 
 - Parses `.go` and `.py` files by default, with registry-based opt-in support for `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`
