@@ -1,67 +1,85 @@
 # Architecture
 
-## High-Level Pipeline
+## Runtime Pipeline
 
-1. Load config (`internal/config`).
-2. Initialize parser + extractors (`internal/parser`).
-3. Recursively scan source files (`.go`, `.py`).
-4. Parse each file into a normalized `parser.File` model.
-5. Add file into dependency graph (`internal/graph`).
-6. Detect cycles (`graph.DetectCycles`).
-7. Compute dependency metrics + complexity hotspots (`graph.ComputeModuleMetrics`, `graph.TopComplexity`).
-8. Validate architecture layer rules when enabled (`graph.LayerRuleEngine.Validate`).
-9. Resolve unresolved references (`internal/resolver`).
-10. Generate DOT/TSV outputs (`internal/output`).
-11. In watch mode, repeat incrementally on changed files (`internal/watcher`).
+`cmd/circular/main.go` is a thin entrypoint that calls `internal/cliapp.Run`.
 
-Audit note:
-- this pipeline has been AI-audited for concurrency/performance/security issue classes; see `docs/documentation/ai-audit.md`
+`internal/cliapp.Run` pipeline:
+1. parse flags/options
+2. optionally print version and exit
+3. configure logging
+4. load config (with default-path fallback)
+5. apply mode constraints (`--trace`/`--impact` conflict and arg checks)
+6. normalize `grammars_path`
+7. build `internal/app.App`
+8. run `InitialScan`
+9. optionally run single-command mode (`--trace` or `--impact`) and exit
+10. run analyses, generate outputs, and print summary
+11. if watch mode: start watcher and process updates (with optional UI)
 
-## Main Components
+## Core App Responsibilities
 
-- `App` (`cmd/circular/app.go`)
-- orchestration for scan, parse, graph update, analysis, output generation, and watch callbacks
-- `Watcher` (`internal/watcher`)
-- fsnotify wrapper with debounce and glob-based filtering
-- `Graph` (`internal/graph`)
-- central module/file/import/definition state
-- architecture validation, impact traversal, and complexity hotspot ranking
-- `Resolver` (`internal/resolver`)
-- unresolved reference analysis over collected refs and symbol tables
-- output generators (`internal/output`)
-- render graph state as DOT and TSV
+`internal/app.App` owns orchestration between parser, graph, resolver, output, and watcher.
 
-## Data Model
+Main responsibilities:
+- scan directories and parse supported source files
+- map files to module names (Go and Python)
+- mutate graph on initial and incremental updates
+- run analyses:
+- cycle detection
+- unresolved references
+- unused imports
+- module metrics
+- complexity hotspots
+- architecture rule violations
+- impact analysis
+- emit DOT/TSV outputs
+- publish update payloads for UI mode
 
-`parser.File` contains:
-- metadata: `Path`, `Language`, `Module`, `PackageName`, `ParsedAt`
-- imports: normalized `Import` entries
-- definitions: symbols declared in file
-- references: callable/symbol uses seen in AST
-- local symbols: vars/params/loop vars used to suppress false unresolved findings
+## Data Flow
 
-`graph.Graph` stores:
-- files by path
-- modules by name
-- import edges (`from -> to`)
-- reverse import index (`importedBy`)
-- definitions by module for symbol resolution
+1. `ScanDirectories` discovers `.go` and `.py` files (respecting excludes).
+2. `ProcessFile` parses AST and normalizes a `parser.File`.
+3. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
+4. Analyses run against graph snapshots.
+5. Output generators serialize graph + findings.
+6. In watch mode, changed paths trigger `HandleChanges`, which reprocesses affected files and importer chains.
 
-## Language Handling
+## Module Naming
 
-- parser detects language by extension:
-- `.go` -> Go extractor
-- `.py` -> Python extractor
-- Go module name resolution uses nearest `go.mod` and relative package directory.
-- Python module name resolution trims non-package prefixes (no `__init__.py`) and maps path to dotted module.
+- Go files:
+- nearest `go.mod` is discovered
+- module path is derived from `module` directive + relative package directory
+- lookup results are cached in app state for incremental updates
+- Python files:
+- module path derived from path relative to selected watch root
+- leading directories without `__init__.py` are trimmed
+- `__init__.py` maps to containing package module
 
-## Watch Loop
+## Watch/Incremental Behavior
 
-- watch paths are recursively registered at startup, and newly created directories are added when create events are seen
-- events (`write`, `create`, `remove`) are debounced and batched
-- each changed path is reprocessed (or removed from graph if deleted)
-- unresolved-reference analysis is recomputed incrementally for affected paths/importer chains
-- architecture validations and complexity hotspots are recomputed per batch
-- callbacks are serialized to avoid overlapping update pipelines
-- fresh outputs are generated after each batch
-- optional UI receives update messages (`updateMsg`) with cycle/unresolved counts
+Watcher (`internal/watcher`) behavior:
+- recursive directory watch registration
+- dynamic registration of newly created directories
+- event filtering with directory/file globs
+- default ignore for `_test.go` and `_test.py`
+- debounced path batching
+- serialized callback execution
+
+Update behavior (`internal/app.HandleChanges`):
+- invalidates transitive importer chain for changed files
+- removes deleted files from graph and incremental caches
+- reprocesses changed files
+- recomputes analysis outputs for affected set
+- emits UI update payload + optional beep
+
+## Boundaries
+
+- `cmd/circular`: process entrypoint only
+- `internal/cliapp`: flags, mode decisions, logging, UI runtime wiring
+- `internal/app`: orchestration and workflow state
+- `internal/parser`: AST extraction to normalized file model
+- `internal/graph`: dependency state + graph algorithms
+- `internal/resolver`: unresolved/unused heuristics
+- `internal/watcher`: fsnotify + debounce
+- `internal/output`: DOT/TSV rendering

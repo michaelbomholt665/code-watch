@@ -1,43 +1,40 @@
 # Limitations and Known Constraints
 
-## Parsing and Language Support
+## Parsing and Language Coverage
 
 - only `.go` and `.py` files are parsed
 - language detection is extension-based only
-- grammar loader uses embedded tree-sitter bindings; `grammars_path` is validated as a directory but is not used to dynamically load grammars from disk
-
-## Watch Behavior
-
-- watcher recursively registers directories at startup
-- directories created later are registered when create events are observed
-- watch callback receives changed paths; app reprocesses those paths directly
-- event handling remains filesystem-event driven and may still vary by platform/fsnotify backend characteristics
+- parser uses bundled Tree-sitter Go/Python grammars, not dynamic grammar loading
 
 ## Resolver Heuristics
 
-- unresolved-reference logic is heuristic, not full type/scope analysis
-- method/field chains are treated by name prefix logic
-- cross-package and alias resolution is best effort
-- `exclude.symbols` can suppress false positives but may hide real misses if over-broad
-- watch-mode unresolved analysis is incremental for affected paths; conservative impact expansion may still over-include files
+- unresolved-reference detection is heuristic and not compiler/type-checker accurate
+- imported symbol resolution is best-effort for aliases, module prefixes, and `from ... import ...`
+- `exclude.symbols` can hide false positives and true positives
+- stdlib/builtin lists are static snapshots
 
 ## Graph Granularity
 
-- dependency graph is module-level (not per-symbol)
-- cycle detection runs across module import edges only
-- unresolved reference checks rely on extracted definitions/references, not full compiler semantic analysis
+- dependency graph is module-level, not symbol-level edges
+- cycle detection and import-chain tracing operate on module graph only
+- unused import detection is reference-name based, not full semantic usage analysis
 
-## UI and Logging
+## Watch Semantics
 
-- in `--ui` mode logs are redirected to a user state path (`$XDG_STATE_HOME` or `~/.local/state/circular/circular.log`) when available
-- symlink log paths are refused, but fallback-to-stdout behavior can still occur if no log path is writable
+- behavior depends on fsnotify event delivery semantics per platform/filesystem
+- update batches are debounced and serialized, so high-frequency churn can delay analysis visibility
+- test files (`*_test.go`, `*_test.py`) are ignored by watcher event processing
 
-## Configuration Fallbacks
+## Output Ordering
 
-- missing `./circular.toml` triggers fallback to `./circular.example.toml`
-- other missing config paths fail immediately
+- DOT node/edge order and TSV row order are not guaranteed stable across runs because map iteration order is not deterministic
 
-## Audit Status
+## Configuration Constraints
 
-- performance/security issue classes in this codebase were AI-audited; see `docs/documentation/ai-audit.md`
-- detailed evidence and severity ranking are in `docs/reviews/performance-security-review-2026-02-12.md`
+- only default config path (`./circular.toml`) has fallback to `./circular.example.toml`
+- strict architecture isolation via empty `allow=[]` is not supported; at least one allowed layer is required
+
+## UI/Logging
+
+- in `--ui` mode, logging is redirected to a user state file when possible
+- if file logging cannot be established, logging can fall back to stdout, which may affect terminal presentation

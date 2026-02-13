@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Config is loaded from TOML by `internal/config`.
+Config is decoded from TOML in `internal/config`.
 
 ## Full Schema
 
@@ -42,68 +42,63 @@ from = "api"
 allow = ["core"]
 ```
 
-## Field Details
+## Field Semantics
 
 - `grammars_path` (`string`)
-- path configured for grammar assets
-- parser uses compiled Go bindings for grammars; this path is validated as a directory when provided, but grammars are not dynamically loaded from it
+- parser grammars are compiled into the binary
+- this path is still accepted by config and normalized to absolute path at runtime
+- startup fails only if the path exists and is not a directory
 - `watch_paths` (`[]string`)
-- root directories to recursively scan and watch
-- defaults to `['.']` when omitted
+- root directories scanned recursively and watched in watch mode
+- defaults to `["."]` when empty or omitted
 - `exclude.dirs` (`[]string`)
-- glob patterns (matched against directory base name) skipped during scan and watch registration
+- glob patterns matched against directory base name
+- applied during initial scan and recursive watcher registration
+- invalid glob patterns fail startup
 - `exclude.files` (`[]string`)
-- glob patterns (matched against file base name) skipped during scan and watch events
-- invalid exclude glob patterns fail startup/scan initialization
+- glob patterns matched against file base name
+- applied during scan and watch events
+- invalid glob patterns fail startup
 - `exclude.symbols` (`[]string`)
-- reference prefixes ignored by unresolved-symbol resolver
-- useful for local context aliases (for example `ctx`, `self`, logger vars)
+- prefix-style exclusions for unresolved-reference checks
 - `watch.debounce` (`duration`)
-- debounce window for grouped file change handling
-- defaults to `500ms`
+- debounce window for batching fsnotify events
+- defaults to `500ms` when unset
 - `output.dot` (`string`)
-- path for Graphviz DOT output
-- empty string disables DOT emission
+- DOT output file path; empty disables DOT generation
 - `output.tsv` (`string`)
-- path for TSV edge list output
-- empty string disables TSV emission
-- when unused imports are detected, the file appends a second TSV block with `Type=unused_import` rows
+- TSV output file path; empty disables TSV generation
 - `alerts.beep` (`bool`)
-- emits terminal bell when cycles, unresolved references, or unused imports are present in update
+- emits terminal bell on updates containing issues (cycles, unresolved, unused imports, architecture violations)
 - `alerts.terminal` (`bool`)
-- enables/disables printed summary output
+- enables summary printing to terminal
 - `architecture.enabled` (`bool`)
-- enables architecture layer-rule validation (default disabled)
+- enables layer-rule validation
 - `architecture.top_complexity` (`int`)
-- number of hotspots printed/exported by complexity ranking (default `5` when unset or `<=0`)
+- number of hotspots used in output/summary
+- coerced to `5` when unset or `<= 0`
 - `architecture.layers` (`[]table`)
-- declared named layers and the path/module patterns assigned to each layer
-- each entry requires:
-- `name` (`string`): unique layer name
-- `paths` (`[]string`): one or more literal prefixes or glob patterns
+- layer name + one or more path patterns
 - `architecture.rules` (`[]table`)
-- dependency policy per source layer
-- each entry requires:
-- `name` (`string`): unique rule name
-- `from` (`string`): source layer name
-- `allow` (`[]string`): allowed target layers for imports originating from `from`
+- exactly one rule per `from` layer
+- `allow` must contain at least one target layer
 
 ## Defaults and Fallbacks
 
-- missing config path causes startup failure, except default path behavior:
-- if `./circular.toml` is missing, app attempts `./circular.example.toml`
-- if `watch_paths` is empty, it becomes `['.']`
-- if `watch.debounce` is zero, it becomes `500ms`
-- if `architecture.top_complexity` is zero/unset, it becomes `5`
+- missing `./circular.toml` triggers fallback load attempt of `./circular.example.toml`
+- custom `--config` paths do not fallback
+- empty `watch_paths` becomes `["."]`
+- zero `watch.debounce` becomes `500ms`
+- `architecture.top_complexity <= 0` becomes `5`
 
-## Architecture Validation Rules
+## Architecture Validation
 
-When `architecture.enabled=true`, config loading fails fast if:
+When `architecture.enabled=true`, config loading fails if:
 - no layers are defined
-- a layer name is duplicated
-- a layer path pattern is duplicated across layers
-- literal layer paths overlap (for example `internal` and `internal/api`)
-- a rule name is duplicated
-- a source layer has multiple rules
-- a rule references unknown layers
+- layer names are duplicated
+- layer path patterns are duplicated across layers
+- layer path patterns overlap (literal/literal, wildcard/literal, or wildcard/wildcard overlap checks)
+- rule names are duplicated
+- multiple rules are defined for one `from` layer
+- rules reference unknown layers
 - a rule has an empty `allow` list

@@ -2,119 +2,88 @@
 
 ## `cmd/circular`
 
-### `main.go`
+- `main.go` only calls `cliapp.Run(os.Args[1:])`
 
-- defines CLI flags and app version
-- initializes logger
-- loads config with fallback behavior
-- runs initial scan + analysis + output
-- starts watcher and optional TUI
+## `internal/cliapp`
 
-### `app.go`
+- parses CLI flags/options (`cli.go`)
+- applies mode constraints and config fallback (`runtime.go`)
+- configures slog targets/levels (`runtime.go`)
+- runs Bubble Tea UI loop and update plumbing (`run_ui.go`, `ui.go`)
 
-Core methods:
-- `NewApp(cfg)`
-- builds grammar loader, parser, and empty graph
-- registers Go/Python extractors
-- `InitialScan()`
-- scans configured roots
-- expands scan roots to Go module root when `go.mod` is discoverable
-- parses each eligible file and updates graph
-- `ScanDirectories(paths, excludeDirs, excludeFiles)`
-- recursive discovery for `.go` and `.py`
-- glob-filtered excludes
-- `ProcessFile(path)`
-- parses one file and computes module name (Go/Python resolver)
-- uses cached Go module-root/module-path lookups to avoid repeated `go.mod` traversal per file
-- `HandleChanges(paths)`
-- incremental update path for watcher callbacks
-- detects cycles + incremental unresolved references for affected files/importers
-- runs architecture rule validation and complexity hotspot ranking
-- writes outputs and prints summary/UI updates
-- `GenerateOutputs(cycles, unusedImports, metrics, violations, hotspots)`
-- writes DOT and TSV when configured, including additive unused-import and architecture-violation blocks
-- `AnalyzeImpact(path)`
-- computes direct/transitive importer impact for a file or module
-- `RunUI()`
-- starts Bubble Tea list view and pushes initial state
-- `StartWatcher()`
-- creates and starts recursive fsnotify watcher
+## `internal/app`
 
-### `ui.go`
-
-- Bubble Tea model showing:
-- cycle findings
-- unresolved reference findings
-- file/module counts and last update time
-- supports filterable list and quit keys (`q`, `ctrl+c`)
+- central orchestrator over parser/graph/resolver/output/watcher
+- builds parser and registers Go/Python extractors
+- performs initial scan and incremental change handling
+- maintains incremental caches for unresolved refs and unused imports
+- computes metrics/hotspots/architecture violations
+- supports trace and impact commands
+- writes DOT/TSV outputs
 
 ## `internal/config`
 
-- TOML-backed config structs
-- `Load(path)` decodes config and applies defaults:
-- `watch.debounce = 500ms` if unset
-- `watch_paths = ['.']` if empty
-- `architecture.top_complexity = 5` if unset/invalid
-- validates optional architecture layer/rule schema when enabled
+- TOML decode into config structs
+- applies defaults:
+- `watch_paths=["."]` when empty
+- `watch.debounce=500ms` when zero
+- `architecture.top_complexity=5` when `<=0`
+- validates architecture layer/rule schema when enabled
 
 ## `internal/parser`
 
-- `GrammarLoader`: loads Go and Python tree-sitter languages
-- validates configured `grammars_path` as a directory when provided
-- `Parser`: dispatches to extractor by extension
-- `PythonExtractor`:
-- imports (`import`, `from ... import ...`)
-- class/function defs
-- assignments, loops, calls, local symbol collection
-- per-function complexity metrics (branches, params, nesting, LOC, score)
-- `GoExtractor`:
-- package clause, imports, funcs/methods, type/interface defs
-- var/const/short decls, params, range variables, call refs
-- per-function/method complexity metrics (branches, params, nesting, LOC, score)
+- `GrammarLoader` creates Tree-sitter Go/Python languages
+- `Parser` routes by file extension (`.go`, `.py`)
+- Go extractor collects:
+- package/imports
+- definitions (functions, methods, types, interfaces)
+- local symbols and call references
+- complexity metrics per callable
+- Python extractor collects:
+- imports/from-imports
+- definitions (functions, classes)
+- local symbols and call references
+- complexity metrics per callable
 
 ## `internal/graph`
 
-- mutable concurrent graph with RW mutex
-- tracks files, modules, definitions, import edges, reverse import edges
-- supports add/remove file updates and cycle detection
-- `AddFile` replacement removes prior contributions for the same file path to avoid stale edges/definitions
-- public accessors return snapshots/copies rather than exposing internal mutable maps
-- `InvalidateTransitive(changedFile)` returns importer-chain affected files
-- `LayerRuleEngine.Validate(graph)` returns architecture violations with source/target layers
-- `AnalyzeImpact(pathOrModule)` returns direct + transitive import impact and exported symbols
-- `TopComplexity(n)` returns ranked hotspots from parser complexity metrics
+- stores files/modules/import edges/reverse edges/definitions
+- `AddFile` replacement semantics remove old file contributions first
+- exposes defensive-copy getters for graph snapshots
+- algorithms:
+- cycle detection
+- shortest import chain
+- transitive invalidation for incremental updates
+- module metrics (depth, fan-in, fan-out)
+- complexity hotspot ranking
+- architecture rule validation
+- impact analysis (direct + transitive importers)
 
 ## `internal/resolver`
 
-- unresolved reference finder over graph files
-- resolution strategy:
+- unresolved-reference detection with heuristics:
 - local symbols
 - same-module definitions
-- imported module symbols (alias/from-import/module prefix forms)
-- stdlib names (embedded lists)
+- imported-module symbols/aliases/items
+- merged stdlib names (Go + Python)
 - language builtins
-- exclusion prefixes (`exclude.symbols`)
-- includes:
-- `GoResolver` for module path mapping via `go.mod`
-- `PythonResolver` for dotted module mapping and relative import resolution helpers
-- supports path-scoped unresolved analysis for incremental watch updates
+- user exclusion prefixes
+- path-scoped unresolved analysis for incremental updates
+- unused-import detection with confidence levels
 
 ## `internal/watcher`
 
-- fsnotify wrapper with:
+- wraps fsnotify with:
 - recursive watch registration
-- registration of newly created directories during watch runtime
-- directory/file glob exclusions
-- default exclusion of `_test.go` and `_test.py`
-- debounce buffering before callback
-- serialized callback execution to avoid overlapping update handlers
+- create-time directory expansion
+- glob-based filtering
+- debounce batching
+- serialized callback execution
 
 ## `internal/output`
 
-- `DOTGenerator`:
-- emits styled graph with internal/external module separation
-- highlights cycle nodes/edges
-- can annotate labels with module complexity hotspot score (`cx=...`)
-- `TSVGenerator`:
-- emits tabular edge list with source location
-- emits additive unused-import and architecture-violation row blocks
+- `DOTGenerator` emits enriched module graph (cycle/metrics/hotspot annotations)
+- `TSVGenerator` emits:
+- dependency edges
+- optional unused-import section
+- optional architecture-violation section

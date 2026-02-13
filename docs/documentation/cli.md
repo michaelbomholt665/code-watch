@@ -1,6 +1,6 @@
 # CLI Reference
 
-Entrypoint: `cmd/circular/main.go`
+Entrypoint: `cmd/circular/main.go` delegates to `internal/cliapp.Run(...)`.
 
 ## Usage
 
@@ -12,61 +12,51 @@ circular [flags] [path]
 
 - `--config string`
 - default: `./circular.toml`
-- if missing and path is default, app falls back to `./circular.example.toml`
+- if default config load fails, runtime retries with `./circular.example.toml`
 - `--once`
 - run initial scan and exit
 - `--ui`
-- start Bubble Tea UI mode
-- logs are redirected to user state log path to avoid TUI corruption
+- run watch mode with Bubble Tea UI
+- redirects logs to a state log file to avoid corrupting UI rendering
 - `--trace`
-- trace shortest dependency chain: `circular --trace <from-module> <to-module>`
-- requires exactly two module arguments and exits after printing the chain
-- `--impact`
-- analyze blast radius for one target: `circular --impact <file-path-or-module>`
-- prints direct importers, transitive impact, and externally used symbols, then exits
+- usage: `circular --trace <from-module> <to-module>`
+- requires exactly two positional module arguments
+- cannot be combined with `--impact`
+- `--impact string`
+- usage: `circular --impact <file-path-or-module>`
+- prints direct importers, transitive importers, and externally used exported symbols
 - cannot be combined with `--trace`
 - `--verbose`
-- sets logger level to debug
+- sets slog level to debug
 - `--version`
 - prints `circular v1.0.0`
 
-## Positional Argument
+## Positional Arguments
 
-If a positional path is provided, it overrides config `watch_paths` with that single path.
+- in normal/watch/once mode, first positional argument overrides `watch_paths` with one path
+- in trace mode, positional args are consumed as `<from> <to>`
 
-Example:
+## Execution Order
 
-```bash
-circular --once ./internal
-```
+For all modes except `--version`, runtime performs:
+1. parse flags
+2. load config
+3. normalize `grammars_path` to absolute path when relative
+4. initialize app
+5. run initial scan
 
-Trace example:
-
-```bash
-circular --trace github.com/acme/project/cmd/app github.com/acme/project/internal/store
-```
-
-Impact example:
-
-```bash
-circular --impact ./internal/graph/graph.go
-```
-
-## Runtime Modes
-
-- one-shot mode:
-- parse -> build graph -> detect cycles/unresolved/unused-imports -> write outputs -> print summary -> exit
-- trace mode (`--trace`):
-- parse -> build graph -> print import chain (or not-found error) -> exit
-- impact mode (`--impact`):
-- parse -> build graph -> print direct and transitive import impact for one target -> exit
-- watch mode (default):
-- same initial pass, then watches configured paths for changes and incrementally reprocesses changed files
-- UI mode (`--ui`):
-- same watch behavior, but summary appears in interactive terminal view
+Then mode-specific behavior:
+- trace mode: run shortest-chain query and exit
+- impact mode: run impact analysis and exit
+- once mode: run analyses/output generation and exit
+- default watch mode: start watcher and process incremental updates forever
+- UI mode: same watch pipeline, plus interactive issue view
 
 ## Logging
 
-- default logs: stdout
-- with `--ui`: logs write to `$XDG_STATE_HOME/circular/circular.log` when available, else `~/.local/state/circular/circular.log`
-- if no writable log location is available, logging may fall back to stdout
+- default output: stdout
+- with `--ui`:
+- `$XDG_STATE_HOME/circular/circular.log` when `XDG_STATE_HOME` is set
+- otherwise `~/.local/state/circular/circular.log`
+- symlink log paths are refused
+- if log-file setup fails, runtime warns to stderr and can fall back to stdout logging

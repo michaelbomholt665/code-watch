@@ -1,22 +1,24 @@
 # Output Reference
 
-This document defines the generated output formats for `circular`.
+`circular` can emit DOT and TSV outputs via `internal/output`.
 
 ## `dependencies.tsv`
 
-Base dependency rows:
-
-Header:
+Base dependency block header:
 
 ```text
 From\tTo\tFile\tLine\tColumn
 ```
 
-Each row represents one import edge from module `From` to module `To`.
+Each row is one import edge:
+- `From`: source module
+- `To`: imported module
+- `File`: source file that contributed the edge
+- `Line`, `Column`: import location
 
-## Unused Import Rows (`type=unused_import`)
+## Appended Unused-Import Block
 
-When unused import findings are present, they are appended after a blank line.
+Appended only when findings exist, separated by a blank line.
 
 Header:
 
@@ -24,19 +26,19 @@ Header:
 Type\tFile\tLanguage\tModule\tAlias\tItem\tLine\tColumn\tConfidence
 ```
 
-Row format:
+Row prefix is always:
 
 ```text
-unused_import\t<file>\t<language>\t<module>\t<alias>\t<item>\t<line>\t<column>\t<confidence>
+unused_import
 ```
 
-Notes:
-- `Confidence` is currently `high` (named imports) or `medium` (module-level usage heuristics).
-- `Item` is populated for item imports (for example Python `from x import y`).
+`Confidence` values currently emitted:
+- `high` for item imports (`from x import y`)
+- `medium` for module-level alias/name heuristics
 
-## Architecture Violation Rows (`type=architecture_violation`)
+## Appended Architecture-Violation Block
 
-When architecture rule violations are present, they are appended after a blank line.
+Appended only when findings exist, separated by a blank line.
 
 Header:
 
@@ -44,31 +46,34 @@ Header:
 Type\tRule\tFromModule\tFromLayer\tToModule\tToLayer\tFile\tLine\tColumn
 ```
 
-Row format:
+Row prefix is always:
 
 ```text
-architecture_violation\t<rule>\t<from-module>\t<from-layer>\t<to-module>\t<to-layer>\t<file>\t<line>\t<column>
+architecture_violation
 ```
 
 ## `graph.dot`
 
-The DOT output remains backward compatible and now supports additive module metrics in node labels.
+DOT graph properties:
+- left-to-right layout (`rankdir=LR`)
+- internal modules grouped in `cluster_internal`
+- external/stdlib modules rendered separately
+- internal internal edges: green
+- edges to external modules: dashed gray
+- cycle edges: red with `label="CYCLE"`
 
-When metric data is provided, internal module labels include:
+Node labels include:
+- module name
+- function/export count and file count
+- optional metrics annotation: `(d=<depth> in=<fan-in> out=<fan-out>)`
+- optional complexity annotation: `(cx=<module-max-hotspot-score>)`
 
-```text
-(d=<depth> in=<fan-in> out=<fan-out>)
-```
-
-When complexity hotspots are provided, module labels also include:
-
-```text
-(cx=<max-hotspot-score-for-module>)
-```
-
-Depth color hints:
+Depth hint colors:
 - depth `0`: `honeydew`
 - depth `1`: `lemonchiffon`
 - depth `2+`: `mistyrose`
 
-Cycle edges continue to be highlighted in red with `label="CYCLE"`.
+## Ordering and Stability
+
+- output schemas are additive and backward-compatible
+- row and edge ordering is not guaranteed stable because graph data is iterated from maps

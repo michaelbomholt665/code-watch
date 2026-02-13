@@ -31,6 +31,14 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 - Live filesystem watch mode with debounce
 - Optional Bubble Tea terminal UI for live issue monitoring
 
+## Runtime Modes
+
+- default (watch mode): run initial scan, print summary, write outputs, then watch for changes
+- `--once`: run initial scan + analysis once, then exit
+- `--trace <from-module> <to-module>`: print shortest internal import chain, then exit
+- `--impact <file-or-module>`: print direct/transitive importer impact, then exit
+- `--ui`: run watch mode with Bubble Tea UI
+
 ## Install / Build
 
 Requirements:
@@ -94,6 +102,7 @@ go run ./cmd/circular --ui
 
 Flags:
 - `--config` path to TOML config (default `./circular.toml`)
+- if default config is missing, it falls back to `./circular.example.toml`
 - `--once` run one scan and exit
 - `--ui` start terminal UI mode
 - `--trace` print shortest import chain from one module to another, then exit
@@ -103,8 +112,9 @@ Flags:
 
 Positional arg:
 - first positional argument overrides `watch_paths` with a single path
+- in trace mode, exactly two positional arguments are required (`<from> <to>`)
 
-Version in source: `1.0.0` (`cmd/circular/main.go`).
+Version in source: `1.0.0` (`internal/cliapp/cli.go`).
 
 ## Configuration
 
@@ -164,6 +174,7 @@ allow = ["core"]
   - `Type`, `File`, `Language`, `Module`, `Alias`, `Item`, `Line`, `Column`, `Confidence`
 - TSV architecture violation rows appended when findings exist:
   - `Type`, `Rule`, `FromModule`, `FromLayer`, `ToModule`, `ToLayer`, `File`, `Line`, `Column`
+- row ordering in DOT/TSV is map-iteration based and not guaranteed stable
 - DOT module labels may include metrics:
   - `d=<depth> in=<fan-in> out=<fan-out>`
   - `cx=<top-complexity-score-in-module>`
