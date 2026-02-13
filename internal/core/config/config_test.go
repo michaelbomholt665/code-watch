@@ -382,6 +382,44 @@ root = "./other"
 	}
 }
 
+func TestLoad_ProjectNamespaceValidation(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[projects]
+active = ""
+
+[[projects.entries]]
+name = "alpha"
+root = "."
+db_namespace = "shared"
+
+[[projects.entries]]
+name = "beta"
+root = "./other"
+db_namespace = "shared"
+`
+	tmpfile, err := os.CreateTemp("", "config-projects-namespace*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Load(tmpfile.Name())
+	if err == nil {
+		t.Fatal("expected duplicate namespace error")
+	}
+	if !strings.Contains(err.Error(), "duplicate project db_namespace") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestLoad_MCPValidation(t *testing.T) {
 	content := `
 grammars_path = "./grammars"
@@ -410,6 +448,120 @@ address = "127.0.0.1:8765"
 	}
 	if !strings.Contains(err.Error(), "mcp transport http is only valid with mcp.mode=server") {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLoad_MCPPOCDefaults(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[mcp]
+enabled = true
+operation_allowlist = ["scan_once"]
+`
+	tmpfile, err := os.CreateTemp("", "config-mcp-defaults*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("load config: %v", err)
+	}
+	if cfg.MCP.ServerName != "circular" {
+		t.Fatalf("expected server_name circular, got %q", cfg.MCP.ServerName)
+	}
+	if cfg.MCP.ServerVersion != "1.0.0" {
+		t.Fatalf("expected server_version 1.0.0, got %q", cfg.MCP.ServerVersion)
+	}
+	if cfg.MCP.MaxResponseItems != 500 {
+		t.Fatalf("expected max_response_items 500, got %d", cfg.MCP.MaxResponseItems)
+	}
+	if cfg.MCP.RequestTimeout != 30*time.Second {
+		t.Fatalf("expected request_timeout 30s, got %v", cfg.MCP.RequestTimeout)
+	}
+	if !cfg.MCP.AutoManageOutputsEnabled() {
+		t.Fatal("expected auto_manage_outputs default true")
+	}
+	if !cfg.MCP.AutoSyncConfigEnabled() {
+		t.Fatal("expected auto_sync_config default true")
+	}
+	if cfg.MCP.ConfigPath != "circular.toml" {
+		t.Fatalf("expected mcp.config_path to default to circular.toml, got %q", cfg.MCP.ConfigPath)
+	}
+}
+
+func TestLoad_MCPPOCValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		errSub  string
+	}{
+		{
+			name: "missing allowlist",
+			content: `
+grammars_path = "./grammars"
+
+[mcp]
+enabled = true
+`,
+			errSub: "mcp.operation_allowlist must not be empty",
+		},
+		{
+			name: "invalid max_response_items",
+			content: `
+grammars_path = "./grammars"
+
+[mcp]
+enabled = true
+operation_allowlist = ["scan_once"]
+max_response_items = -1
+`,
+			errSub: "mcp.max_response_items must be between 1 and 5000",
+		},
+		{
+			name: "invalid request_timeout",
+			content: `
+grammars_path = "./grammars"
+
+[mcp]
+enabled = true
+operation_allowlist = ["scan_once"]
+request_timeout = "500ms"
+`,
+			errSub: "mcp.request_timeout must be between 1s and 2m",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpfile, err := os.CreateTemp("", "config-mcp-validate*.toml")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(tmpfile.Name())
+			if _, err := tmpfile.Write([]byte(tt.content)); err != nil {
+				t.Fatal(err)
+			}
+			if err := tmpfile.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = Load(tmpfile.Name())
+			if err == nil {
+				t.Fatal("expected validation error")
+			}
+			if !strings.Contains(err.Error(), tt.errSub) {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
 	}
 }
 

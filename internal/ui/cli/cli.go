@@ -1,8 +1,11 @@
 package cli
 
-import "flag"
+import (
+	"circular/internal/shared/version"
+	"flag"
+)
 
-const versionString = "1.0.0"
+const versionString = version.Version
 const defaultConfigPath = "./data/config/circular.toml"
 
 type cliOptions struct {

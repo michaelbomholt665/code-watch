@@ -33,13 +33,23 @@ registry_file = "projects.toml"
 name = "default"
 root = "."
 db_namespace = "default"
+config_file = "circular.toml"
 
 [mcp]
 enabled = false
 mode = "embedded"
 transport = "stdio"
 address = "127.0.0.1:8765"
-config_path = ""
+config_path = "circular.toml"
+server_name = "circular"
+server_version = "1.0.0"
+exposed_tool_name = ""
+operation_allowlist = ["scan_once", "detect_cycles", "find_unresolved", "trace_import_chain", "generate_reports"]
+max_response_items = 500
+request_timeout = "30s"
+allow_mutations = false
+auto_manage_outputs = true
+auto_sync_config = true
 
 [languages]
 # Optional per-language rollout overrides.

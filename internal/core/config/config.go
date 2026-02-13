@@ -1,6 +1,7 @@
 package config
 
 import (
+	"circular/internal/shared/version"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -59,14 +60,24 @@ type ProjectEntry struct {
 	Name        string `toml:"name"`
 	Root        string `toml:"root"`
 	DBNamespace string `toml:"db_namespace"`
+	ConfigFile  string `toml:"config_file"`
 }
 
 type MCP struct {
-	Enabled    bool   `toml:"enabled"`
-	Mode       string `toml:"mode"`
-	Transport  string `toml:"transport"`
-	Address    string `toml:"address"`
-	ConfigPath string `toml:"config_path"`
+	Enabled            bool          `toml:"enabled"`
+	Mode               string        `toml:"mode"`
+	Transport          string        `toml:"transport"`
+	Address            string        `toml:"address"`
+	ConfigPath         string        `toml:"config_path"`
+	ServerName         string        `toml:"server_name"`
+	ServerVersion      string        `toml:"server_version"`
+	ExposedToolName    string        `toml:"exposed_tool_name"`
+	OperationAllowlist []string      `toml:"operation_allowlist"`
+	MaxResponseItems   int           `toml:"max_response_items"`
+	RequestTimeout     time.Duration `toml:"request_timeout"`
+	AllowMutations     bool          `toml:"allow_mutations"`
+	AutoManageOutputs  *bool         `toml:"auto_manage_outputs"`
+	AutoSyncConfig     *bool         `toml:"auto_sync_config"`
 }
 
 type GrammarVerification struct {
@@ -145,6 +156,8 @@ func Load(path string) (*Config, error) {
 	}
 
 	applyDefaults(&cfg)
+	normalizeProjects(&cfg)
+	normalizeMCP(&cfg)
 
 	if err := validateVersion(&cfg); err != nil {
 		return nil, err
@@ -223,6 +236,29 @@ func applyDefaults(cfg *Config) {
 	if strings.TrimSpace(cfg.MCP.Address) == "" {
 		cfg.MCP.Address = "127.0.0.1:8765"
 	}
+	if strings.TrimSpace(cfg.MCP.ConfigPath) == "" && strings.TrimSpace(cfg.ConfigFiles.ActiveFile) != "" {
+		cfg.MCP.ConfigPath = cfg.ConfigFiles.ActiveFile
+	}
+	if strings.TrimSpace(cfg.MCP.ServerName) == "" {
+		cfg.MCP.ServerName = "circular"
+	}
+	if strings.TrimSpace(cfg.MCP.ServerVersion) == "" {
+		cfg.MCP.ServerVersion = version.Version
+	}
+	if cfg.MCP.MaxResponseItems == 0 {
+		cfg.MCP.MaxResponseItems = 500
+	}
+	if cfg.MCP.RequestTimeout <= 0 {
+		cfg.MCP.RequestTimeout = 30 * time.Second
+	}
+	if cfg.MCP.AutoManageOutputs == nil {
+		enabled := true
+		cfg.MCP.AutoManageOutputs = &enabled
+	}
+	if cfg.MCP.AutoSyncConfig == nil {
+		enabled := true
+		cfg.MCP.AutoSyncConfig = &enabled
+	}
 	// Default debounce if not set.
 	if cfg.Watch.Debounce == 0 {
 		cfg.Watch.Debounce = 500 * time.Millisecond
@@ -246,6 +282,20 @@ func (g GrammarVerification) IsEnabled() bool {
 		return true
 	}
 	return *g.Enabled
+}
+
+func (m MCP) AutoManageOutputsEnabled() bool {
+	if m.AutoManageOutputs == nil {
+		return true
+	}
+	return *m.AutoManageOutputs
+}
+
+func (m MCP) AutoSyncConfigEnabled() bool {
+	if m.AutoSyncConfig == nil {
+		return true
+	}
+	return *m.AutoSyncConfig
 }
 
 func validateVersion(cfg *Config) error {
@@ -283,20 +333,29 @@ func validateProjects(cfg *Config) error {
 	}
 
 	seenNames := make(map[string]bool, len(entries))
+	seenNamespaces := make(map[string]bool, len(entries))
 	for i, entry := range entries {
 		ref := fmt.Sprintf("projects.entries[%d]", i)
 		name := strings.TrimSpace(entry.Name)
 		root := strings.TrimSpace(entry.Root)
+		namespace := strings.TrimSpace(entry.DBNamespace)
 		if name == "" {
 			return fmt.Errorf("%s.name must not be empty", ref)
 		}
 		if root == "" {
 			return fmt.Errorf("%s.root must not be empty", ref)
 		}
+		if namespace == "" {
+			return fmt.Errorf("%s.db_namespace must not be empty", ref)
+		}
 		if seenNames[name] {
 			return fmt.Errorf("duplicate project name %q", name)
 		}
 		seenNames[name] = true
+		if seenNamespaces[namespace] {
+			return fmt.Errorf("duplicate project db_namespace %q", namespace)
+		}
+		seenNamespaces[namespace] = true
 	}
 
 	active := strings.TrimSpace(cfg.Projects.Active)
@@ -327,7 +386,91 @@ func validateMCP(cfg *Config) error {
 	if cfg.MCP.Enabled && mode == "embedded" && transport == "http" {
 		return fmt.Errorf("mcp transport http is only valid with mcp.mode=server")
 	}
+
+	if cfg.MCP.MaxResponseItems < 1 || cfg.MCP.MaxResponseItems > 5000 {
+		return fmt.Errorf("mcp.max_response_items must be between 1 and 5000")
+	}
+	if cfg.MCP.RequestTimeout < time.Second || cfg.MCP.RequestTimeout > 2*time.Minute {
+		return fmt.Errorf("mcp.request_timeout must be between 1s and 2m")
+	}
+
+	exposed := strings.TrimSpace(cfg.MCP.ExposedToolName)
+	if exposed != "" && strings.ContainsAny(exposed, " \t\n") {
+		return fmt.Errorf("mcp.exposed_tool_name must not contain whitespace")
+	}
+	allowlist := cfg.MCP.OperationAllowlist
+	if len(allowlist) > 0 {
+		seen := make(map[string]bool, len(allowlist))
+		for _, op := range allowlist {
+			op = strings.TrimSpace(op)
+			if op == "" {
+				return fmt.Errorf("mcp.operation_allowlist entries must not be empty")
+			}
+			key := strings.ToLower(op)
+			if seen[key] {
+				return fmt.Errorf("mcp.operation_allowlist contains duplicate entry %q", op)
+			}
+			seen[key] = true
+		}
+	}
+
+	if cfg.MCP.Enabled {
+		if strings.TrimSpace(cfg.MCP.ServerName) == "" {
+			return fmt.Errorf("mcp.server_name must not be empty when mcp.enabled=true")
+		}
+		if strings.TrimSpace(cfg.MCP.ServerVersion) == "" {
+			return fmt.Errorf("mcp.server_version must not be empty when mcp.enabled=true")
+		}
+		if exposed != "" && len(allowlist) > 0 {
+			return fmt.Errorf("mcp.exposed_tool_name cannot be set alongside mcp.operation_allowlist")
+		}
+		if exposed == "" && len(allowlist) == 0 {
+			return fmt.Errorf("mcp.operation_allowlist must not be empty when mcp.enabled=true (or set mcp.exposed_tool_name)")
+		}
+	}
 	return nil
+}
+
+func normalizeProjects(cfg *Config) {
+	cfg.Projects.Active = strings.TrimSpace(cfg.Projects.Active)
+	cfg.Projects.RegistryFile = strings.TrimSpace(cfg.Projects.RegistryFile)
+	for i := range cfg.Projects.Entries {
+		entry := &cfg.Projects.Entries[i]
+		entry.Name = strings.TrimSpace(entry.Name)
+		entry.Root = strings.TrimSpace(entry.Root)
+		entry.DBNamespace = normalizeProjectNamespace(entry.DBNamespace, entry.Name)
+		entry.ConfigFile = strings.TrimSpace(entry.ConfigFile)
+	}
+}
+
+func normalizeProjectNamespace(raw, fallback string) string {
+	namespace := strings.TrimSpace(raw)
+	if namespace == "" {
+		namespace = strings.TrimSpace(fallback)
+	}
+	return namespace
+}
+
+func normalizeMCP(cfg *Config) {
+	cfg.MCP.Mode = strings.TrimSpace(cfg.MCP.Mode)
+	cfg.MCP.Transport = strings.TrimSpace(cfg.MCP.Transport)
+	cfg.MCP.Address = strings.TrimSpace(cfg.MCP.Address)
+	cfg.MCP.ConfigPath = strings.TrimSpace(cfg.MCP.ConfigPath)
+	cfg.MCP.ServerName = strings.TrimSpace(cfg.MCP.ServerName)
+	cfg.MCP.ServerVersion = strings.TrimSpace(cfg.MCP.ServerVersion)
+	cfg.MCP.ExposedToolName = strings.TrimSpace(cfg.MCP.ExposedToolName)
+	if len(cfg.MCP.OperationAllowlist) == 0 {
+		return
+	}
+	normalized := make([]string, 0, len(cfg.MCP.OperationAllowlist))
+	for _, op := range cfg.MCP.OperationAllowlist {
+		op = strings.ToLower(strings.TrimSpace(op))
+		if op == "" {
+			continue
+		}
+		normalized = append(normalized, op)
+	}
+	cfg.MCP.OperationAllowlist = normalized
 }
 
 func validateOutput(cfg *Config) error {

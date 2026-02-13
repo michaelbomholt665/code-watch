@@ -14,6 +14,11 @@
 - provides issue + module-explorer UI panels backed by query read models
 - supports module drill-down, trend overlays, and source-jump actions (`ui_actions.go`, `ui_panels.go`)
 
+## `internal/mcp/runtime`
+
+- MCP runtime bootstrap entrypoint and project context resolution
+- derives active project, config sync targets, and runtime metadata for MCP startup
+
 ## `internal/core/app`
 
 - central orchestrator over parser/graph/resolver/output/watcher

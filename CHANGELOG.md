@@ -45,6 +45,9 @@ All notable changes to this project will be documented in this file.
 - `parser:` Added consolidated profile-driven extractor registry in `internal/parser/profile_extractors.go` and default extractor auto-registration for all enabled languages.
 - `parser:` Added multi-language parser matrix coverage for `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`.
 - `config:` Added committed runtime defaults at `data/config/circular.toml` and `data/config/projects.toml` so the default config path works out of the box.
+- `mcp:` Added MCP runtime bootstrap scaffolding and project-context resolution for config-driven MCP startup.
+- `config:` Added MCP POC configuration fields for server metadata, tool exposure policy, response limits, and auto-sync controls.
+- `config:` Added per-project `config_file` support and enforced unique `db_namespace` values for SQLite isolation.
 
 ### Changed
 - `architecture:` Reorganized internal packages into pillar paths: `internal/core/{app,config,watcher}`, `internal/engine/{parser,resolver,graph}`, `internal/data/{history,query}`, and `internal/ui/{cli,report}`.
@@ -81,6 +84,8 @@ All notable changes to this project will be documented in this file.
 - `parser:` `gomod` and `gosum` parsing now uses raw-text extraction paths that do not require runtime tree-sitter bindings.
 - `app:` App startup now registers default extractors from the language registry instead of hardcoding Go/Python extractor wiring.
 - `config:` Expanded example exclude guidance to cover project-specific symbol/import suppression.
+- `runtime:` MCP mode now starts from TOML config and enforces CLI incompatibility checks when enabled.
+- `docs:` Updated configuration/CLI/README docs and MCP examples to align with the expanded MCP config contract.
 
 ### Fixed
 - `compatibility:` Restored `GOTOOLCHAIN=go1.24 go test ./...` compatibility by aligning the module Go directive.

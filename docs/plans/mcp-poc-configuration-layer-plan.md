@@ -56,7 +56,7 @@ Constraints:
 
 ## Tasks
 
-- C1 Extend TOML config model for MCP + multi-project DB isolation [ ]
+- C1 Extend TOML config model for MCP + multi-project DB isolation [x]
 Summary: Add additive TOML fields for MCP runtime policy, multi-project routing, and project-aware SQLite behavior.
 Inputs/outputs: existing `MCP` struct in; expanded config contract out.
 File changes (with classes/functions):
@@ -77,7 +77,7 @@ Acceptance checks:
 - New fields decode correctly from TOML with defaults.
 - No behavior changes when `mcp.enabled=false`.
 
-- C2 Add strict validation and normalization rules [ ]
+- C2 Add strict validation and normalization rules [x]
 Summary: Ensure config catches invalid MCP settings before runtime startup.
 Inputs/outputs: raw MCP config in; normalized validated runtime options out.
 File changes (with classes/functions):
@@ -98,7 +98,7 @@ Acceptance checks:
 - Path normalization is stable across relative and absolute inputs.
 - Duplicate project namespaces fail validation with explicit errors.
 
-- C3 Wire config-driven MCP bootstrap and automatic output/config sync [ ]
+- C3 Wire config-driven MCP bootstrap and automatic output/config sync [x]
 Summary: Start MCP mode from TOML config and enforce automatic output/config management behavior per active project.
 Inputs/outputs: parsed config + CLI options in; explicit MCP runtime bootstrap decision out.
 File changes (with classes/functions):
@@ -124,7 +124,7 @@ Acceptance checks:
 - Conflicting mode combinations exit with deterministic errors.
 - MCP mode auto-updates configured output artifacts and project config without needing AI to request each file write.
 
-- C4 Add compatibility and migration tests [ ]
+- C4 Add compatibility and migration tests [x]
 Summary: Lock down additive behavior and avoid regressions across existing config workflows.
 Inputs/outputs: legacy/new TOML fixtures in; deterministic validation/runtime behavior out.
 File changes (with classes/functions):
@@ -142,7 +142,7 @@ Acceptance checks:
 - Legacy non-MCP test fixtures remain green.
 - New MCP tests cover invalid and valid matrices.
 
-- C5 Update docs/examples and rollout notes [ ]
+- C5 Update docs/examples and rollout notes [x]
 Summary: Align config reference with final MCP POC contract and migration guidance.
 Inputs/outputs: finalized schema in; user-facing docs and release notes out.
 File changes (with classes/functions):

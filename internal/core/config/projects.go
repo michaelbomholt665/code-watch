@@ -14,6 +14,7 @@ type ActiveProject struct {
 	Root        string
 	DBNamespace string
 	Key         string
+	ConfigFile  string
 }
 
 func ResolveActiveProject(cfg *Config, cwd string) (ActiveProject, error) {
@@ -76,7 +77,7 @@ func LoadProjectRegistry(path string) ([]ProjectEntry, error) {
 
 func materializeProject(entry ProjectEntry, base string) ActiveProject {
 	root := ResolveRelative(base, entry.Root)
-	key := strings.TrimSpace(entry.DBNamespace)
+	key := normalizeProjectNamespace(entry.DBNamespace, entry.Name)
 	if key == "" {
 		key = strings.TrimSpace(entry.Name)
 	}
@@ -88,5 +89,6 @@ func materializeProject(entry ProjectEntry, base string) ActiveProject {
 		Root:        filepath.Clean(root),
 		DBNamespace: key,
 		Key:         key,
+		ConfigFile:  strings.TrimSpace(entry.ConfigFile),
 	}
 }

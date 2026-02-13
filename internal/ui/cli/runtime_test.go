@@ -237,7 +237,7 @@ func TestLoadConfig_DefaultDiscoveryOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg, err := loadConfig(defaultConfigPath, tmpDir)
+	cfg, _, err := loadConfig(defaultConfigPath, tmpDir)
 	if err != nil {
 		t.Fatalf("load config: %v", err)
 	}
@@ -250,7 +250,7 @@ func TestLoadConfig_CustomPathNoFallback(t *testing.T) {
 	tmpDir := t.TempDir()
 	custom := filepath.Join(tmpDir, "custom.toml")
 
-	_, err := loadConfig(custom, tmpDir)
+	_, _, err := loadConfig(custom, tmpDir)
 	if err == nil {
 		t.Fatal("expected missing custom config error")
 	}
@@ -301,5 +301,29 @@ func TestOpenHistoryStore_DBDisabled(t *testing.T) {
 	}
 	if store != nil {
 		t.Fatal("expected nil store when db disabled")
+	}
+}
+
+func TestValidateModeCompatibility_MCPPOC(t *testing.T) {
+	cfg := &config.Config{
+		MCP: config.MCP{
+			Enabled:   true,
+			Mode:      "embedded",
+			Transport: "stdio",
+		},
+	}
+
+	if err := validateModeCompatibility(cliOptions{once: true}, cfg); err == nil {
+		t.Fatal("expected MCP mode/CLI conflict error")
+	}
+	if err := validateModeCompatibility(cliOptions{}, cfg); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestMCPBootstrapDecision_Disabled(t *testing.T) {
+	cfg := &config.Config{}
+	if err := runMCPModeIfEnabled(cliOptions{}, cfg, "circular.toml"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

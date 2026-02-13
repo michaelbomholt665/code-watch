@@ -6,14 +6,18 @@ import (
 	"circular/internal/data/history"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
+	mcpruntime "circular/internal/mcp/runtime"
 	"circular/internal/shared/util"
 	"circular/internal/ui/report"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -37,7 +41,7 @@ func Run(args []string) int {
 		return 1
 	}
 
-	cfg, err := loadConfig(opts.configPath, cwd)
+	cfg, cfgPath, err := loadConfig(opts.configPath, cwd)
 	if err != nil {
 		slog.Error("failed to load config", "error", err)
 		return 1
@@ -62,6 +66,14 @@ func Run(args []string) int {
 	if err := normalizeGrammarsPath(cfg, paths.ProjectRoot); err != nil {
 		slog.Error("failed to normalize grammars path", "error", err, "grammarsPath", cfg.GrammarsPath)
 		return 1
+	}
+
+	if err := runMCPModeIfEnabled(opts, cfg, cfgPath); err != nil {
+		slog.Error("failed to start MCP mode", "error", err)
+		return 1
+	}
+	if cfg.MCP.Enabled {
+		return 0
 	}
 
 	if opts.verifyGrammars {
@@ -286,14 +298,18 @@ func runQueryCommand(app *coreapp.App, opts cliOptions, historyStore *history.St
 	}
 }
 
-func loadConfig(path, cwd string) (*config.Config, error) {
+func loadConfig(path, cwd string) (*config.Config, string, error) {
 	if path != defaultConfigPath {
-		return config.Load(path)
+		cfg, err := config.Load(path)
+		if err != nil {
+			return nil, "", err
+		}
+		return cfg, path, nil
 	}
 
 	candidates, err := discoverDefaultConfig(cwd)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	var lastErr error
@@ -303,19 +319,19 @@ func loadConfig(path, cwd string) (*config.Config, error) {
 			if candidate == filepath.Clean(filepath.Join(cwd, "circular.toml")) {
 				fmt.Fprintln(os.Stderr, "warning: using deprecated config path ./circular.toml; migrate to ./data/config/circular.toml")
 			}
-			return cfg, nil
+			return cfg, candidate, nil
 		}
 		if os.IsNotExist(loadErr) {
 			lastErr = loadErr
 			continue
 		}
-		return nil, loadErr
+		return nil, "", loadErr
 	}
 
 	if lastErr != nil {
-		return nil, lastErr
+		return nil, "", lastErr
 	}
-	return nil, fmt.Errorf("no default config file found")
+	return nil, "", fmt.Errorf("no default config file found")
 }
 
 func discoverDefaultConfig(cwd string) ([]string, error) {
@@ -570,6 +586,9 @@ func resolveRuntimeProject(cfg *config.Config, paths config.ResolvedPaths, cwd s
 	}
 	for i := range cfg.Projects.Entries {
 		cfg.Projects.Entries[i].Root = config.ResolveRelative(paths.ProjectRoot, cfg.Projects.Entries[i].Root)
+		if strings.TrimSpace(cfg.Projects.Entries[i].ConfigFile) != "" {
+			cfg.Projects.Entries[i].ConfigFile = config.ResolveRelative(paths.ConfigDir, cfg.Projects.Entries[i].ConfigFile)
+		}
 	}
 	project, err := config.ResolveActiveProject(cfg, cwd)
 	if err != nil {
@@ -585,11 +604,66 @@ func resolveRuntimeProject(cfg *config.Config, paths config.ResolvedPaths, cwd s
 }
 
 func validateModeCompatibility(opts cliOptions, cfg *config.Config) error {
-	if opts.ui && cfg.MCP.Enabled {
-		return fmt.Errorf("--ui cannot be combined with mcp.enabled=true")
+	if cfg.MCP.Enabled {
+		if opts.ui || opts.once || opts.verifyGrammars || opts.trace || opts.impact != "" || opts.history ||
+			opts.queryModules || opts.queryModule != "" || opts.queryTrace != "" || opts.queryTrends || len(opts.args) > 0 {
+			return fmt.Errorf("mcp.enabled=true cannot be combined with CLI modes or positional path arguments")
+		}
 	}
 	if cfg.MCP.Enabled && strings.EqualFold(cfg.MCP.Mode, "embedded") && strings.EqualFold(cfg.MCP.Transport, "http") {
 		return fmt.Errorf("mcp.mode=embedded does not support mcp.transport=http")
+	}
+	return nil
+}
+
+func runMCPModeIfEnabled(opts cliOptions, cfg *config.Config, configPath string) error {
+	if !cfg.MCP.Enabled {
+		return nil
+	}
+
+	app, err := coreapp.New(cfg)
+	if err != nil {
+		return fmt.Errorf("init app: %w", err)
+	}
+	app.IncludeTests = opts.includeTests
+
+	if err := app.InitialScan(); err != nil {
+		return fmt.Errorf("initial scan: %w", err)
+	}
+
+	cycles := app.Graph.DetectCycles()
+	metrics := app.Graph.ComputeModuleMetrics()
+	hotspots := app.Graph.TopComplexity(cfg.Architecture.TopComplexity)
+	violations := app.ArchitectureViolations()
+	unusedImports := app.AnalyzeUnusedImports()
+
+	if cfg.MCP.AutoManageOutputsEnabled() {
+		if err := app.GenerateOutputs(cycles, unusedImports, metrics, violations, hotspots); err != nil {
+			return fmt.Errorf("auto-manage outputs: %w", err)
+		}
+	}
+
+	server, err := mcpruntime.Build(cfg, mcpruntime.AppDeps{
+		App:        app,
+		Logger:     slog.Default(),
+		ConfigPath: configPath,
+	})
+	if err != nil {
+		return fmt.Errorf("build MCP runtime: %w", err)
+	}
+
+	project := server.ProjectContext()
+	if cfg.MCP.AutoSyncConfigEnabled() {
+		if err := mcpruntime.SyncProjectConfig(project); err != nil {
+			return fmt.Errorf("auto-sync config: %w", err)
+		}
+	}
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	if err := server.Run(ctx); err != nil && !errors.Is(err, context.Canceled) {
+		return err
 	}
 	return nil
 }

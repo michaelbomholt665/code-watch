@@ -78,6 +78,12 @@ circular [flags] [path]
 - in normal/watch/once/query/history mode, first positional argument overrides `watch_paths` with one path
 - in trace mode, positional args are consumed as `<from> <to>`
 
+## MCP Mode
+
+- MCP startup is config-driven via `[mcp].enabled = true`
+- MCP mode cannot be combined with `--once`, `--ui`, `--trace`, `--impact`, `--query-*`, `--history`, `--verify-grammars`, or positional path arguments
+- MCP startup runs an initial scan and can auto-write outputs/config when `mcp.auto_manage_outputs` or `mcp.auto_sync_config` are enabled
+
 ## Execution Order
 
 For all modes except `--version`, runtime performs:

@@ -39,13 +39,23 @@ registry_file = "projects.toml"
 name = "default"
 root = "."
 db_namespace = "default"
+config_file = "circular.toml"
 
 [mcp]
 enabled = false
 mode = "embedded"
 transport = "stdio"
 address = "127.0.0.1:8765"
-config_path = ""
+config_path = "circular.toml"
+server_name = "circular"
+server_version = "1.0.0"
+exposed_tool_name = ""
+operation_allowlist = ["scan_once", "detect_cycles", "find_unresolved", "trace_import_chain", "generate_reports"]
+max_response_items = 500
+request_timeout = "30s"
+allow_mutations = false
+auto_manage_outputs = true
+auto_sync_config = true
 
 [languages]
 # Optional per-language overrides.
@@ -121,7 +131,9 @@ top_complexity = 5
 - `projects.registry_file` (`string`)
 - optional registry source under `paths.config_dir` (`data/config/projects.toml` by default)
 - `projects.entries` (`[]table`)
-- per-project `name`, `root`, and optional `db_namespace`
+- per-project `name`, `root`, `db_namespace`, and optional `config_file`
+- `db_namespace` must be unique and non-empty after trimming; it scopes SQLite history isolation
+- `config_file` resolves under `paths.config_dir` when set and is used for MCP config sync
 - `mcp.enabled` (`bool`)
 - additive MCP config contract, runtime wiring still disabled
 - `mcp.mode` (`string`)
@@ -131,7 +143,27 @@ top_complexity = 5
 - `mcp.address` (`string`)
 - required when `mcp.transport=http`
 - `mcp.config_path` (`string`)
-- optional path resolved under `paths.config_dir`
+- config file path resolved under `paths.config_dir` for MCP auto-sync
+- defaults to `config.active_file` when empty
+- `mcp.server_name` (`string`)
+- required when `mcp.enabled=true`
+- `mcp.server_version` (`string`)
+- required when `mcp.enabled=true`
+- `mcp.exposed_tool_name` (`string`)
+- optional single-tool exposure; must not contain whitespace
+- `mcp.operation_allowlist` (`[]string`)
+- explicit tool allowlist for MCP exposure
+- required when `mcp.enabled=true` if `mcp.exposed_tool_name` is empty
+- `mcp.max_response_items` (`int`)
+- maximum list payload items (default `500`)
+- `mcp.request_timeout` (`duration`)
+- bounds: `1s` to `2m` (default `30s`)
+- `mcp.allow_mutations` (`bool`)
+- gate for mutation-enabled MCP tools (default `false`)
+- `mcp.auto_manage_outputs` (`bool`)
+- when `true`, MCP startup auto-writes configured outputs
+- `mcp.auto_sync_config` (`bool`)
+- when `true`, MCP startup writes the active config to the configured MCP config path
 - `grammars_path` (`string`)
 - normalized to absolute path at runtime relative to resolved project root
 - `grammar_verification.enabled` (`bool`, default `true`)
@@ -179,7 +211,11 @@ Config load fails when:
 - `db.project_mode` is not `single|multi`
 - `projects.active` references a missing project
 - duplicate `projects.entries.name` values exist
+- duplicate `projects.entries.db_namespace` values exist or `db_namespace` is empty
 - MCP mode/transport combinations are invalid
+- MCP server metadata is missing when enabled
+- MCP tool exposure configuration is missing or duplicated
+- MCP response/timeout limits exceed bounds
 - output markdown targets are malformed
 - architecture rules violate layer/rule constraints
 - `languages.*.extensions` or `languages.*.filenames` include empty values

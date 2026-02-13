@@ -32,6 +32,33 @@ func TestResolvePaths_DefaultLayout(t *testing.T) {
 	}
 }
 
+func TestResolvePaths_MCPConfigPathRelative(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module example.com/test\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &Config{
+		WatchPaths: []string{root},
+		Paths: Paths{
+			ConfigDir: "cfg",
+		},
+		MCP: MCP{
+			ConfigPath: "mcp.toml",
+		},
+	}
+	applyDefaults(cfg)
+	normalizeMCP(cfg)
+
+	got, err := ResolvePaths(cfg, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.MCPConfigPath != filepath.Join(root, "cfg", "mcp.toml") {
+		t.Fatalf("unexpected mcp config path: %q", got.MCPConfigPath)
+	}
+}
+
 func TestResolvePaths_AbsoluteOverrides(t *testing.T) {
 	root := t.TempDir()
 	dbPath := filepath.Join(root, "custom", "history.db")
