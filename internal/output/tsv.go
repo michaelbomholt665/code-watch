@@ -51,3 +51,23 @@ func (t *TSVGenerator) GenerateUnusedImports(rows []resolver.UnusedImport) (stri
 
 	return buf.String(), nil
 }
+
+func (t *TSVGenerator) GenerateArchitectureViolations(rows []graph.ArchitectureViolation) (string, error) {
+	var buf strings.Builder
+
+	buf.WriteString("Type\tRule\tFromModule\tFromLayer\tToModule\tToLayer\tFile\tLine\tColumn\n")
+	for _, row := range rows {
+		buf.WriteString(fmt.Sprintf("architecture_violation\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\n",
+			row.RuleName,
+			row.FromModule,
+			row.FromLayer,
+			row.ToModule,
+			row.ToLayer,
+			row.File,
+			row.Line,
+			row.Column,
+		))
+	}
+
+	return buf.String(), nil
+}

@@ -34,6 +34,22 @@ Notes:
 - `Confidence` is currently `high` (named imports) or `medium` (module-level usage heuristics).
 - `Item` is populated for item imports (for example Python `from x import y`).
 
+## Architecture Violation Rows (`type=architecture_violation`)
+
+When architecture rule violations are present, they are appended after a blank line.
+
+Header:
+
+```text
+Type\tRule\tFromModule\tFromLayer\tToModule\tToLayer\tFile\tLine\tColumn
+```
+
+Row format:
+
+```text
+architecture_violation\t<rule>\t<from-module>\t<from-layer>\t<to-module>\t<to-layer>\t<file>\t<line>\t<column>
+```
+
 ## `graph.dot`
 
 The DOT output remains backward compatible and now supports additive module metrics in node labels.
@@ -42,6 +58,12 @@ When metric data is provided, internal module labels include:
 
 ```text
 (d=<depth> in=<fan-in> out=<fan-out>)
+```
+
+When complexity hotspots are provided, module labels also include:
+
+```text
+(cx=<max-hotspot-score-for-module>)
 ```
 
 Depth color hints:

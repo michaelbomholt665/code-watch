@@ -35,6 +35,12 @@ type Definition struct {
 	Location Location
 	Exported bool   // Is public/exported?
 	Scope    string // Global, class method, nested function
+	// Heuristic complexity metrics used for hotspot ranking.
+	BranchCount     int
+	ParameterCount  int
+	NestingDepth    int
+	LOC             int
+	ComplexityScore int
 }
 
 type Reference struct {

@@ -1,4 +1,3 @@
-// # internal/parser/python.go
 package parser
 
 import (
@@ -42,7 +41,6 @@ func (e *PythonExtractor) walk(node *sitter.Node, source []byte, file *File) {
 		e.extractCall(node, source, file)
 	}
 
-	// Recurse
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 		e.walk(child, source, file)
@@ -52,7 +50,7 @@ func (e *PythonExtractor) walk(node *sitter.Node, source []byte, file *File) {
 func (e *PythonExtractor) extractImport(node *sitter.Node, source []byte, file *File) {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
-		
+
 		if child.Kind() == "dotted_name" || child.Kind() == "identifier" {
 			module := e.getText(child, source)
 			file.Imports = append(file.Imports, Import{
@@ -95,19 +93,17 @@ func (e *PythonExtractor) extractFromImport(node *sitter.Node, source []byte, fi
 			isRelative = true
 			relText := e.getText(child, source)
 			module = strings.TrimLeft(relText, ".")
-			
+
 		case "dotted_name", "identifier":
 			if !isRelative {
 				module = e.getText(child, source)
 			}
 
 		case "import_list", "aliased_import":
-			// Simplified: just collect all identifiers as items
 			e.collectItems(child, source, &items)
 		}
 	}
-	
-	// If items is empty but we have an identifier after 'import'
+
 	if len(items) == 0 {
 		foundImport := false
 		for i := uint(0); i < node.ChildCount(); i++ {
@@ -148,20 +144,74 @@ func (e *PythonExtractor) extractFunction(node *sitter.Node, source []byte, file
 		return
 	}
 
-	// Extract parameters as local symbols
 	params := node.ChildByFieldName("parameters")
 	if params != nil {
 		e.collectLocalSymbols(params, source, file)
 	}
 
+	paramCount := e.countPythonParameters(params)
+	branches, nesting := e.computePythonComplexity(node.ChildByFieldName("body"), 0)
+	loc := int(node.EndPosition().Row-node.StartPosition().Row) + 1
+	if loc < 1 {
+		loc = 1
+	}
+	score := (branches * 2) + (nesting * 2) + paramCount + (loc / 10)
+	if score == 0 {
+		score = 1
+	}
+
 	exported := !strings.HasPrefix(name, "_")
 	file.Definitions = append(file.Definitions, Definition{
-		Name:     name,
-		FullName: file.Module + "." + name,
-		Kind:     KindFunction,
-		Exported: exported,
-		Location: e.getLocation(node, file.Path),
+		Name:            name,
+		FullName:        file.Module + "." + name,
+		Kind:            KindFunction,
+		Exported:        exported,
+		ParameterCount:  paramCount,
+		BranchCount:     branches,
+		NestingDepth:    nesting,
+		LOC:             loc,
+		ComplexityScore: score,
+		Location:        e.getLocation(node, file.Path),
 	})
+}
+
+func (e *PythonExtractor) countPythonParameters(params *sitter.Node) int {
+	if params == nil {
+		return 0
+	}
+	count := 0
+	for i := uint(0); i < params.ChildCount(); i++ {
+		if params.Child(i).Kind() == "identifier" {
+			count++
+		}
+	}
+	return count
+}
+
+func (e *PythonExtractor) computePythonComplexity(node *sitter.Node, depth int) (branches int, maxDepth int) {
+	if node == nil {
+		return 0, depth
+	}
+
+	maxDepth = depth
+	for i := uint(0); i < node.ChildCount(); i++ {
+		child := node.Child(i)
+		childDepth := depth
+
+		switch child.Kind() {
+		case "if_statement", "elif_clause", "for_statement", "while_statement", "try_statement", "except_clause", "with_statement", "match_statement":
+			branches++
+			childDepth = depth + 1
+		}
+
+		subBranches, subDepth := e.computePythonComplexity(child, childDepth)
+		branches += subBranches
+		if subDepth > maxDepth {
+			maxDepth = subDepth
+		}
+	}
+
+	return branches, maxDepth
 }
 
 func (e *PythonExtractor) extractAssignment(node *sitter.Node, source []byte, file *File) {

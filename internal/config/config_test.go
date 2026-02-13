@@ -92,3 +92,89 @@ func TestLoadError(t *testing.T) {
 		t.Error("Expected error for malformed TOML")
 	}
 }
+
+func TestLoadArchitectureRules(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[architecture]
+enabled = true
+top_complexity = 7
+
+[[architecture.layers]]
+name = "core"
+paths = ["internal/core"]
+
+[[architecture.layers]]
+name = "api"
+paths = ["internal/api"]
+
+[[architecture.rules]]
+name = "api-only-to-core"
+from = "api"
+allow = ["core"]
+`
+
+	tmpfile, err := os.CreateTemp("", "config-architecture*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if !cfg.Architecture.Enabled {
+		t.Fatal("expected architecture.enabled to be true")
+	}
+	if cfg.Architecture.TopComplexity != 7 {
+		t.Fatalf("expected top_complexity=7, got %d", cfg.Architecture.TopComplexity)
+	}
+	if len(cfg.Architecture.Layers) != 2 {
+		t.Fatalf("expected 2 layers, got %d", len(cfg.Architecture.Layers))
+	}
+	if len(cfg.Architecture.Rules) != 1 {
+		t.Fatalf("expected 1 rule, got %d", len(cfg.Architecture.Rules))
+	}
+}
+
+func TestLoadArchitectureRules_InvalidOverlap(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[architecture]
+enabled = true
+
+[[architecture.layers]]
+name = "core"
+paths = ["internal"]
+
+[[architecture.layers]]
+name = "api"
+paths = ["internal/api"]
+`
+
+	tmpfile, err := os.CreateTemp("", "config-architecture-bad*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Load(tmpfile.Name())
+	if err == nil {
+		t.Fatal("expected overlap validation error")
+	}
+}

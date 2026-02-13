@@ -7,6 +7,9 @@ It scans source files, builds a module import graph, then reports:
 - unresolved symbol references ("hallucinations")
 - unused imports
 - dependency depth/fan-in/fan-out metrics
+- architecture layer-rule violations
+- change impact (direct + transitive importers)
+- complexity hotspots
 
 It can run once (`--once`) or watch continuously with optional terminal UI mode (`--ui`).
 
@@ -19,6 +22,9 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 - Detects unused imports and appends findings to TSV output
 - Computes module dependency metrics (depth, fan-in, fan-out)
 - Traces shortest import chain between modules (`--trace`)
+- Analyzes blast radius for a file/module (`--impact`)
+- Validates optional architecture layer rules
+- Reports top complexity hotspots from parser heuristics
 - Emits outputs:
   - Graphviz DOT (`graph.dot` by default)
   - TSV edge list (`dependencies.tsv` by default)
@@ -91,6 +97,7 @@ Flags:
 - `--once` run one scan and exit
 - `--ui` start terminal UI mode
 - `--trace` print shortest import chain from one module to another, then exit
+- `--impact` analyze direct/transitive impact for a file path or module, then exit
 - `--verbose` enable debug logs
 - `--version` print version and exit
 
@@ -124,6 +131,28 @@ tsv = "dependencies.tsv"
 [alerts]
 beep = true
 terminal = true
+
+[architecture]
+enabled = false
+top_complexity = 5
+
+[[architecture.layers]]
+name = "api"
+paths = ["internal/api", "cmd"]
+
+[[architecture.layers]]
+name = "core"
+paths = ["internal/core", "internal/graph", "internal/parser", "internal/resolver"]
+
+[[architecture.rules]]
+name = "api-to-core-only"
+from = "api"
+allow = ["core"]
+
+[[architecture.rules]]
+name = "core-self-only"
+from = "core"
+allow = ["core"]
 ```
 
 ## Outputs
@@ -133,8 +162,11 @@ terminal = true
   - `From`, `To`, `File`, `Line`, `Column`
 - TSV unused import rows appended when findings exist:
   - `Type`, `File`, `Language`, `Module`, `Alias`, `Item`, `Line`, `Column`, `Confidence`
+- TSV architecture violation rows appended when findings exist:
+  - `Type`, `Rule`, `FromModule`, `FromLayer`, `ToModule`, `ToLayer`, `File`, `Line`, `Column`
 - DOT module labels may include metrics:
   - `d=<depth> in=<fan-in> out=<fan-out>`
+  - `cx=<top-complexity-score-in-module>`
 
 ## Documentation
 

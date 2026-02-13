@@ -8,9 +8,11 @@
 4. Parse each file into a normalized `parser.File` model.
 5. Add file into dependency graph (`internal/graph`).
 6. Detect cycles (`graph.DetectCycles`).
-7. Resolve unresolved references (`internal/resolver`).
-8. Generate DOT/TSV outputs (`internal/output`).
-9. In watch mode, repeat incrementally on changed files (`internal/watcher`).
+7. Compute dependency metrics + complexity hotspots (`graph.ComputeModuleMetrics`, `graph.TopComplexity`).
+8. Validate architecture layer rules when enabled (`graph.LayerRuleEngine.Validate`).
+9. Resolve unresolved references (`internal/resolver`).
+10. Generate DOT/TSV outputs (`internal/output`).
+11. In watch mode, repeat incrementally on changed files (`internal/watcher`).
 
 Audit note:
 - this pipeline has been AI-audited for concurrency/performance/security issue classes; see `docs/documentation/ai-audit.md`
@@ -23,6 +25,7 @@ Audit note:
 - fsnotify wrapper with debounce and glob-based filtering
 - `Graph` (`internal/graph`)
 - central module/file/import/definition state
+- architecture validation, impact traversal, and complexity hotspot ranking
 - `Resolver` (`internal/resolver`)
 - unresolved reference analysis over collected refs and symbol tables
 - output generators (`internal/output`)
@@ -58,6 +61,7 @@ Audit note:
 - events (`write`, `create`, `remove`) are debounced and batched
 - each changed path is reprocessed (or removed from graph if deleted)
 - unresolved-reference analysis is recomputed incrementally for affected paths/importer chains
+- architecture validations and complexity hotspots are recomputed per batch
 - callbacks are serialized to avoid overlapping update pipelines
 - fresh outputs are generated after each batch
 - optional UI receives update messages (`updateMsg`) with cycle/unresolved counts

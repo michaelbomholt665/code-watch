@@ -10,6 +10,7 @@ import (
 type DOTGenerator struct {
 	graph   *graph.Graph
 	metrics map[string]graph.ModuleMetrics
+	hotspot map[string]int
 }
 
 func NewDOTGenerator(g *graph.Graph) *DOTGenerator {
@@ -24,6 +25,19 @@ func (d *DOTGenerator) SetModuleMetrics(metrics map[string]graph.ModuleMetrics) 
 	d.metrics = make(map[string]graph.ModuleMetrics, len(metrics))
 	for mod, m := range metrics {
 		d.metrics[mod] = m
+	}
+}
+
+func (d *DOTGenerator) SetComplexityHotspots(hotspots []graph.ComplexityHotspot) {
+	if len(hotspots) == 0 {
+		d.hotspot = nil
+		return
+	}
+	d.hotspot = make(map[string]int, len(hotspots))
+	for _, h := range hotspots {
+		if current, ok := d.hotspot[h.Module]; !ok || h.Score > current {
+			d.hotspot[h.Module] = h.Score
+		}
 	}
 }
 
@@ -84,6 +98,9 @@ func (d *DOTGenerator) Generate(cycles [][]string) (string, error) {
 		label := fmt.Sprintf("%s\\n(%d funcs, %d files)", modName, funcCount, fileCount)
 		if metric, ok := d.metrics[modName]; ok {
 			label = fmt.Sprintf("%s\\n(d=%d in=%d out=%d)", label, metric.Depth, metric.FanIn, metric.FanOut)
+		}
+		if score, ok := d.hotspot[modName]; ok {
+			label = fmt.Sprintf("%s\\n(cx=%d)", label, score)
 		}
 
 		inCycle := false

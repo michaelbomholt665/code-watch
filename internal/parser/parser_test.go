@@ -54,9 +54,11 @@ class MyClass:
 	// Check definitions
 	foundFunc := false
 	foundClass := false
+	var funcDef Definition
 	for _, def := range file.Definitions {
 		if def.Name == "my_func" && def.Kind == KindFunction {
 			foundFunc = true
+			funcDef = def
 		}
 		if def.Name == "MyClass" && def.Kind == KindClass {
 			foundClass = true
@@ -67,6 +69,12 @@ class MyClass:
 	}
 	if !foundClass {
 		t.Error("MyClass not found")
+	}
+	if funcDef.ParameterCount != 1 {
+		t.Errorf("Expected my_func parameter count 1, got %d", funcDef.ParameterCount)
+	}
+	if funcDef.LOC < 2 {
+		t.Errorf("Expected my_func LOC >= 2, got %d", funcDef.LOC)
 	}
 
 	// Check local symbols
@@ -159,9 +167,11 @@ type MyInterface interface {
 	foundMain := false
 	foundStruct := false
 	foundInterface := false
+	var mainDef Definition
 	for _, def := range file.Definitions {
 		if def.Name == "Main" && def.Kind == KindFunction {
 			foundMain = true
+			mainDef = def
 		}
 		if def.Name == "MyStruct" && def.Kind == KindType {
 			foundStruct = true
@@ -178,6 +188,12 @@ type MyInterface interface {
 	}
 	if !foundInterface {
 		t.Error("MyInterface not found")
+	}
+	if mainDef.LOC < 2 {
+		t.Errorf("Expected Main LOC >= 2, got %d", mainDef.LOC)
+	}
+	if mainDef.ComplexityScore <= 0 {
+		t.Errorf("Expected Main complexity score > 0, got %d", mainDef.ComplexityScore)
 	}
 
 	// Check local symbols in a more complex Go snippet

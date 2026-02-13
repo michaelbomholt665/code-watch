@@ -1,4 +1,3 @@
-// # internal/parser/golang.go
 package parser
 
 import (
@@ -102,33 +101,110 @@ func (e *GoExtractor) walkImports(node *sitter.Node, source []byte, file *File) 
 }
 
 func (e *GoExtractor) extractFunction(node *sitter.Node, source []byte, file *File) {
-	var name string
+	e.extractCallable(node, source, file, KindFunction)
+}
 
-	for i := uint(0); i < node.ChildCount(); i++ {
-		child := node.Child(i)
-		if child.Kind() == "identifier" {
-			name = e.getText(child, source)
-			break
-		}
+func (e *GoExtractor) extractMethod(node *sitter.Node, source []byte, file *File) {
+	receiver := node.ChildByFieldName("receiver")
+	if receiver != nil {
+		e.extractParam(receiver, source, file)
 	}
+	e.extractCallable(node, source, file, KindMethod)
+}
 
+func (e *GoExtractor) extractCallable(node *sitter.Node, source []byte, file *File, kind DefinitionKind) {
+	nameNode := node.ChildByFieldName("name")
+	if nameNode == nil {
+		return
+	}
+	name := e.getText(nameNode, source)
 	if name == "" {
 		return
 	}
 
 	exported := len(name) > 0 && unicode.IsUpper(rune(name[0]))
+	paramCount := e.countGoParameters(node.ChildByFieldName("parameters"))
+	branches, nesting := e.computeGoComplexity(node.ChildByFieldName("body"), 0)
+	loc := int(node.EndPosition().Row-node.StartPosition().Row) + 1
+	if loc < 1 {
+		loc = 1
+	}
+	score := (branches * 2) + (nesting * 2) + paramCount + (loc / 10)
+	if score == 0 {
+		score = 1
+	}
 
 	file.Definitions = append(file.Definitions, Definition{
-		Name:     name,
-		FullName: file.Module + "." + name,
-		Kind:     KindFunction,
-		Exported: exported,
+		Name:            name,
+		FullName:        file.Module + "." + name,
+		Kind:            kind,
+		Exported:        exported,
+		ParameterCount:  paramCount,
+		BranchCount:     branches,
+		NestingDepth:    nesting,
+		LOC:             loc,
+		ComplexityScore: score,
 		Location: Location{
 			File:   file.Path,
 			Line:   int(node.StartPosition().Row) + 1,
 			Column: int(node.StartPosition().Column) + 1,
 		},
 	})
+}
+
+func (e *GoExtractor) countGoParameters(params *sitter.Node) int {
+	if params == nil {
+		return 0
+	}
+	count := 0
+	var walk func(*sitter.Node)
+	walk = func(n *sitter.Node) {
+		if n == nil {
+			return
+		}
+		switch n.Kind() {
+		case "identifier":
+			count++
+		case "variadic_parameter":
+			for i := uint(0); i < n.ChildCount(); i++ {
+				child := n.Child(i)
+				if child.Kind() == "identifier" {
+					count++
+				}
+			}
+		}
+		for i := uint(0); i < n.ChildCount(); i++ {
+			walk(n.Child(i))
+		}
+	}
+	walk(params)
+	return count
+}
+
+func (e *GoExtractor) computeGoComplexity(body *sitter.Node, depth int) (branches int, maxDepth int) {
+	if body == nil {
+		return 0, depth
+	}
+
+	maxDepth = depth
+	for i := uint(0); i < body.ChildCount(); i++ {
+		child := body.Child(i)
+		childDepth := depth
+
+		switch child.Kind() {
+		case "if_statement", "for_statement", "range_clause", "switch_statement", "type_switch_statement", "select_statement", "case_clause", "communication_case":
+			branches++
+			childDepth = depth + 1
+		}
+
+		subBranches, subDepth := e.computeGoComplexity(child, childDepth)
+		branches += subBranches
+		if subDepth > maxDepth {
+			maxDepth = subDepth
+		}
+	}
+
+	return branches, maxDepth
 }
 
 func (e *GoExtractor) extractType(node *sitter.Node, source []byte, file *File) {
@@ -174,21 +250,16 @@ func (e *GoExtractor) extractTypeSpec(node *sitter.Node, source []byte, file *Fi
 }
 
 func (e *GoExtractor) extractVarDecl(node *sitter.Node, source []byte, file *File) {
-	// Simple DFS to find all identifiers on the left side
 	var findIdentifiers func(*sitter.Node)
 	findIdentifiers = func(n *sitter.Node) {
 		if n.Kind() == "identifier" {
 			file.LocalSymbols = append(file.LocalSymbols, e.getText(n, source))
 		}
-		// In short_var_declaration, left is a field. We only want the left side of :=
-		// But for now, any identifier in these declaration nodes is likely a local symbol
 		for i := uint(0); i < n.ChildCount(); i++ {
 			findIdentifiers(n.Child(i))
 		}
 	}
 
-	// For var_declaration/const_declaration, we want the names being defined
-	// For short_var_declaration, we only want the left side.
 	if node.Kind() == "short_var_declaration" {
 		left := node.ChildByFieldName("left")
 		if left != nil {
@@ -206,15 +277,6 @@ func (e *GoExtractor) extractParam(node *sitter.Node, source []byte, file *File)
 			file.LocalSymbols = append(file.LocalSymbols, e.getText(child, source))
 		}
 	}
-}
-
-func (e *GoExtractor) extractMethod(node *sitter.Node, source []byte, file *File) {
-	// Extract receiver
-	receiver := node.ChildByFieldName("receiver")
-	if receiver != nil {
-		e.extractParam(receiver, source, file)
-	}
-	e.extractFunction(node, source, file)
 }
 
 func (e *GoExtractor) extractRange(node *sitter.Node, source []byte, file *File) {

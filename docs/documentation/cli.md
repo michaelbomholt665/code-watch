@@ -21,6 +21,10 @@ circular [flags] [path]
 - `--trace`
 - trace shortest dependency chain: `circular --trace <from-module> <to-module>`
 - requires exactly two module arguments and exits after printing the chain
+- `--impact`
+- analyze blast radius for one target: `circular --impact <file-path-or-module>`
+- prints direct importers, transitive impact, and externally used symbols, then exits
+- cannot be combined with `--trace`
 - `--verbose`
 - sets logger level to debug
 - `--version`
@@ -42,12 +46,20 @@ Trace example:
 circular --trace github.com/acme/project/cmd/app github.com/acme/project/internal/store
 ```
 
+Impact example:
+
+```bash
+circular --impact ./internal/graph/graph.go
+```
+
 ## Runtime Modes
 
 - one-shot mode:
 - parse -> build graph -> detect cycles/unresolved/unused-imports -> write outputs -> print summary -> exit
 - trace mode (`--trace`):
 - parse -> build graph -> print import chain (or not-found error) -> exit
+- impact mode (`--impact`):
+- parse -> build graph -> print direct and transitive import impact for one target -> exit
 - watch mode (default):
 - same initial pass, then watches configured paths for changes and incrementally reprocesses changed files
 - UI mode (`--ui`):

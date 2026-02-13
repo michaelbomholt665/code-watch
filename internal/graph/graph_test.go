@@ -344,3 +344,78 @@ func TestGraph_FindImportChain(t *testing.T) {
 		})
 	}
 }
+
+func TestLayerRuleEngine_Validate(t *testing.T) {
+	g := NewGraph()
+
+	g.AddFile(&parser.File{Path: "internal/api/a.go", Module: "internal/api", Imports: []parser.Import{{Module: "internal/core"}}})
+	g.AddFile(&parser.File{Path: "internal/core/b.go", Module: "internal/core", Imports: []parser.Import{{Module: "internal/api"}}})
+
+	engine := NewLayerRuleEngine(ArchitectureModel{
+		Enabled: true,
+		Layers: []ArchitectureLayer{
+			{Name: "api", Paths: []string{"internal/api"}},
+			{Name: "core", Paths: []string{"internal/core"}},
+		},
+		Rules: []ArchitectureRule{
+			{Name: "api-to-core-only", From: "api", Allow: []string{"core"}},
+			{Name: "core-to-core-only", From: "core", Allow: []string{"core"}},
+		},
+	})
+
+	violations := engine.Validate(g)
+	if len(violations) != 1 {
+		t.Fatalf("expected 1 violation, got %d", len(violations))
+	}
+	v := violations[0]
+	if v.RuleName != "core-to-core-only" || v.FromLayer != "core" || v.ToLayer != "api" {
+		t.Fatalf("unexpected violation: %+v", v)
+	}
+}
+
+func TestGraph_AnalyzeImpact(t *testing.T) {
+	g := NewGraph()
+
+	g.AddFile(&parser.File{Path: "a.go", Module: "A", Imports: []parser.Import{{Module: "B"}}})
+	g.AddFile(&parser.File{Path: "b.go", Module: "B", Definitions: []parser.Definition{{Name: "Run", Exported: true}}})
+	g.AddFile(&parser.File{Path: "c.go", Module: "C", Imports: []parser.Import{{Module: "A"}}})
+	g.AddFile(&parser.File{Path: "d.go", Module: "D", Imports: []parser.Import{{Module: "A"}}})
+
+	report, err := g.AnalyzeImpact("b.go")
+	if err != nil {
+		t.Fatalf("AnalyzeImpact returned error: %v", err)
+	}
+	if report.TargetModule != "B" {
+		t.Fatalf("expected target module B, got %s", report.TargetModule)
+	}
+	if len(report.DirectImporters) != 1 || report.DirectImporters[0] != "A" {
+		t.Fatalf("unexpected direct importers: %v", report.DirectImporters)
+	}
+	if len(report.TransitiveImporters) != 2 {
+		t.Fatalf("unexpected transitive importers: %v", report.TransitiveImporters)
+	}
+	if len(report.ExternallyUsedSymbols) != 1 || report.ExternallyUsedSymbols[0] != "Run" {
+		t.Fatalf("unexpected externally used symbols: %v", report.ExternallyUsedSymbols)
+	}
+}
+
+func TestGraph_TopComplexity(t *testing.T) {
+	g := NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:   "mod/main.go",
+		Module: "mod",
+		Definitions: []parser.Definition{
+			{Name: "Small", Kind: parser.KindFunction, ComplexityScore: 2},
+			{Name: "Large", Kind: parser.KindFunction, ComplexityScore: 9, BranchCount: 3, ParameterCount: 2, NestingDepth: 2, LOC: 30},
+		},
+	})
+
+	top := g.TopComplexity(1)
+	if len(top) != 1 {
+		t.Fatalf("expected 1 hotspot, got %d", len(top))
+	}
+	if top[0].Definition != "Large" {
+		t.Fatalf("expected Large as top hotspot, got %s", top[0].Definition)
+	}
+}

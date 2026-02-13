@@ -23,6 +23,23 @@ tsv = "dependencies.tsv"
 [alerts]
 beep = false
 terminal = true
+
+[architecture]
+enabled = false
+top_complexity = 5
+
+[[architecture.layers]]
+name = "api"
+paths = ["internal/api", "cmd"]
+
+[[architecture.layers]]
+name = "core"
+paths = ["internal/core", "internal/graph", "internal/parser", "internal/resolver"]
+
+[[architecture.rules]]
+name = "api-to-core-only"
+from = "api"
+allow = ["core"]
 ```
 
 ## Field Details
@@ -55,6 +72,21 @@ terminal = true
 - emits terminal bell when cycles, unresolved references, or unused imports are present in update
 - `alerts.terminal` (`bool`)
 - enables/disables printed summary output
+- `architecture.enabled` (`bool`)
+- enables architecture layer-rule validation (default disabled)
+- `architecture.top_complexity` (`int`)
+- number of hotspots printed/exported by complexity ranking (default `5` when unset or `<=0`)
+- `architecture.layers` (`[]table`)
+- declared named layers and the path/module patterns assigned to each layer
+- each entry requires:
+- `name` (`string`): unique layer name
+- `paths` (`[]string`): one or more literal prefixes or glob patterns
+- `architecture.rules` (`[]table`)
+- dependency policy per source layer
+- each entry requires:
+- `name` (`string`): unique rule name
+- `from` (`string`): source layer name
+- `allow` (`[]string`): allowed target layers for imports originating from `from`
 
 ## Defaults and Fallbacks
 
@@ -62,3 +94,16 @@ terminal = true
 - if `./circular.toml` is missing, app attempts `./circular.example.toml`
 - if `watch_paths` is empty, it becomes `['.']`
 - if `watch.debounce` is zero, it becomes `500ms`
+- if `architecture.top_complexity` is zero/unset, it becomes `5`
+
+## Architecture Validation Rules
+
+When `architecture.enabled=true`, config loading fails fast if:
+- no layers are defined
+- a layer name is duplicated
+- a layer path pattern is duplicated across layers
+- literal layer paths overlap (for example `internal` and `internal/api`)
+- a rule name is duplicated
+- a source layer has multiple rules
+- a rule references unknown layers
+- a rule has an empty `allow` list

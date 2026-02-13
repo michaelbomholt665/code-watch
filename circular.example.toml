@@ -18,3 +18,25 @@ tsv = "dependencies.tsv"
 [alerts]
 beep = true
 terminal = true
+
+[architecture]
+enabled = false
+top_complexity = 5
+
+[[architecture.layers]]
+name = "api"
+paths = ["internal/api", "cmd"]
+
+[[architecture.layers]]
+name = "core"
+paths = ["internal/core", "internal/graph", "internal/parser", "internal/resolver"]
+
+[[architecture.rules]]
+name = "api-to-core-only"
+from = "api"
+allow = ["core"]
+
+[[architecture.rules]]
+name = "core-self-only"
+from = "core"
+allow = ["core"]

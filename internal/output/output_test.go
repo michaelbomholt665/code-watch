@@ -73,6 +73,28 @@ func TestDOTGenerator_WithModuleMetrics(t *testing.T) {
 	}
 }
 
+func TestDOTGenerator_WithComplexityHotspots(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:   "a.go",
+		Module: "modA",
+	})
+
+	gen := NewDOTGenerator(g)
+	gen.SetComplexityHotspots([]graph.ComplexityHotspot{
+		{Module: "modA", Score: 11},
+	})
+
+	dot, err := gen.Generate(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(dot, "(cx=11)") {
+		t.Fatalf("Expected complexity annotation in DOT output, got: %s", dot)
+	}
+}
+
 func TestTSVGenerator(t *testing.T) {
 	g := graph.NewGraph()
 	g.AddFile(&parser.File{
@@ -129,5 +151,37 @@ func TestTSVGenerator_GenerateUnusedImports(t *testing.T) {
 	}
 	if !strings.Contains(lines[1], "unused_import\ta.py\tpython\tmath\t\tpow\t3\t1\thigh") {
 		t.Fatalf("Unexpected unused-import TSV row: %s", lines[1])
+	}
+}
+
+func TestTSVGenerator_GenerateArchitectureViolations(t *testing.T) {
+	g := graph.NewGraph()
+	gen := NewTSVGenerator(g)
+
+	tsv, err := gen.GenerateArchitectureViolations([]graph.ArchitectureViolation{
+		{
+			RuleName:   "api-to-core-only",
+			FromModule: "internal/core",
+			FromLayer:  "core",
+			ToModule:   "internal/api",
+			ToLayer:    "api",
+			File:       "internal/core/service.go",
+			Line:       12,
+			Column:     4,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(tsv), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("Expected 2 lines in architecture TSV, got %d", len(lines))
+	}
+	if !strings.Contains(lines[0], "Type\tRule\tFromModule\tFromLayer\tToModule\tToLayer\tFile\tLine\tColumn") {
+		t.Fatalf("Unexpected architecture TSV header: %s", lines[0])
+	}
+	if !strings.Contains(lines[1], "architecture_violation\tapi-to-core-only\tinternal/core\tcore\tinternal/api\tapi\tinternal/core/service.go\t12\t4") {
+		t.Fatalf("Unexpected architecture TSV row: %s", lines[1])
 	}
 }
