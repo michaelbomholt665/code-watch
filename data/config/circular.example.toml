@@ -43,11 +43,51 @@ config_path = ""
 
 [languages]
 # Optional per-language rollout overrides.
-# Go and Python are enabled by default.
+# Defaults: go=true, python=true, all others=false.
+
+# [languages.css]
+# enabled = false
+# extensions = [".css"]
+
+# [languages.go]
+# enabled = true
+# extensions = [".go"]
+
+# [languages.gomod]
+# enabled = false
+# filenames = ["go.mod"]
+
+# [languages.gosum]
+# enabled = false
+# filenames = ["go.sum"]
+
+# [languages.html]
+# enabled = false
+# extensions = [".html", ".htm"]
 
 # [languages.javascript]
-# enabled = true
+# enabled = false
 # extensions = [".js", ".cjs", ".mjs"]
+
+# [languages.java]
+# enabled = false
+# extensions = [".java"]
+
+# [languages.python]
+# enabled = true
+# extensions = [".py"]
+
+# [languages.rust]
+# enabled = false
+# extensions = [".rs"]
+
+# [languages.tsx]
+# enabled = false
+# extensions = [".tsx"]
+
+# [languages.typescript]
+# enabled = false
+# extensions = [".ts"]
 
 [exclude]
 dirs = [".git", "node_modules", "vendor", "__pycache__"]
