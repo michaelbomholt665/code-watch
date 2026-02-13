@@ -22,6 +22,17 @@ debounce = "1s"
 [output]
 dot = "graph.dot"
 tsv = "deps.tsv"
+mermaid = "graph.mmd"
+plantuml = "graph.puml"
+
+[output.paths]
+root = "."
+diagrams_dir = "docs/diagrams"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-mermaid"
+format = "mermaid"
 
 [alerts]
 beep = true
@@ -56,6 +67,21 @@ terminal = true
 	}
 	if cfg.Output.DOT != "graph.dot" {
 		t.Errorf("Expected DOT graph.dot, got %s", cfg.Output.DOT)
+	}
+	if cfg.Output.Mermaid != "graph.mmd" {
+		t.Errorf("Expected Mermaid graph.mmd, got %s", cfg.Output.Mermaid)
+	}
+	if cfg.Output.PlantUML != "graph.puml" {
+		t.Errorf("Expected PlantUML graph.puml, got %s", cfg.Output.PlantUML)
+	}
+	if cfg.Output.Paths.DiagramsDir != "docs/diagrams" {
+		t.Fatalf("Expected diagrams_dir docs/diagrams, got %q", cfg.Output.Paths.DiagramsDir)
+	}
+	if len(cfg.Output.UpdateMarkdown) != 1 {
+		t.Fatalf("Expected 1 markdown update target, got %d", len(cfg.Output.UpdateMarkdown))
+	}
+	if cfg.Output.UpdateMarkdown[0].Format != "mermaid" {
+		t.Fatalf("Expected markdown format mermaid, got %s", cfg.Output.UpdateMarkdown[0].Format)
 	}
 }
 
@@ -176,5 +202,60 @@ paths = ["internal/api"]
 	_, err = Load(tmpfile.Name())
 	if err == nil {
 		t.Fatal("expected overlap validation error")
+	}
+}
+
+func TestLoadOutputMarkdownValidation(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[output]
+dot = "graph.dot"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = ""
+format = "mermaid"
+`
+	tmpfile, err := os.CreateTemp("", "config-output-bad*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Load(tmpfile.Name())
+	if err == nil {
+		t.Fatal("expected markdown marker validation error")
+	}
+}
+
+func TestLoadOutputPathsDefault(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+`
+	tmpfile, err := os.CreateTemp("", "config-output-paths-default*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Output.Paths.DiagramsDir != "docs/diagrams" {
+		t.Fatalf("expected default diagrams dir docs/diagrams, got %q", cfg.Output.Paths.DiagramsDir)
 	}
 }

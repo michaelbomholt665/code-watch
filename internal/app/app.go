@@ -1,5 +1,4 @@
-// # cmd/circular/app.go
-package main
+package app
 
 import (
 	"circular/internal/config"
@@ -15,24 +14,36 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/gobwas/glob"
 )
+
+type Update struct {
+	Cycles         [][]string
+	Hallucinations []resolver.UnresolvedReference
+	ModuleCount    int
+	FileCount      int
+}
 
 type App struct {
 	Config     *config.Config
 	Parser     *parser.Parser
 	Graph      *graph.Graph
 	archEngine *graph.LayerRuleEngine
-	teaProgram *tea.Program
 	goModCache map[string]goModuleCacheEntry
+
+	updateMu sync.RWMutex
+	onUpdate func(Update)
 
 	// Cached unresolved references keyed by file path for incremental updates.
 	unresolvedByFile map[string][]resolver.UnresolvedReference
+	unresolvedMu     sync.RWMutex
+
 	// Cached unused imports keyed by file path for incremental updates.
 	unusedByFile map[string][]resolver.UnusedImport
+	unusedMu     sync.RWMutex
 }
 
 type goModuleCacheEntry struct {
@@ -41,7 +52,7 @@ type goModuleCacheEntry struct {
 	ModulePath string
 }
 
-func NewApp(cfg *config.Config) (*App, error) {
+func New(cfg *config.Config) (*App, error) {
 	loader, err := parser.NewGrammarLoader(cfg.GrammarsPath)
 	if err != nil {
 		return nil, err
@@ -62,29 +73,40 @@ func NewApp(cfg *config.Config) (*App, error) {
 	}, nil
 }
 
-func (a *App) InitialScan() error {
-	paths := a.Config.WatchPaths
+func (a *App) SetUpdateHandler(handler func(Update)) {
+	a.updateMu.Lock()
+	defer a.updateMu.Unlock()
+	a.onUpdate = handler
+}
 
-	// If it's a Go project, we might want to expand the scan to the module root
-	// to ensure all internal definitions are loaded, even if we only watch a sub-path.
-	expandedPaths := make(map[string]bool)
-	for _, p := range paths {
+func (a *App) CurrentUpdate() Update {
+	return Update{
+		Cycles:         a.Graph.DetectCycles(),
+		Hallucinations: a.AnalyzeHallucinations(),
+		ModuleCount:    a.Graph.ModuleCount(),
+		FileCount:      a.Graph.FileCount(),
+	}
+}
+
+func (a *App) InitialScan() error {
+	finalPaths := uniqueScanRoots(a.Config.WatchPaths)
+	expandedPaths := make(map[string]bool, len(finalPaths))
+	for _, p := range finalPaths {
 		expandedPaths[p] = true
 
-		// Look for go.mod to find module root
 		r := resolver.NewGoResolver()
 		if err := r.FindGoMod(p); err == nil {
-			// Get absolute path of module root
 			if absRoot, err := filepath.Abs(r.GetModuleRoot()); err == nil {
-				expandedPaths[absRoot] = true
+				expandedPaths[filepath.Clean(absRoot)] = true
 			}
 		}
 	}
 
-	finalPaths := make([]string, 0, len(expandedPaths))
+	finalPaths = make([]string, 0, len(expandedPaths))
 	for p := range expandedPaths {
 		finalPaths = append(finalPaths, p)
 	}
+	sort.Strings(finalPaths)
 
 	files, err := a.ScanDirectories(finalPaths, a.Config.Exclude.Dirs, a.Config.Exclude.Files)
 	if err != nil {
@@ -97,6 +119,24 @@ func (a *App) InitialScan() error {
 		}
 	}
 	return nil
+}
+
+func uniqueScanRoots(paths []string) []string {
+	seen := make(map[string]bool, len(paths))
+	roots := make([]string, 0, len(paths))
+	for _, p := range paths {
+		normalized := filepath.Clean(p)
+		if abs, err := filepath.Abs(normalized); err == nil {
+			normalized = filepath.Clean(abs)
+		}
+		if seen[normalized] {
+			continue
+		}
+		seen[normalized] = true
+		roots = append(roots, normalized)
+	}
+	sort.Strings(roots)
+	return roots
 }
 
 func (a *App) ScanDirectories(paths []string, excludeDirs, excludeFiles []string) ([]string, error) {
@@ -127,7 +167,6 @@ func (a *App) ScanDirectories(paths []string, excludeDirs, excludeFiles []string
 			}
 
 			base := filepath.Base(path)
-
 			if d.IsDir() {
 				for _, g := range dirGlobs {
 					if g.Match(base) {
@@ -171,16 +210,51 @@ func (a *App) ProcessFile(path string) error {
 	}
 
 	if file.Language == "python" {
-		r := resolver.NewPythonResolver(a.Config.WatchPaths[0])
+		if len(a.Config.WatchPaths) == 0 {
+			return fmt.Errorf("python resolver requires at least one watch path")
+		}
+		matchingPath, err := findContainingWatchPath(path, a.Config.WatchPaths)
+		if err != nil {
+			return err
+		}
+		r := resolver.NewPythonResolver(matchingPath)
 		file.Module = r.GetModuleName(path)
 	} else if file.Language == "go" {
-		if moduleName, ok := a.resolveGoModule(path); ok {
+		moduleName, ok, err := a.resolveGoModule(path)
+		if err != nil {
+			return err
+		}
+		if ok {
 			file.Module = moduleName
 		}
 	}
 
 	a.Graph.AddFile(file)
 	return nil
+}
+
+func findContainingWatchPath(path string, watchPaths []string) (string, error) {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("resolve file path %q: %w", path, err)
+	}
+
+	for _, watchPath := range watchPaths {
+		absWatchPath, err := filepath.Abs(watchPath)
+		if err != nil {
+			return "", fmt.Errorf("resolve watch path %q: %w", watchPath, err)
+		}
+
+		rel, err := filepath.Rel(absWatchPath, absPath)
+		if err != nil {
+			continue
+		}
+		if rel == "." || (rel != ".." && !strings.HasPrefix(rel, ".."+string(os.PathSeparator))) {
+			return absWatchPath, nil
+		}
+	}
+
+	return "", fmt.Errorf("python file %q is not under any configured watch path", path)
 }
 
 func (a *App) HandleChanges(paths []string) {
@@ -193,7 +267,6 @@ func (a *App) HandleChanges(paths []string) {
 			a.goModCache = make(map[string]goModuleCacheEntry)
 		}
 
-		// Determine impacted files from previous graph state before applying this update.
 		for _, f := range a.Graph.InvalidateTransitive(path) {
 			affectedSet[f] = true
 		}
@@ -201,7 +274,12 @@ func (a *App) HandleChanges(paths []string) {
 
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			a.Graph.RemoveFile(path)
+			a.unresolvedMu.Lock()
 			delete(a.unresolvedByFile, path)
+			a.unresolvedMu.Unlock()
+			a.unusedMu.Lock()
+			delete(a.unusedByFile, path)
+			a.unusedMu.Unlock()
 			continue
 		}
 
@@ -213,7 +291,7 @@ func (a *App) HandleChanges(paths []string) {
 	cycles := a.Graph.DetectCycles()
 	metrics := a.Graph.ComputeModuleMetrics()
 	hotspots := a.Graph.TopComplexity(a.Config.Architecture.TopComplexity)
-	violations := a.archEngine.Validate(a.Graph)
+	violations := a.ArchitectureViolations()
 	hallucinations := a.AnalyzeHallucinationsIncremental(affectedSet)
 	unusedImports := a.AnalyzeUnusedImportsIncremental(affectedSet)
 
@@ -223,18 +301,24 @@ func (a *App) HandleChanges(paths []string) {
 
 	duration := time.Since(start)
 	a.PrintSummary(len(paths), a.Graph.ModuleCount(), duration, cycles, hallucinations, unusedImports, metrics, violations, hotspots)
-
-	if a.teaProgram != nil {
-		a.teaProgram.Send(updateMsg{
-			cycles:         cycles,
-			hallucinations: hallucinations,
-			moduleCount:    a.Graph.ModuleCount(),
-			fileCount:      a.Graph.FileCount(), // Need to implement this or use a count
-		})
-	}
+	a.emitUpdate(Update{
+		Cycles:         cycles,
+		Hallucinations: hallucinations,
+		ModuleCount:    a.Graph.ModuleCount(),
+		FileCount:      a.Graph.FileCount(),
+	})
 
 	if a.Config.Alerts.Beep && (len(cycles) > 0 || len(hallucinations) > 0 || len(unusedImports) > 0 || len(violations) > 0) {
 		fmt.Print("\a")
+	}
+}
+
+func (a *App) emitUpdate(update Update) {
+	a.updateMu.RLock()
+	handler := a.onUpdate
+	a.updateMu.RUnlock()
+	if handler != nil {
+		handler(update)
 	}
 }
 
@@ -258,7 +342,7 @@ func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []re
 	res := resolver.NewResolver(a.Graph, a.Config.Exclude.Symbols)
 	updated := res.FindUnresolvedForPaths(paths)
 
-	// Reset cache entries for impacted files that still exist.
+	a.unresolvedMu.Lock()
 	for _, path := range paths {
 		if _, ok := a.Graph.GetFile(path); ok {
 			a.unresolvedByFile[path] = nil
@@ -270,6 +354,7 @@ func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []re
 	for _, u := range updated {
 		a.unresolvedByFile[u.File] = append(a.unresolvedByFile[u.File], u)
 	}
+	a.unresolvedMu.Unlock()
 
 	return a.cachedUnresolved()
 }
@@ -295,6 +380,7 @@ func (a *App) AnalyzeUnusedImportsIncremental(affectedSet map[string]bool) []res
 	res := resolver.NewResolver(a.Graph, a.Config.Exclude.Symbols)
 	updated := res.FindUnusedImports(paths)
 
+	a.unusedMu.Lock()
 	for _, path := range paths {
 		if _, ok := a.Graph.GetFile(path); ok {
 			a.unusedByFile[path] = nil
@@ -306,6 +392,7 @@ func (a *App) AnalyzeUnusedImportsIncremental(affectedSet map[string]bool) []res
 	for _, u := range updated {
 		a.unusedByFile[u.File] = append(a.unusedByFile[u.File], u)
 	}
+	a.unusedMu.Unlock()
 
 	return a.cachedUnused()
 }
@@ -317,48 +404,233 @@ func (a *App) GenerateOutputs(
 	violations []graph.ArchitectureViolation,
 	hotspots []graph.ComplexityHotspot,
 ) error {
-	if a.Config.Output.DOT != "" {
+	archModel := architectureModelFromConfig(a.Config.Architecture)
+	mermaidDiagram := ""
+	plantUMLDiagram := ""
+	targets, err := a.resolveOutputTargets()
+	if err != nil {
+		return err
+	}
+
+	if targets.DOT != "" {
 		dotGen := output.NewDOTGenerator(a.Graph)
 		dotGen.SetModuleMetrics(metrics)
 		dotGen.SetComplexityHotspots(hotspots)
 		dot, err := dotGen.Generate(cycles)
 		if err != nil {
-			return err
+			return fmt.Errorf("generate DOT output: %w", err)
 		}
-		if err := os.WriteFile(a.Config.Output.DOT, []byte(dot), 0644); err != nil {
-			return err
+		if err := writeArtifact(targets.DOT, dot); err != nil {
+			return fmt.Errorf("write DOT output %q: %w", targets.DOT, err)
 		}
 	}
 
-	if a.Config.Output.TSV != "" {
+	if targets.TSV != "" {
 		tsvGen := output.NewTSVGenerator(a.Graph)
 		dependenciesTSV, err := tsvGen.Generate()
 		if err != nil {
-			return err
+			return fmt.Errorf("generate TSV output: %w", err)
 		}
 		tsv := dependenciesTSV
 
 		if len(unusedImports) > 0 {
 			unusedTSV, err := tsvGen.GenerateUnusedImports(unusedImports)
 			if err != nil {
-				return err
+				return fmt.Errorf("generate unused-import TSV block: %w", err)
 			}
 			tsv = strings.TrimRight(dependenciesTSV, "\n") + "\n\n" + strings.TrimRight(unusedTSV, "\n") + "\n"
 		}
 		if len(violations) > 0 {
 			violationsTSV, err := tsvGen.GenerateArchitectureViolations(violations)
 			if err != nil {
-				return err
+				return fmt.Errorf("generate architecture-violation TSV block: %w", err)
 			}
 			tsv = strings.TrimRight(tsv, "\n") + "\n\n" + strings.TrimRight(violationsTSV, "\n") + "\n"
 		}
 
-		if err := os.WriteFile(a.Config.Output.TSV, []byte(tsv), 0644); err != nil {
-			return err
+		if err := writeArtifact(targets.TSV, tsv); err != nil {
+			return fmt.Errorf("write TSV output %q: %w", targets.TSV, err)
+		}
+	}
+
+	needMermaid := targets.Mermaid != ""
+	needPlantUML := targets.PlantUML != ""
+	for _, injection := range a.Config.Output.UpdateMarkdown {
+		switch strings.ToLower(strings.TrimSpace(injection.Format)) {
+		case "mermaid":
+			needMermaid = true
+		case "plantuml":
+			needPlantUML = true
+		}
+	}
+
+	if needMermaid {
+		mermaidGen := output.NewMermaidGenerator(a.Graph)
+		mermaidGen.SetModuleMetrics(metrics)
+		mermaidGen.SetComplexityHotspots(hotspots)
+		diagram, err := mermaidGen.Generate(cycles, violations, archModel)
+		if err != nil {
+			return fmt.Errorf("generate Mermaid output: %w", err)
+		}
+		mermaidDiagram = diagram
+		if targets.Mermaid != "" {
+			if err := writeArtifact(targets.Mermaid, mermaidDiagram); err != nil {
+				return fmt.Errorf("write Mermaid output %q: %w", targets.Mermaid, err)
+			}
+		}
+	}
+
+	if needPlantUML {
+		plantUMLGen := output.NewPlantUMLGenerator(a.Graph)
+		plantUMLGen.SetModuleMetrics(metrics)
+		plantUMLGen.SetComplexityHotspots(hotspots)
+		diagram, err := plantUMLGen.Generate(cycles, violations, archModel)
+		if err != nil {
+			return fmt.Errorf("generate PlantUML output: %w", err)
+		}
+		plantUMLDiagram = diagram
+		if targets.PlantUML != "" {
+			if err := writeArtifact(targets.PlantUML, plantUMLDiagram); err != nil {
+				return fmt.Errorf("write PlantUML output %q: %w", targets.PlantUML, err)
+			}
+		}
+	}
+
+	for _, injection := range a.Config.Output.UpdateMarkdown {
+		format := strings.ToLower(strings.TrimSpace(injection.Format))
+		diagram := ""
+		switch format {
+		case "mermaid":
+			diagram = markdownDiagramBlock("mermaid", mermaidDiagram)
+		case "plantuml":
+			diagram = markdownDiagramBlock("plantuml", plantUMLDiagram)
+		default:
+			continue
+		}
+
+		if err := output.InjectDiagram(injection.File, injection.Marker, diagram); err != nil {
+			return fmt.Errorf("inject %s diagram into %q with marker %q: %w", format, injection.File, injection.Marker, err)
 		}
 	}
 
 	return nil
+}
+
+type outputTargets struct {
+	DOT      string
+	TSV      string
+	Mermaid  string
+	PlantUML string
+}
+
+func (a *App) resolveOutputTargets() (outputTargets, error) {
+	root, err := resolveOutputRoot(a.Config.Output.Paths.Root, a.Config.WatchPaths)
+	if err != nil {
+		return outputTargets{}, fmt.Errorf("resolve output root: %w", err)
+	}
+
+	diagramsDir := strings.TrimSpace(a.Config.Output.Paths.DiagramsDir)
+	if diagramsDir == "" {
+		diagramsDir = "docs/diagrams"
+	}
+	if !filepath.IsAbs(diagramsDir) {
+		diagramsDir = filepath.Join(root, diagramsDir)
+	}
+
+	targets := outputTargets{
+		DOT:      resolveOutputPath(strings.TrimSpace(a.Config.Output.DOT), root),
+		TSV:      resolveOutputPath(strings.TrimSpace(a.Config.Output.TSV), root),
+		Mermaid:  resolveDiagramPath(strings.TrimSpace(a.Config.Output.Mermaid), root, diagramsDir),
+		PlantUML: resolveDiagramPath(strings.TrimSpace(a.Config.Output.PlantUML), root, diagramsDir),
+	}
+	return targets, nil
+}
+
+func resolveOutputRoot(configuredRoot string, watchPaths []string) (string, error) {
+	if strings.TrimSpace(configuredRoot) != "" {
+		if filepath.IsAbs(configuredRoot) {
+			return filepath.Clean(configuredRoot), nil
+		}
+		abs, err := filepath.Abs(configuredRoot)
+		if err != nil {
+			return "", err
+		}
+		return abs, nil
+	}
+	return detectProjectRoot(watchPaths)
+}
+
+func detectProjectRoot(watchPaths []string) (string, error) {
+	candidates := make([]string, 0, len(watchPaths)+1)
+	candidates = append(candidates, watchPaths...)
+	if cwd, err := os.Getwd(); err == nil {
+		candidates = append(candidates, cwd)
+	}
+
+	for _, candidate := range candidates {
+		abs, err := filepath.Abs(candidate)
+		if err != nil {
+			continue
+		}
+		root := abs
+		if info, err := os.Stat(abs); err == nil && !info.IsDir() {
+			root = filepath.Dir(abs)
+		}
+		for {
+			if pathExists(filepath.Join(root, "go.mod")) || pathExists(filepath.Join(root, ".git")) || pathExists(filepath.Join(root, "circular.toml")) {
+				return root, nil
+			}
+			parent := filepath.Dir(root)
+			if parent == root {
+				break
+			}
+			root = parent
+		}
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return cwd, nil
+}
+
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func resolveOutputPath(path, root string) string {
+	if path == "" {
+		return ""
+	}
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+	return filepath.Join(root, path)
+}
+
+func resolveDiagramPath(path, root, diagramsDir string) string {
+	if path == "" {
+		return ""
+	}
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+	if strings.Contains(path, string(os.PathSeparator)) || strings.Contains(path, "/") {
+		return filepath.Join(root, path)
+	}
+	return filepath.Join(diagramsDir, path)
+}
+
+func writeArtifact(path, content string) error {
+	dir := filepath.Dir(path)
+	if dir != "" && dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
+	}
+	return os.WriteFile(path, []byte(content), 0644)
 }
 
 func (a *App) TraceImportChain(from, to string) (string, error) {
@@ -389,6 +661,10 @@ func (a *App) TraceImportChain(from, to string) (string, error) {
 
 func (a *App) AnalyzeImpact(path string) (graph.ImpactReport, error) {
 	return a.Graph.AnalyzeImpact(path)
+}
+
+func (a *App) ArchitectureViolations() []graph.ArchitectureViolation {
+	return a.archEngine.Validate(a.Graph)
 }
 
 func (a *App) PrintSummary(
@@ -474,29 +750,6 @@ func (a *App) PrintSummary(
 	fmt.Println(strings.Repeat("-", 40))
 }
 
-func (a *App) RunUI() error {
-	m := initialModel()
-	p := tea.NewProgram(m, tea.WithAltScreen())
-	a.teaProgram = p
-
-	// Trigger initial UI update
-	go func() {
-		// Wait a bit for initial scan to complete if it's still running
-		// In main.go we call InitialScan before StartWatcher/RunUI
-		cycles := a.Graph.DetectCycles()
-		hallucinations := a.AnalyzeHallucinations()
-		a.teaProgram.Send(updateMsg{
-			cycles:         cycles,
-			hallucinations: hallucinations,
-			moduleCount:    a.Graph.ModuleCount(),
-			fileCount:      a.Graph.FileCount(),
-		})
-	}()
-
-	_, err := p.Run()
-	return err
-}
-
 func (a *App) StartWatcher() error {
 	w, err := watcher.NewWatcher(
 		a.Config.Watch.Debounce,
@@ -507,11 +760,10 @@ func (a *App) StartWatcher() error {
 	if err != nil {
 		return err
 	}
-	// Note: We don't close here, it should run forever
 	return w.Watch(a.Config.WatchPaths)
 }
 
-func (a *App) resolveGoModule(path string) (string, bool) {
+func (a *App) resolveGoModule(path string) (string, bool, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		absPath = path
@@ -522,9 +774,13 @@ func (a *App) resolveGoModule(path string) (string, bool) {
 	for {
 		if cached, ok := a.goModCache[dir]; ok {
 			if !cached.Found {
-				return "", false
+				return "", false, nil
 			}
-			return moduleNameFromCache(cached, absPath), true
+			moduleName, err := moduleNameFromCache(cached, absPath)
+			if err != nil {
+				return "", false, err
+			}
+			return moduleName, true, nil
 		}
 		visited = append(visited, dir)
 		parent := filepath.Dir(dir)
@@ -539,7 +795,7 @@ func (a *App) resolveGoModule(path string) (string, bool) {
 		for _, d := range visited {
 			a.goModCache[d] = goModuleCacheEntry{Found: false}
 		}
-		return "", false
+		return "", false, nil
 	}
 
 	cached := goModuleCacheEntry{
@@ -551,19 +807,23 @@ func (a *App) resolveGoModule(path string) (string, bool) {
 		a.goModCache[d] = cached
 	}
 
-	return moduleNameFromCache(cached, absPath), true
+	moduleName, err := moduleNameFromCache(cached, absPath)
+	if err != nil {
+		return "", false, err
+	}
+	return moduleName, true, nil
 }
 
-func moduleNameFromCache(cached goModuleCacheEntry, filePath string) string {
+func moduleNameFromCache(cached goModuleCacheEntry, filePath string) (string, error) {
 	rel, err := filepath.Rel(cached.ModuleRoot, filePath)
 	if err != nil {
-		return ""
+		return "", fmt.Errorf("resolve module name from cache entry %+v for %q: %w", cached, filePath, err)
 	}
 	dir := filepath.Dir(rel)
 	if dir == "." {
-		return cached.ModulePath
+		return cached.ModulePath, nil
 	}
-	return cached.ModulePath + "/" + dir
+	return cached.ModulePath + "/" + dir, nil
 }
 
 func (a *App) rebuildUnresolvedCache(unresolved []resolver.UnresolvedReference) {
@@ -574,10 +834,15 @@ func (a *App) rebuildUnresolvedCache(unresolved []resolver.UnresolvedReference) 
 	for _, u := range unresolved {
 		next[u.File] = append(next[u.File], u)
 	}
+	a.unresolvedMu.Lock()
 	a.unresolvedByFile = next
+	a.unresolvedMu.Unlock()
 }
 
 func (a *App) cachedUnresolved() []resolver.UnresolvedReference {
+	a.unresolvedMu.RLock()
+	defer a.unresolvedMu.RUnlock()
+
 	res := make([]resolver.UnresolvedReference, 0)
 	for _, refs := range a.unresolvedByFile {
 		res = append(res, refs...)
@@ -593,10 +858,15 @@ func (a *App) rebuildUnusedCache(unused []resolver.UnusedImport) {
 	for _, u := range unused {
 		next[u.File] = append(next[u.File], u)
 	}
+	a.unusedMu.Lock()
 	a.unusedByFile = next
+	a.unusedMu.Unlock()
 }
 
 func (a *App) cachedUnused() []resolver.UnusedImport {
+	a.unusedMu.RLock()
+	defer a.unusedMu.RUnlock()
+
 	res := make([]resolver.UnusedImport, 0)
 	for _, refs := range a.unusedByFile {
 		res = append(res, refs...)
@@ -630,10 +900,7 @@ func metricLeaders(
 		if score < minScore {
 			continue
 		}
-		scored = append(scored, scoredModule{
-			module: module,
-			score:  score,
-		})
+		scored = append(scored, scoredModule{module: module, score: score})
 	}
 
 	sort.Slice(scored, func(i, j int) bool {
@@ -674,4 +941,9 @@ func architectureModelFromConfig(arch config.Architecture) graph.ArchitectureMod
 		})
 	}
 	return model
+}
+
+func markdownDiagramBlock(format, diagram string) string {
+	trimmed := strings.TrimRight(diagram, "\n")
+	return "```" + format + "\n" + trimmed + "\n```"
 }

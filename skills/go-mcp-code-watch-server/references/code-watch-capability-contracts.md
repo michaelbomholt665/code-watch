@@ -4,7 +4,7 @@
 
 - `paths: []string`
 - `config_path: string` (optional)
-- `project_root: string` (optional override)
+- `project_root: string` (optional override; defaults to current working directory)
 
 ## Tool Contracts
 
@@ -38,7 +38,9 @@ Input:
 
 Output:
 - `count: int`
-- `items: []{file,module,symbol,line,column}`
+- `items: []UnresolvedItem` (see below)
+
+`type UnresolvedItem struct { file, module, symbol string; line, column int }`
 
 ### trace_import_chain
 
@@ -49,14 +51,16 @@ Input:
 
 Output:
 - `found: bool`
-- `path: []string`
-
 ### generate_reports
 
 Input:
 - `paths`
 - `formats: []string` (`tsv|dot|mermaid|plantuml`)
+- `config_path?`
 
+Output:
+- `reports: map[string]string`
+- `metadata: {generated_at, module_count, edge_count}`
 Output:
 - `reports: map[string]string`
 - `metadata: {generated_at, module_count, edge_count}`

@@ -1,0 +1,58 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+left to right direction
+
+component "circular/cmd/circular\n(0 funcs, 1 files)\n(d=6 in=0 out=1)" as circular_cmd_circular
+component "circular/internal/app\n(31 funcs, 3 files)\n(d=4 in=1 out=6)" as circular_internal_app
+component "circular/internal/cliapp\n(11 funcs, 5 files)\n(d=5 in=1 out=3)" as circular_internal_cliapp
+component "circular/internal/config\n(18 funcs, 2 files)\n(d=0 in=2 out=0)\n(cx=101)" as circular_internal_config
+component "circular/internal/graph\n(49 funcs, 6 files)\n(d=1 in=3 out=1)" as circular_internal_graph
+component "circular/internal/output\n(28 funcs, 6 files)\n(d=3 in=1 out=3)\n(cx=123)" as circular_internal_output
+component "circular/internal/parser\n(21 funcs, 7 files)\n(d=0 in=4 out=0)\n(cx=80)" as circular_internal_parser
+component "circular/internal/resolver\n(25 funcs, 6 files)\n(d=2 in=3 out=2)" as circular_internal_resolver
+component "circular/internal/watcher\n(7 funcs, 2 files)\n(d=0 in=1 out=0)" as circular_internal_watcher
+component "External/Stdlib\n(24 modules)" as __external_aggregate__ #DDDDDD
+
+circular_cmd_circular --> circular_internal_cliapp
+circular_internal_app --> circular_internal_config
+circular_internal_app --> circular_internal_graph
+circular_internal_app --> circular_internal_output
+circular_internal_app --> circular_internal_parser
+circular_internal_app --> circular_internal_resolver
+circular_internal_app --> circular_internal_watcher
+circular_internal_cliapp --> circular_internal_app
+circular_internal_cliapp --> circular_internal_config
+circular_internal_cliapp --> circular_internal_resolver
+circular_internal_graph --> circular_internal_parser
+circular_internal_output --> circular_internal_graph
+circular_internal_output --> circular_internal_parser
+circular_internal_output --> circular_internal_resolver
+circular_internal_resolver --> circular_internal_graph
+circular_internal_resolver --> circular_internal_parser
+circular_cmd_circular -[#777777,dashed]-> __external_aggregate__ : ext:1
+circular_internal_app -[#777777,dashed]-> __external_aggregate__ : ext:11
+circular_internal_cliapp -[#777777,dashed]-> __external_aggregate__ : ext:11
+circular_internal_config -[#777777,dashed]-> __external_aggregate__ : ext:7
+circular_internal_graph -[#777777,dashed]-> __external_aggregate__ : ext:8
+circular_internal_output -[#777777,dashed]-> __external_aggregate__ : ext:7
+circular_internal_parser -[#777777,dashed]-> __external_aggregate__ : ext:11
+circular_internal_resolver -[#777777,dashed]-> __external_aggregate__ : ext:7
+circular_internal_watcher -[#777777,dashed]-> __external_aggregate__ : ext:10
+
+legend right
+|= Item |= Meaning |
+|Node line 1|Module name|
+|Node line 2|Function/export count and file count|
+|d|Dependency depth|
+|in|Fan-in (number of internal modules importing this module)|
+|out|Fan-out (number of internal modules this module imports)|
+|cx|Top complexity hotspot score in the module|
+|<color:#DDDDDD>Component</color>|External module|
+|ext:N|Count of external dependencies from that module (aggregated mode)|
+endlegend
+
+@enduml

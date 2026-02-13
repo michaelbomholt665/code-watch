@@ -31,8 +31,23 @@ type Watch struct {
 }
 
 type Output struct {
-	DOT string `toml:"dot"`
-	TSV string `toml:"tsv"`
+	DOT            string              `toml:"dot"`
+	TSV            string              `toml:"tsv"`
+	Mermaid        string              `toml:"mermaid"`
+	PlantUML       string              `toml:"plantuml"`
+	UpdateMarkdown []MarkdownInjection `toml:"update_markdown"`
+	Paths          OutputPaths         `toml:"paths"`
+}
+
+type MarkdownInjection struct {
+	File   string `toml:"file"`
+	Marker string `toml:"marker"`
+	Format string `toml:"format"`
+}
+
+type OutputPaths struct {
+	Root        string `toml:"root"`
+	DiagramsDir string `toml:"diagrams_dir"`
 }
 
 type Alerts struct {
@@ -82,12 +97,47 @@ func Load(path string) (*Config, error) {
 	if cfg.Architecture.TopComplexity <= 0 {
 		cfg.Architecture.TopComplexity = 5
 	}
+	if strings.TrimSpace(cfg.Output.Paths.DiagramsDir) == "" {
+		cfg.Output.Paths.DiagramsDir = "docs/diagrams"
+	}
 
 	if err := validateArchitecture(&cfg); err != nil {
 		return nil, err
 	}
+	if err := validateOutput(&cfg); err != nil {
+		return nil, err
+	}
 
 	return &cfg, nil
+}
+
+func validateOutput(cfg *Config) error {
+	if strings.TrimSpace(cfg.Output.Paths.DiagramsDir) == "" {
+		return fmt.Errorf("output.paths.diagrams_dir must not be empty")
+	}
+
+	seen := make(map[string]bool, len(cfg.Output.UpdateMarkdown))
+	for i, injection := range cfg.Output.UpdateMarkdown {
+		ref := fmt.Sprintf("output.update_markdown[%d]", i)
+		file := strings.TrimSpace(injection.File)
+		if file == "" {
+			return fmt.Errorf("%s.file must not be empty", ref)
+		}
+		marker := strings.TrimSpace(injection.Marker)
+		if marker == "" {
+			return fmt.Errorf("%s.marker must not be empty", ref)
+		}
+		format := strings.ToLower(strings.TrimSpace(injection.Format))
+		if format != "mermaid" && format != "plantuml" {
+			return fmt.Errorf("%s.format must be one of: mermaid, plantuml", ref)
+		}
+		key := file + "|" + marker + "|" + format
+		if seen[key] {
+			return fmt.Errorf("duplicate markdown injection target: file=%q marker=%q format=%q", file, marker, format)
+		}
+		seen[key] = true
+	}
+	return nil
 }
 
 func validateArchitecture(cfg *Config) error {
@@ -103,6 +153,7 @@ func validateArchitecture(cfg *Config) error {
 	layerNames := make(map[string]bool, len(arch.Layers))
 	patternOwner := make(map[string]string)
 	literalPaths := make(map[string]string)
+	wildcardPatterns := make(map[string]string)
 
 	for i, layer := range arch.Layers {
 		layerRef := fmt.Sprintf("architecture.layers[%d]", i)
@@ -130,6 +181,25 @@ func validateArchitecture(cfg *Config) error {
 			patternOwner[path] = layer.Name
 
 			if hasWildcard(path) {
+				for existing, owner := range literalPaths {
+					if owner == layer.Name {
+						continue
+					}
+					if matched, _ := filepath.Match(path, existing); matched {
+						return fmt.Errorf("layer %q path %q overlaps with layer %q path %q", layer.Name, path, owner, existing)
+					}
+				}
+
+				for existing, owner := range wildcardPatterns {
+					if owner == layer.Name {
+						continue
+					}
+					if wildcardPatternsOverlap(path, existing) {
+						return fmt.Errorf("layer %q path %q overlaps with layer %q path %q", layer.Name, path, owner, existing)
+					}
+				}
+
+				wildcardPatterns[path] = layer.Name
 				continue
 			}
 
@@ -138,6 +208,14 @@ func validateArchitecture(cfg *Config) error {
 					continue
 				}
 				if isPathOverlap(existing, path) {
+					return fmt.Errorf("layer %q path %q overlaps with layer %q path %q", layer.Name, path, owner, existing)
+				}
+			}
+			for existing, owner := range wildcardPatterns {
+				if owner == layer.Name {
+					continue
+				}
+				if matched, _ := filepath.Match(existing, path); matched {
 					return fmt.Errorf("layer %q path %q overlaps with layer %q path %q", layer.Name, path, owner, existing)
 				}
 			}
@@ -198,4 +276,61 @@ func isPathOverlap(a, b string) bool {
 		return true
 	}
 	return false
+}
+
+func wildcardPatternsOverlap(a, b string) bool {
+	if a == b || strings.HasPrefix(a, b) || strings.HasPrefix(b, a) {
+		return true
+	}
+
+	aPrefix := wildcardPrefix(a)
+	bPrefix := wildcardPrefix(b)
+	if aPrefix != "" && bPrefix != "" && (strings.HasPrefix(aPrefix, bPrefix) || strings.HasPrefix(bPrefix, aPrefix)) {
+		return true
+	}
+
+	aSample := wildcardSample(a)
+	if aSample != "" {
+		if matched, _ := filepath.Match(b, aSample); matched {
+			return true
+		}
+	}
+
+	bSample := wildcardSample(b)
+	if bSample != "" {
+		if matched, _ := filepath.Match(a, bSample); matched {
+			return true
+		}
+	}
+
+	return false
+}
+
+func wildcardPrefix(pattern string) string {
+	idx := strings.IndexAny(pattern, "*?[]{}")
+	if idx == -1 {
+		return pattern
+	}
+	return pattern[:idx]
+}
+
+func wildcardSample(pattern string) string {
+	var sample strings.Builder
+	inSet := false
+	for _, ch := range pattern {
+		switch {
+		case ch == '[':
+			inSet = true
+			sample.WriteRune('x')
+		case ch == ']':
+			inSet = false
+		case inSet:
+			continue
+		case ch == '*' || ch == '?' || ch == '{' || ch == '}' || ch == ',':
+			sample.WriteRune('x')
+		default:
+			sample.WriteRune(ch)
+		}
+	}
+	return sample.String()
 }

@@ -28,6 +28,9 @@ It can run once (`--once`) or watch continuously with optional terminal UI mode 
 - Emits outputs:
   - Graphviz DOT (`graph.dot` by default)
   - TSV edge list (`dependencies.tsv` by default)
+  - Mermaid (`graph.mmd`, optional)
+  - PlantUML (`graph.puml`, optional)
+  - Marker-based Markdown diagram injection (optional)
 - Live filesystem watch mode with debounce
 - Optional Bubble Tea terminal UI for live issue monitoring
 
@@ -137,6 +140,22 @@ debounce = "1s"
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
+mermaid = "graph.mmd"
+plantuml = "graph.puml"
+
+[output.paths]
+root = ""
+diagrams_dir = "docs/diagrams"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-mermaid"
+format = "mermaid"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-plantuml"
+format = "plantuml"
 
 [alerts]
 beep = true
@@ -170,6 +189,11 @@ allow = ["core"]
 - DOT graph (default `graph.dot`) for visual inspection in Graphviz tools
 - TSV import edges (default `dependencies.tsv`) with columns:
   - `From`, `To`, `File`, `Line`, `Column`
+- Mermaid graph (optional `graph.mmd`) using `flowchart LR`
+- PlantUML graph (optional `graph.puml`) using component/package view
+- Optional markdown diagram injection via `[[output.update_markdown]]` markers:
+  - `<!-- circular:<marker>:start -->`
+  - `<!-- circular:<marker>:end -->`
 - TSV unused import rows appended when findings exist:
   - `Type`, `File`, `Language`, `Module`, `Alias`, `Item`, `Line`, `Column`, `Confidence`
 - TSV architecture violation rows appended when findings exist:
@@ -202,4 +226,4 @@ AI audit reports are in `docs/reviews/`:
 - `internal/graph/` dependency graph + cycle detection
 - `internal/resolver/` unresolved reference detection
 - `internal/watcher/` fsnotify watch + debounce
-- `internal/output/` DOT and TSV generators
+- `internal/output/` DOT/TSV/Mermaid/PlantUML generators + markdown injection

@@ -25,6 +25,9 @@ def my_func(a):
     print(a)
     return os.path.join(a, "b")
 
+def wrapped_params(a: int, b=1, *args, **kwargs):
+    return a
+
 class MyClass:
     def __init__(self):
         pass
@@ -54,24 +57,36 @@ class MyClass:
 	// Check definitions
 	foundFunc := false
 	foundClass := false
+	foundWrapped := false
 	var funcDef Definition
+	var wrappedDef Definition
 	for _, def := range file.Definitions {
 		if def.Name == "my_func" && def.Kind == KindFunction {
 			foundFunc = true
 			funcDef = def
+		}
+		if def.Name == "wrapped_params" && def.Kind == KindFunction {
+			foundWrapped = true
+			wrappedDef = def
 		}
 		if def.Name == "MyClass" && def.Kind == KindClass {
 			foundClass = true
 		}
 	}
 	if !foundFunc {
-		t.Error("my_func not found")
+		t.Fatal("my_func not found")
 	}
 	if !foundClass {
 		t.Error("MyClass not found")
 	}
+	if !foundWrapped {
+		t.Error("wrapped_params not found")
+	}
 	if funcDef.ParameterCount != 1 {
 		t.Errorf("Expected my_func parameter count 1, got %d", funcDef.ParameterCount)
+	}
+	if wrappedDef.ParameterCount != 4 {
+		t.Errorf("Expected wrapped_params parameter count 4, got %d", wrappedDef.ParameterCount)
 	}
 	if funcDef.LOC < 2 {
 		t.Errorf("Expected my_func LOC >= 2, got %d", funcDef.LOC)
@@ -150,6 +165,10 @@ type MyStruct struct {
 type MyInterface interface {
 	Run()
 }
+
+func Sum(base int, extra ...int) int {
+	return base
+}
 `
 	file, err := p.ParseFile("main.go", []byte(code))
 	if err != nil {
@@ -167,7 +186,9 @@ type MyInterface interface {
 	foundMain := false
 	foundStruct := false
 	foundInterface := false
+	foundSum := false
 	var mainDef Definition
+	var sumDef Definition
 	for _, def := range file.Definitions {
 		if def.Name == "Main" && def.Kind == KindFunction {
 			foundMain = true
@@ -179,9 +200,13 @@ type MyInterface interface {
 		if def.Name == "MyInterface" && def.Kind == KindInterface {
 			foundInterface = true
 		}
+		if def.Name == "Sum" && def.Kind == KindFunction {
+			foundSum = true
+			sumDef = def
+		}
 	}
 	if !foundMain {
-		t.Error("Main function not found")
+		t.Fatal("Main function not found")
 	}
 	if !foundStruct {
 		t.Error("MyStruct type not found")
@@ -189,11 +214,17 @@ type MyInterface interface {
 	if !foundInterface {
 		t.Error("MyInterface not found")
 	}
+	if !foundSum {
+		t.Error("Sum function not found")
+	}
 	if mainDef.LOC < 2 {
 		t.Errorf("Expected Main LOC >= 2, got %d", mainDef.LOC)
 	}
 	if mainDef.ComplexityScore <= 0 {
 		t.Errorf("Expected Main complexity score > 0, got %d", mainDef.ComplexityScore)
+	}
+	if sumDef.ParameterCount != 2 {
+		t.Errorf("Expected Sum parameter count 2, got %d", sumDef.ParameterCount)
 	}
 
 	// Check local symbols in a more complex Go snippet

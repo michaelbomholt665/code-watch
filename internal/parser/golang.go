@@ -133,10 +133,14 @@ func (e *GoExtractor) extractCallable(node *sitter.Node, source []byte, file *Fi
 	if score == 0 {
 		score = 1
 	}
+	fullName := name
+	if file.Module != "" {
+		fullName = file.Module + "." + name
+	}
 
 	file.Definitions = append(file.Definitions, Definition{
 		Name:            name,
-		FullName:        file.Module + "." + name,
+		FullName:        fullName,
 		Kind:            kind,
 		Exported:        exported,
 		ParameterCount:  paramCount,
@@ -172,6 +176,7 @@ func (e *GoExtractor) countGoParameters(params *sitter.Node) int {
 					count++
 				}
 			}
+			return
 		}
 		for i := uint(0); i < n.ChildCount(); i++ {
 			walk(n.Child(i))

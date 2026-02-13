@@ -5,6 +5,8 @@ import (
 	"circular/internal/graph"
 	"circular/internal/parser"
 	"circular/internal/resolver"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -183,5 +185,199 @@ func TestTSVGenerator_GenerateArchitectureViolations(t *testing.T) {
 	}
 	if !strings.Contains(lines[1], "architecture_violation\tapi-to-core-only\tinternal/core\tcore\tinternal/api\tapi\tinternal/core/service.go\t12\t4") {
 		t.Fatalf("Unexpected architecture TSV row: %s", lines[1])
+	}
+}
+
+func TestMermaidGenerator(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:   "a.go",
+		Module: "modA",
+		Imports: []parser.Import{
+			{Module: "modB"},
+			{Module: "fmt"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:    "b.go",
+		Module:  "modB",
+		Imports: []parser.Import{{Module: "modA"}},
+	})
+
+	gen := NewMermaidGenerator(g)
+	out, err := gen.Generate(
+		[][]string{{"modA", "modB"}},
+		[]graph.ArchitectureViolation{{FromModule: "modA", ToModule: "modB"}},
+		graph.ArchitectureModel{},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "flowchart LR") {
+		t.Fatalf("expected flowchart header, got: %s", out)
+	}
+	if !strings.Contains(out, "nodeSpacing") {
+		t.Fatalf("expected mermaid spacing init block, got: %s", out)
+	}
+	if !strings.Contains(out, "modA -->|CYCLE| modB") {
+		t.Fatalf("expected cycle edge label, got: %s", out)
+	}
+	if !strings.Contains(out, "stroke:#cc0000,stroke-width:3px;") {
+		t.Fatalf("expected cycle link style, got: %s", out)
+	}
+	if !strings.Contains(out, "classDef externalNode") {
+		t.Fatalf("expected external node style class, got: %s", out)
+	}
+	if !strings.Contains(out, "classDef cycleNode") {
+		t.Fatalf("expected cycle node style class, got: %s", out)
+	}
+	if !strings.Contains(out, "subgraph legend_info") {
+		t.Fatalf("expected mermaid legend block, got: %s", out)
+	}
+	if !strings.Contains(out, "fmt") {
+		t.Fatalf("expected external module node, got: %s", out)
+	}
+}
+
+func TestPlantUMLGenerator(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:   "a.go",
+		Module: "internal/api",
+		Imports: []parser.Import{
+			{Module: "internal/core"},
+			{Module: "fmt"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:   "b.go",
+		Module: "internal/core",
+	})
+
+	model := graph.ArchitectureModel{
+		Enabled: true,
+		Layers: []graph.ArchitectureLayer{
+			{Name: "api", Paths: []string{"internal/api"}},
+			{Name: "core", Paths: []string{"internal/core"}},
+		},
+	}
+	gen := NewPlantUMLGenerator(g)
+	out, err := gen.Generate(nil, nil, model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(out, "@startuml") {
+		t.Fatalf("expected @startuml header, got: %s", out)
+	}
+	if !strings.Contains(out, "package \"api\"") {
+		t.Fatalf("expected api package cluster, got: %s", out)
+	}
+	if !strings.Contains(out, "-[#777777,dashed]->") {
+		t.Fatalf("expected external edge style, got: %s", out)
+	}
+	if !strings.Contains(out, "skinparam linetype ortho") {
+		t.Fatalf("expected orthogonal line routing, got: %s", out)
+	}
+	if !strings.Contains(out, "skinparam nodesep 80") {
+		t.Fatalf("expected increased node spacing, got: %s", out)
+	}
+	if !strings.Contains(out, "legend right") {
+		t.Fatalf("expected legend block, got: %s", out)
+	}
+	if !strings.Contains(out, "@enduml") {
+		t.Fatalf("expected @enduml footer, got: %s", out)
+	}
+}
+
+func TestMermaidGenerator_AggregatesExternalsWhenLarge(t *testing.T) {
+	g := graph.NewGraph()
+	imports := make([]parser.Import, 0, 12)
+	for i := 0; i < 12; i++ {
+		imports = append(imports, parser.Import{Module: "ext/module" + string(rune('A'+i))})
+	}
+	g.AddFile(&parser.File{
+		Path:    "a.go",
+		Module:  "modA",
+		Imports: imports,
+	})
+	gen := NewMermaidGenerator(g)
+	out, err := gen.Generate(nil, nil, graph.ArchitectureModel{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "External/Stdlib") {
+		t.Fatalf("expected aggregated external node, got: %s", out)
+	}
+	if strings.Contains(out, "ext/moduleA") {
+		t.Fatalf("expected individual external nodes to be collapsed, got: %s", out)
+	}
+}
+
+func TestPlantUMLGenerator_AggregatesExternalsWhenLarge(t *testing.T) {
+	g := graph.NewGraph()
+	imports := make([]parser.Import, 0, 12)
+	for i := 0; i < 12; i++ {
+		imports = append(imports, parser.Import{Module: "ext/module" + string(rune('A'+i))})
+	}
+	g.AddFile(&parser.File{
+		Path:    "a.go",
+		Module:  "modA",
+		Imports: imports,
+	})
+	gen := NewPlantUMLGenerator(g)
+	out, err := gen.Generate(nil, nil, graph.ArchitectureModel{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "External/Stdlib") {
+		t.Fatalf("expected aggregated external node, got: %s", out)
+	}
+	if !strings.Contains(out, "skinparam linetype ortho") {
+		t.Fatalf("expected orthogonal line style, got: %s", out)
+	}
+}
+
+func TestReplaceBetweenMarkers(t *testing.T) {
+	content := strings.Join([]string{
+		"# Docs",
+		"<!-- circular:arch:start -->",
+		"old",
+		"<!-- circular:arch:end -->",
+	}, "\n")
+	got, err := ReplaceBetweenMarkers(content, "arch", "new-line")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(got, "new-line") {
+		t.Fatalf("expected replacement content, got: %s", got)
+	}
+	if !strings.Contains(got, "<!-- circular:arch:start -->\nnew-line\n<!-- circular:arch:end -->") {
+		t.Fatalf("unexpected marker replacement result: %s", got)
+	}
+}
+
+func TestReplaceBetweenMarkers_MissingMarker(t *testing.T) {
+	_, err := ReplaceBetweenMarkers("no markers here", "arch", "content")
+	if err == nil {
+		t.Fatal("expected error for missing markers")
+	}
+}
+
+func TestInjectDiagram(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "README.md")
+	initial := "<!-- circular:deps:start -->\nold\n<!-- circular:deps:end -->\n"
+	if err := os.WriteFile(path, []byte(initial), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := InjectDiagram(path, "deps", "```mermaid\nflowchart LR\n```"); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "flowchart LR") {
+		t.Fatalf("expected updated markdown diagram, got: %s", string(data))
 	}
 }

@@ -2,6 +2,7 @@
 package graph
 
 import (
+	"errors"
 	"circular/internal/parser"
 	"testing"
 )
@@ -396,6 +397,18 @@ func TestGraph_AnalyzeImpact(t *testing.T) {
 	}
 	if len(report.ExternallyUsedSymbols) != 1 || report.ExternallyUsedSymbols[0] != "Run" {
 		t.Fatalf("unexpected externally used symbols: %v", report.ExternallyUsedSymbols)
+	}
+}
+
+func TestGraph_AnalyzeImpact_TargetNotFound(t *testing.T) {
+	g := NewGraph()
+
+	_, err := g.AnalyzeImpact("missing.go")
+	if err == nil {
+		t.Fatal("expected error for missing impact target")
+	}
+	if !errors.Is(err, ErrImpactTargetNotFound) {
+		t.Fatalf("expected errors.Is(err, ErrImpactTargetNotFound) to be true, got err=%v", err)
 	}
 }
 

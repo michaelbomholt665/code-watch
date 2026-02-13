@@ -14,6 +14,23 @@ debounce = "1s"
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
+mermaid = "graph.mmd" # resolved to <root>/docs/diagrams/graph.mmd
+plantuml = "graph.puml" # resolved to <root>/docs/diagrams/graph.puml
+
+[output.paths]
+# optional; when empty, root is auto-detected from go.mod/.git/circular.toml
+root = ""
+diagrams_dir = "docs/diagrams"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-mermaid"
+format = "mermaid"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-plantuml"
+format = "plantuml"
 
 [alerts]
 beep = true

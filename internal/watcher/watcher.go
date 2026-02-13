@@ -27,6 +27,28 @@ type Watcher struct {
 }
 
 func NewWatcher(debounce time.Duration, excludeDirs, excludeFiles []string, onChange func([]string)) (*Watcher, error) {
+	if onChange == nil {
+		return nil, os.ErrInvalid
+	}
+
+	compiledDirs := make([]glob.Glob, 0, len(excludeDirs))
+	for _, pattern := range excludeDirs {
+		g, err := glob.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		compiledDirs = append(compiledDirs, g)
+	}
+
+	compiledFiles := make([]glob.Glob, 0, len(excludeFiles))
+	for _, pattern := range excludeFiles {
+		g, err := glob.Compile(pattern)
+		if err != nil {
+			return nil, err
+		}
+		compiledFiles = append(compiledFiles, g)
+	}
+
 	fsw, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -39,21 +61,8 @@ func NewWatcher(debounce time.Duration, excludeDirs, excludeFiles []string, onCh
 		pending:   make(map[string]time.Time),
 	}
 
-	for _, pattern := range excludeDirs {
-		g, err := glob.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-		w.excludeDirs = append(w.excludeDirs, g)
-	}
-
-	for _, pattern := range excludeFiles {
-		g, err := glob.Compile(pattern)
-		if err != nil {
-			return nil, err
-		}
-		w.excludeFiles = append(w.excludeFiles, g)
-	}
+	w.excludeDirs = compiledDirs
+	w.excludeFiles = compiledFiles
 
 	return w, nil
 }
@@ -114,7 +123,8 @@ func (w *Watcher) run() {
 
 			if event.Op&fsnotify.Write == fsnotify.Write ||
 				event.Op&fsnotify.Create == fsnotify.Create ||
-				event.Op&fsnotify.Remove == fsnotify.Remove {
+				event.Op&fsnotify.Remove == fsnotify.Remove ||
+				event.Op&fsnotify.Rename == fsnotify.Rename {
 				w.scheduleChange(event.Name)
 			}
 

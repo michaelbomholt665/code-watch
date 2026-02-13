@@ -19,6 +19,22 @@ debounce = "500ms"
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
+mermaid = "graph.mmd"
+plantuml = "graph.puml"
+
+[output.paths]
+root = ""
+diagrams_dir = "docs/diagrams"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-mermaid"
+format = "mermaid"
+
+[[output.update_markdown]]
+file = "README.md"
+marker = "deps-plantuml"
+format = "plantuml"
 
 [alerts]
 beep = false
@@ -68,6 +84,22 @@ allow = ["core"]
 - DOT output file path; empty disables DOT generation
 - `output.tsv` (`string`)
 - TSV output file path; empty disables TSV generation
+- `output.mermaid` (`string`)
+- Mermaid output file path; empty disables Mermaid file generation
+- when value is filename-only (for example `graph.mmd`), it resolves under `<output.paths.root>/<output.paths.diagrams_dir>/`
+- `output.plantuml` (`string`)
+- PlantUML output file path; empty disables PlantUML file generation
+- when value is filename-only (for example `graph.puml`), it resolves under `<output.paths.root>/<output.paths.diagrams_dir>/`
+- `output.paths.root` (`string`)
+- optional root override for relative output paths
+- when empty, root is auto-detected by walking up from `watch_paths`/cwd and selecting the first directory containing `go.mod`, `.git`, or `circular.toml`
+- `output.paths.diagrams_dir` (`string`)
+- default `docs/diagrams`; base directory for filename-only Mermaid/PlantUML paths
+- `output.update_markdown` (`[]table`)
+- optional marker-based markdown updates; each table requires:
+- `file` target markdown file path
+- `marker` marker name used with `<!-- circular:<marker>:start -->` and `<!-- circular:<marker>:end -->`
+- `format` one of `mermaid` or `plantuml`
 - `alerts.beep` (`bool`)
 - emits terminal bell on updates containing issues (cycles, unresolved, unused imports, architecture violations)
 - `alerts.terminal` (`bool`)
@@ -90,6 +122,8 @@ allow = ["core"]
 - empty `watch_paths` becomes `["."]`
 - zero `watch.debounce` becomes `500ms`
 - `architecture.top_complexity <= 0` becomes `5`
+- unset Mermaid/PlantUML/markdown output keys keep existing DOT/TSV-only behavior unchanged
+- empty `output.paths.diagrams_dir` becomes `docs/diagrams`
 
 ## Architecture Validation
 

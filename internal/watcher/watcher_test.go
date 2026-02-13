@@ -2,11 +2,25 @@
 package watcher
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 )
+
+func TestNewWatcher_RejectsNilCallback(t *testing.T) {
+	w, err := NewWatcher(100*time.Millisecond, nil, nil, nil)
+	if err == nil {
+		t.Fatal("expected error for nil callback")
+	}
+	if !errors.Is(err, os.ErrInvalid) {
+		t.Fatalf("expected os.ErrInvalid, got %v", err)
+	}
+	if w != nil {
+		t.Fatal("expected nil watcher when callback is invalid")
+	}
+}
 
 func TestWatcher(t *testing.T) {
 	tmpDir, _ := os.MkdirTemp("", "watchertest")
@@ -84,6 +98,51 @@ func TestWatcher(t *testing.T) {
 			}
 		case <-timeout:
 			t.Fatal("timed out waiting for nested file event in newly created directory")
+		}
+	}
+}
+
+func TestWatcher_RenameTriggersChange(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "watcher-rename")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	changedFiles := make(chan []string, 8)
+	w, err := NewWatcher(100*time.Millisecond, nil, nil, func(paths []string) {
+		changedFiles <- paths
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+
+	if err := w.Watch([]string{tmpDir}); err != nil {
+		t.Fatal(err)
+	}
+
+	oldPath := filepath.Join(tmpDir, "old.go")
+	newPath := filepath.Join(tmpDir, "new.go")
+	if err := os.WriteFile(oldPath, []byte("package main"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := os.Rename(oldPath, newPath); err != nil {
+		t.Fatal(err)
+	}
+
+	timeout := time.After(2 * time.Second)
+	for {
+		select {
+		case paths := <-changedFiles:
+			for _, p := range paths {
+				if p == oldPath || p == newPath {
+					return
+				}
+			}
+		case <-timeout:
+			t.Fatalf("timed out waiting for rename event, old=%s new=%s", oldPath, newPath)
 		}
 	}
 }

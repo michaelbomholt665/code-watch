@@ -1,5 +1,5 @@
 // # cmd/circular/ui.go
-package main
+package cliapp
 
 import (
 	"circular/internal/resolver"
@@ -40,7 +40,6 @@ var (
 
 type item struct {
 	title, desc string
-	isCycle     bool
 }
 
 func (i item) Title() string       { return i.title }
@@ -86,16 +85,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		items := []list.Item{}
 		for _, c := range m.cycles {
 			items = append(items, item{
-				title:   "Circular Import",
-				desc:    strings.Join(c, " -> "),
-				isCycle: true,
+				title: "Circular Import",
+				desc:  strings.Join(c, " -> "),
 			})
 		}
 		for _, h := range m.hallucinations {
 			items = append(items, item{
-				title:   "Unresolved Reference",
-				desc:    fmt.Sprintf("%s in %s:%d", h.Reference.Name, h.File, h.Reference.Location.Line),
-				isCycle: false,
+				title: "Unresolved Reference",
+				desc:  fmt.Sprintf("%s in %s:%d", h.Reference.Name, h.File, h.Reference.Location.Line),
 			})
 		}
 		m.list.SetItems(items)

@@ -24,6 +24,10 @@ func (e *ImpactTargetError) Error() string {
 	return fmt.Sprintf("%v: %s", ErrImpactTargetNotFound, e.Target)
 }
 
+func (e *ImpactTargetError) Unwrap() error {
+	return ErrImpactTargetNotFound
+}
+
 func (g *Graph) AnalyzeImpact(path string) (ImpactReport, error) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()

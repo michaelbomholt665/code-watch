@@ -1,0 +1,4 @@
+interface:
+  display_name: "Go Defect Reviewer"
+  short_description: "Audit Go code for reliability defects"
+  default_prompt: "Use $go-defect-reviewer to review this code for missing/silent error handling, resolver issues, memory leaks, and crash/performance risks."

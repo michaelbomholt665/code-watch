@@ -53,6 +53,12 @@ Rules:
 ## PlantUML Generation Pattern
 
 ```go
+type Event struct {
+    From   string
+    To     string
+    Label  string
+}
+
 func GeneratePlantUMLSequence(events []Event) (string, error)
 func GeneratePlantUMLComponent(s AnalysisSnapshot) (string, error)
 ```

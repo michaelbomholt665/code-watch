@@ -181,11 +181,33 @@ func (e *PythonExtractor) countPythonParameters(params *sitter.Node) int {
 	}
 	count := 0
 	for i := uint(0); i < params.ChildCount(); i++ {
-		if params.Child(i).Kind() == "identifier" {
+		if e.isPythonParameterNode(params.Child(i)) {
 			count++
 		}
 	}
 	return count
+}
+
+func (e *PythonExtractor) isPythonParameterNode(node *sitter.Node) bool {
+	if node == nil {
+		return false
+	}
+
+	switch node.Kind() {
+	case "identifier", "typed_parameter", "default_parameter", "typed_default_parameter", "list_splat_pattern", "dictionary_splat_pattern":
+		return true
+	case ",", "(", ")", "*", "/":
+		return false
+	}
+
+	for i := uint(0); i < node.ChildCount(); i++ {
+		if e.isPythonParameterNode(node.Child(i)) {
+			return true
+		}
+	}
+
+	kind := node.Kind()
+	return strings.HasSuffix(kind, "_parameter") || strings.HasSuffix(kind, "_pattern")
 }
 
 func (e *PythonExtractor) computePythonComplexity(node *sitter.Node, depth int) (branches int, maxDepth int) {
