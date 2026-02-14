@@ -14,6 +14,7 @@ This folder contains implementation-level documentation for `circular`.
 - `mcp.md`: MCP POC tool protocol, operations, and examples
 - `limitations.md`: known behavior constraints and tradeoffs
 - `ai-audit.md`: hardening scope and verification baseline
+- `../plans/diagram-expansion-plan.md`: planned architecture/component/flow diagram expansion status
 
 ## Intended Audience
 

@@ -35,8 +35,8 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Emits outputs:
   - Graphviz DOT (`graph.dot` by default)
   - TSV edge list (`dependencies.tsv` by default)
-  - Mermaid (`graph.mmd`, optional)
-  - PlantUML (`graph.puml`, optional)
+  - Mermaid module dependency diagram (`graph.mmd`, optional)
+  - PlantUML module dependency diagram (`graph.puml`, optional)
   - Marker-based Markdown diagram injection (optional)
 - MCP POC runtime with stdio JSON tool protocol and allowlisted operations
 - Live filesystem watch mode with debounce
@@ -120,7 +120,7 @@ go run ./cmd/circular --ui
 [mcp]
 enabled = true
 allow_mutations = true
-operation_allowlist = ["scan.run", "graph.cycles", "query.modules", "query.module_details", "query.trace", "system.sync_outputs", "system.sync_config", "system.select_project", "query.trends"]
+operation_allowlist = ["scan.run", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.select_project", "query.trends"]
 ```
 
 2. Send a request over stdio:
@@ -141,6 +141,16 @@ Run a one-time scan to refresh generated diagram artifacts and markdown injectio
 ```bash
 go run ./cmd/circular --config data/config/circular.toml --once
 ```
+
+## Diagram Scope
+
+Current Mermaid and PlantUML outputs are module-level dependency diagrams with cycle and architecture-violation annotations.
+
+Dedicated architecture/component/flow diagram modes are tracked in:
+- `docs/plans/diagram-expansion-plan.md`
+
+Note:
+- `[output.diagrams]` is planned and not available in current config schema.
 
 ## CLI
 
@@ -220,7 +230,7 @@ openapi_spec_url = ""
 server_name = "circular"
 server_version = "1.0.0"
 exposed_tool_name = ""
-operation_allowlist = ["scan.run", "graph.cycles", "query.modules", "query.module_details", "query.trace", "system.sync_outputs", "system.sync_config", "system.select_project", "query.trends"]
+operation_allowlist = ["scan.run", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.select_project", "query.trends"]
 max_response_items = 500
 request_timeout = "30s"
 allow_mutations = false

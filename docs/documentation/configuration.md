@@ -196,6 +196,10 @@ top_complexity = 5
 - keep lists minimal and prefer project-specific overrides when embedding MCP configs
 - `watch.debounce` (`duration`)
 - defaults to `500ms`
+- diagram output controls currently supported in schema:
+- `output.dot`, `output.tsv`, `output.mermaid`, `output.plantuml`
+- `output.paths.*`, `output.update_markdown`
+- planned but not yet available: `[output.diagrams]` typed toggles for architecture/component/flow modes
 - `output.*`, `alerts.*`, `architecture.*`
 - unchanged semantics from prior versions
 

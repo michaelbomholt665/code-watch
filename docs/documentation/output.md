@@ -2,6 +2,24 @@
 
 `circular` can emit DOT, TSV, Mermaid, and PlantUML outputs via `internal/ui/report`.
 
+## Diagram Scope
+
+Current Mermaid and PlantUML renderers produce module dependency diagrams.
+
+Implemented overlays:
+- cycle highlighting
+- architecture-violation highlighting
+- optional architecture-layer grouping when `[architecture].enabled=true`
+
+Planned (not yet implemented):
+- dedicated architecture diagram mode
+- dedicated component diagram mode
+- dedicated flow/call diagram mode
+- per-diagram config toggles under `[output.diagrams]`
+
+Roadmap source:
+- `docs/plans/diagram-expansion-plan.md`
+
 ## `dependencies.tsv`
 
 Base dependency block header:
