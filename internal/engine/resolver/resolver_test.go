@@ -302,6 +302,32 @@ func TestResolver_FindUnusedImports_ExcludeImports(t *testing.T) {
 	}
 }
 
+func TestResolver_CrossLanguageBridgeContexts(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "bridge.py",
+		Language: "python",
+		Module:   "bridge",
+		References: []parser.Reference{
+			{Name: "ctypes.CDLL", Context: parser.RefContextFFI},
+			{Name: "subprocess.run", Context: parser.RefContextProcess},
+			{Name: "grpc.insecure_channel", Context: parser.RefContextService},
+			{Name: "unknown.bridgeCall"},
+		},
+	})
+
+	res := NewResolver(g, nil, nil)
+	unresolved := res.FindUnresolved()
+
+	if len(unresolved) != 1 {
+		t.Fatalf("Expected 1 unresolved reference, got %d", len(unresolved))
+	}
+	if unresolved[0].Reference.Name != "unknown.bridgeCall" {
+		t.Fatalf("Expected unknown.bridgeCall unresolved, got %s", unresolved[0].Reference.Name)
+	}
+}
+
 func TestResolver_ImportReferenceNameByLanguage(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -389,5 +415,81 @@ func TestResolver_StdlibIsLanguageScoped(t *testing.T) {
 	}
 	if unresolved[0].Reference.Name != "fmt.Println" {
 		t.Fatalf("expected fmt.Println unresolved for javascript file, got %s", unresolved[0].Reference.Name)
+	}
+}
+
+func TestResolver_ProbabilisticCrossLanguageServiceResolution(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "grpc_server.py",
+		Language: "python",
+		Module:   "svc",
+		Definitions: []parser.Definition{
+			{
+				Name:       "GreeterServicer",
+				FullName:   "svc.GreeterServicer",
+				Kind:       parser.KindClass,
+				Exported:   true,
+				Visibility: "public",
+				Scope:      "global",
+				Signature:  "class GreeterServicer",
+				TypeHint:   "class",
+				Decorators: []string{"grpc.service"},
+			},
+		},
+	})
+
+	g.AddFile(&parser.File{
+		Path:     "client.go",
+		Language: "go",
+		Module:   "client",
+		References: []parser.Reference{
+			{Name: "GreeterClient", Context: parser.RefContextService},
+		},
+	})
+
+	r := NewResolver(g, nil, nil)
+	unresolved := r.FindUnresolvedForPaths([]string{"client.go"})
+	if len(unresolved) != 0 {
+		t.Fatalf("expected GreeterClient to resolve via service symbol table, got %+v", unresolved)
+	}
+}
+
+func TestResolver_ProbabilisticMatchAmbiguousStaysUnresolved(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "a.py",
+		Language: "python",
+		Module:   "a",
+		Definitions: []parser.Definition{
+			{Name: "Handle", FullName: "a.Handle", Kind: parser.KindFunction, Exported: true, Visibility: "public"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:     "b.go",
+		Language: "go",
+		Module:   "b",
+		Definitions: []parser.Definition{
+			{Name: "Handle", FullName: "b.Handle", Kind: parser.KindFunction, Exported: true, Visibility: "public"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:     "main.ts",
+		Language: "typescript",
+		Module:   "web",
+		References: []parser.Reference{
+			{Name: "api.Handle"},
+		},
+	})
+
+	r := NewResolver(g, nil, nil)
+	unresolved := r.FindUnresolvedForPaths([]string{"main.ts"})
+	if len(unresolved) != 1 {
+		t.Fatalf("expected ambiguous probabilistic match to stay unresolved, got %d", len(unresolved))
+	}
+	if unresolved[0].Reference.Name != "api.Handle" {
+		t.Fatalf("expected unresolved Handle, got %s", unresolved[0].Reference.Name)
 	}
 }

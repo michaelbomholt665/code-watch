@@ -27,15 +27,15 @@ func (e *GoExtractor) Extract(root *sitter.Node, source []byte, filePath string)
 		"var_declaration":       e.extractVarDecl,
 		"const_declaration":     e.extractVarDecl,
 		"parameter_declaration": e.extractParam,
-				"method_declaration":    e.extractMethod,
-				"range_clause":          e.extractRange,
-				"identifier":            e.captureLocal,
-				"selector_expression":   e.extractReference,
-				"type_identifier":       e.captureLocal,
-				"qualified_type":        e.extractReference,
-				"field_identifier":      e.captureLocal,
-			})
-			engine.Walk(ctx, root)
+		"method_declaration":    e.extractMethod,
+		"range_clause":          e.extractRange,
+		"identifier":            e.captureLocal,
+		"selector_expression":   e.extractReference,
+		"type_identifier":       e.captureLocal,
+		"qualified_type":        e.extractReference,
+		"field_identifier":      e.captureLocal,
+	})
+	engine.Walk(ctx, root)
 
 	return file, nil
 }
@@ -54,9 +54,9 @@ func (e *GoExtractor) captureLocal(ctx *ExtractionContext, node *sitter.Node) bo
 				Location: ctx.Location(node),
 			})
 			// Do not return true here, we also want to add it to LocalSymbols
-			// just in case, or let other handlers see it. 
+			// just in case, or let other handlers see it.
 			// Actually, if it's a package name, it's NOT a local symbol.
-			return true 
+			return true
 		}
 	}
 
@@ -149,6 +149,10 @@ func (e *GoExtractor) extractCallable(ctx *ExtractionContext, node *sitter.Node,
 	}
 
 	exported := len(name) > 0 && unicode.IsUpper(rune(name[0]))
+	visibility := "private"
+	if exported {
+		visibility = "public"
+	}
 	paramCount := e.countGoParameters(node.ChildByFieldName("parameters"))
 	branches, nesting := e.computeGoComplexity(node.ChildByFieldName("body"), 0)
 	loc := int(node.EndPosition().Row-node.StartPosition().Row) + 1
@@ -163,12 +167,34 @@ func (e *GoExtractor) extractCallable(ctx *ExtractionContext, node *sitter.Node,
 	if ctx.File.Module != "" {
 		fullName = ctx.File.Module + "." + name
 	}
+	paramsText := ""
+	if params != nil {
+		paramsText = ctx.Text(params)
+	}
+	resultText := ""
+	if results != nil {
+		resultText = ctx.Text(results)
+	}
+	signature := name + paramsText
+	if resultText != "" {
+		signature += " " + resultText
+	}
+	scope := "global"
+	typeHint := "function"
+	if kind == KindMethod {
+		scope = "method"
+		typeHint = "method"
+	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
 		Name:            name,
 		FullName:        fullName,
 		Kind:            kind,
 		Exported:        exported,
+		Visibility:      visibility,
+		Scope:           scope,
+		Signature:       signature,
+		TypeHint:        typeHint,
 		ParameterCount:  paramCount,
 		BranchCount:     branches,
 		NestingDepth:    nesting,
@@ -288,17 +314,35 @@ func (e *GoExtractor) extractTypeSpec(ctx *ExtractionContext, node *sitter.Node)
 	}
 
 	exported := len(name) > 0 && unicode.IsUpper(rune(name[0]))
+	visibility := "private"
+	if exported {
+		visibility = "public"
+	}
 	fullName := name
 	if ctx.File.Module != "" {
 		fullName = ctx.File.Module + "." + name
 	}
+	typeNode := node.ChildByFieldName("type")
+	typeHint := "type"
+	signature := name
+	if typeNode != nil {
+		typeHint = typeNode.Kind()
+		signature += " " + ctx.Text(typeNode)
+	}
+	if kind == KindInterface {
+		typeHint = "interface"
+	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: fullName,
-		Kind:     kind,
-		Exported: exported,
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   fullName,
+		Kind:       kind,
+		Exported:   exported,
+		Visibility: visibility,
+		Scope:      "global",
+		Signature:  signature,
+		TypeHint:   typeHint,
+		Location:   ctx.Location(node),
 	})
 	ctx.ProcessedChildren = true
 	return true
@@ -387,6 +431,7 @@ func (e *GoExtractor) extractReference(ctx *ExtractionContext, node *sitter.Node
 	ctx.File.References = append(ctx.File.References, Reference{
 		Name:     name,
 		Location: ctx.Location(node),
+		Context:  callReferenceContext("go", name),
 	})
 
 	return true

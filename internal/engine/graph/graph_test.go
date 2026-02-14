@@ -432,3 +432,44 @@ func TestGraph_TopComplexity(t *testing.T) {
 		t.Fatalf("expected Large as top hotspot, got %s", top[0].Definition)
 	}
 }
+
+func TestGraph_BuildUniversalSymbolTable(t *testing.T) {
+	g := NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "svc.py",
+		Language: "python",
+		Module:   "svc",
+		Definitions: []parser.Definition{
+			{
+				Name:       "GreeterServicer",
+				FullName:   "svc.GreeterServicer",
+				Kind:       parser.KindClass,
+				Exported:   true,
+				Visibility: "public",
+				Scope:      "global",
+				Signature:  "class GreeterServicer",
+				TypeHint:   "class",
+				Decorators: []string{"grpc.service"},
+			},
+		},
+	})
+
+	table := g.BuildUniversalSymbolTable()
+	if table == nil {
+		t.Fatal("expected non-nil symbol table")
+	}
+
+	records := table.Lookup("GreeterServicer")
+	if len(records) != 1 {
+		t.Fatalf("expected one direct lookup result, got %d", len(records))
+	}
+	if !records[0].IsService {
+		t.Fatal("expected service record classification")
+	}
+
+	service := table.LookupService("GreeterClient")
+	if len(service) == 0 {
+		t.Fatal("expected service-key lookup result for GreeterClient")
+	}
+}

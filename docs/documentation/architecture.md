@@ -53,11 +53,13 @@ Main responsibilities:
 
 1. `ScanDirectories` discovers registry-enabled files by extension/filename routes (respecting excludes).
 2. `ProcessFile` parses AST and normalizes a `parser.File`.
-3. When `[secrets].enabled=true`, `ProcessFile` runs secret detection and attaches findings to `parser.File.Secrets`.
-4. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
-5. Analyses run against graph snapshots.
-6. Output generators serialize graph + findings.
-7. In watch mode, changed paths trigger `HandleChanges`, which reprocesses affected files and importer chains.
+3. Parser extraction enriches definitions with visibility/scope/signature/type/decorator metadata and tags known bridge-call reference contexts (`ffi_bridge`, `process_bridge`, `service_bridge`) across core language profiles.
+4. When `[secrets].enabled=true`, `ProcessFile` runs secret detection and attaches findings to `parser.File.Secrets`.
+5. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
+6. Resolver builds a universal symbol table from graph definitions and performs exact + probabilistic multi-pass matching (including service-contract link heuristics).
+7. Analyses run against graph snapshots.
+8. Output generators serialize graph + findings.
+9. In watch mode, changed paths trigger `HandleChanges`, which reprocesses affected files and importer chains.
 
 ## Module Naming
 
@@ -95,6 +97,7 @@ Update behavior (`internal/core/app.HandleChanges`):
 - `internal/engine/parser`: AST extraction to normalized file model
 - `internal/engine/graph`: dependency state + graph algorithms
 - `internal/engine/resolver`: unresolved/unused heuristics
+- resolver includes bridge-call heuristics, a universal symbol-table pass, and probabilistic cross-language matching so common interop references and service contracts are treated as expected links
 - `internal/core/watcher`: fsnotify + debounce
 - `internal/ui/report`: output rendering (DOT/TSV/Mermaid/PlantUML/Markdown)
 - `internal/mcp/runtime`: MCP startup, allowlist enforcement, stdio dispatch loop

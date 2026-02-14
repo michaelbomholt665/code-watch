@@ -10,10 +10,14 @@
 ## Resolver Heuristics
 
 - unresolved-reference detection is heuristic and not compiler/type-checker accurate
+- bridge-call contexts (`ffi_bridge`, `process_bridge`, `service_bridge`) reduce false positives but are pattern-driven and can miss custom interop wrappers
+- universal symbol-table + probabilistic fallback matching improves cross-language resolution but can still miss highly dynamic dispatch or generated-code contracts
+- service contract linking uses naming/decorator/signature heuristics (for example client/server/servicer suffix families), not schema-aware IDL compilation
 - imported symbol resolution is best-effort for aliases/module prefixes and language-specific module naming:
 - `go` (path base), `python` (dot modules), `javascript`/`typescript`/`tsx` (package/path base), `java` (package class), `rust` (`::` module base)
 - `exclude.symbols` can hide false positives and true positives
 - stdlib/builtin lists are static snapshots and language-scoped
+- enriched definition metadata (signature/type/decorators/scope) is extracted from syntax only; it is not type-checked or runtime-validated
 
 ## Secret Detection Heuristics
 

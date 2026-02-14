@@ -30,12 +30,16 @@ type Import struct {
 }
 
 type Definition struct {
-	Name     string
-	FullName string // module.function or package.Type
-	Kind     DefinitionKind
-	Location Location
-	Exported bool   // Is public/exported?
-	Scope    string // Global, class method, nested function
+	Name       string
+	FullName   string // module.function or package.Type
+	Kind       DefinitionKind
+	Location   Location
+	Exported   bool   // Is public/exported?
+	Visibility string // public, private, or internal
+	Scope      string // global, class, method, nested
+	Signature  string // Lightweight declaration signature for cross-language comparisons
+	TypeHint   string // Normalized type category/signature hint
+	Decorators []string
 	// Heuristic complexity metrics used for hotspot ranking.
 	BranchCount     int
 	ParameterCount  int
@@ -71,6 +75,13 @@ const (
 	KindConstant
 	KindType
 	KindInterface
+)
+
+const (
+	RefContextDefault = ""
+	RefContextFFI     = "ffi_bridge"
+	RefContextProcess = "process_bridge"
+	RefContextService = "service_bridge"
 )
 
 type Location struct {

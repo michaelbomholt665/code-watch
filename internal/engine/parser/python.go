@@ -146,9 +146,23 @@ func (e *PythonExtractor) extractFunction(ctx *ExtractionContext, node *sitter.N
 	}
 
 	exported := !strings.HasPrefix(name, "_")
+	visibility := "public"
+	if !exported {
+		visibility = "private"
+	}
 	fullName := name
 	if ctx.File.Module != "" {
 		fullName = ctx.File.Module + "." + name
+	}
+	scope := e.pythonDefinitionScope(node)
+	paramsText := "()"
+	if params != nil {
+		paramsText = ctx.Text(params)
+	}
+	signature := name + paramsText
+	decorators := e.pythonDecorators(ctx, node)
+	if scope == "class" {
+		scope = "method"
 	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
@@ -156,6 +170,11 @@ func (e *PythonExtractor) extractFunction(ctx *ExtractionContext, node *sitter.N
 		FullName:        fullName,
 		Kind:            KindFunction,
 		Exported:        exported,
+		Visibility:      visibility,
+		Scope:           scope,
+		Signature:       signature,
+		TypeHint:        "function",
+		Decorators:      decorators,
 		ParameterCount:  paramCount,
 		BranchCount:     branches,
 		NestingDepth:    nesting,
@@ -250,17 +269,31 @@ func (e *PythonExtractor) extractClass(ctx *ExtractionContext, node *sitter.Node
 	}
 
 	exported := !strings.HasPrefix(name, "_")
+	visibility := "public"
+	if !exported {
+		visibility = "private"
+	}
 	fullName := name
 	if ctx.File.Module != "" {
 		fullName = ctx.File.Module + "." + name
 	}
+	scope := e.pythonDefinitionScope(node)
+	signature := name
+	if superclasses := node.ChildByFieldName("superclasses"); superclasses != nil {
+		signature += "(" + ctx.Text(superclasses) + ")"
+	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: fullName,
-		Kind:     KindClass,
-		Exported: exported,
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   fullName,
+		Kind:       KindClass,
+		Exported:   exported,
+		Visibility: visibility,
+		Scope:      scope,
+		Signature:  signature,
+		TypeHint:   "class",
+		Decorators: e.pythonDecorators(ctx, node),
+		Location:   ctx.Location(node),
 	})
 	return false
 }
@@ -269,11 +302,50 @@ func (e *PythonExtractor) extractCall(ctx *ExtractionContext, node *sitter.Node)
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
 		if child.Kind() == "attribute" || child.Kind() == "identifier" {
+			name := ctx.Text(child)
 			ctx.File.References = append(ctx.File.References, Reference{
-				Name:     ctx.Text(child),
+				Name:     name,
 				Location: ctx.Location(child),
+				Context:  callReferenceContext("python", name),
 			})
 		}
 	}
 	return false
+}
+
+func (e *PythonExtractor) pythonDecorators(ctx *ExtractionContext, node *sitter.Node) []string {
+	if node == nil {
+		return nil
+	}
+	parent := node.Parent()
+	if parent == nil || parent.Kind() != "decorated_definition" {
+		return nil
+	}
+
+	decorators := make([]string, 0, parent.ChildCount())
+	for i := uint(0); i < parent.ChildCount(); i++ {
+		child := parent.Child(i)
+		if child.Kind() != "decorator" {
+			continue
+		}
+		dec := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(ctx.Text(child)), "@"))
+		if dec == "" {
+			continue
+		}
+		decorators = append(decorators, dec)
+	}
+	return decorators
+}
+
+func (e *PythonExtractor) pythonDefinitionScope(node *sitter.Node) string {
+	scope := "global"
+	for p := node.Parent(); p != nil; p = p.Parent() {
+		switch p.Kind() {
+		case "class_definition":
+			return "class"
+		case "function_definition":
+			scope = "nested"
+		}
+	}
+	return scope
 }

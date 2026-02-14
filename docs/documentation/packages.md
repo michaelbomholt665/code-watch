@@ -108,13 +108,17 @@
 - Go extractor collects:
 - package/imports
 - definitions (functions, methods, types, interfaces)
+- definition metadata: visibility, scope, lightweight signature, type hints
 - local symbols and call references
 - complexity metrics per callable
 - Python extractor collects:
 - imports/from-imports
 - definitions (functions, classes)
+- definition metadata: visibility, scope, decorators, lightweight signature, type hints
 - local symbols and call references
+- bridge-call reference context tags (`ffi_bridge`, `process_bridge`, `service_bridge`)
 - complexity metrics per callable
+- JS/TS/Java/Rust profile extractors also populate definition metadata parity fields (`Visibility`, `Scope`, `Signature`, `TypeHint`) for cross-language resolver matching
 - `gomod` and `gosum` use raw-text extractors (no runtime tree-sitter binding required)
 
 ## `internal/engine/parser/registry`
@@ -153,6 +157,10 @@
 - imported-module symbols/aliases/items
 - language-scoped stdlib names (`go`, `python`, `javascript`/`typescript`/`tsx`, `java`, `rust`)
 - language builtins
+- bridge-call contexts from parser (`ffi_bridge`, `process_bridge`, `service_bridge`) to suppress common polyglot interop false positives
+- universal symbol-table second pass over graph definitions for cross-language candidate matching
+- probabilistic scoring for ambiguous symbols (exact-first, scored fallback, ambiguity guardrails)
+- framework-aware service linking heuristics for common client/server naming families (for example gRPC/Thrift-style symbols)
 - user exclusion prefixes
 - path-scoped unresolved analysis for incremental updates
 - unused-import detection with confidence levels

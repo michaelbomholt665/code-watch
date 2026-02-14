@@ -220,6 +220,8 @@ top_complexity = 5
 - parser extraction is profile-driven for enabled non-Go/Python languages (`javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, `gosum`)
 - resolver heuristics currently include language-specific stdlib/module policy for:
 - `go`, `python`, `javascript`/`typescript`/`tsx`, `java`, `rust`
+- resolver also applies a graph-derived universal symbol table and probabilistic second-pass matching for cross-language unresolved-reference reduction
+- service bridge references (`service_bridge`) are matched against normalized service keys to link likely contract definitions across files/languages
 - `languages.<id>.extensions` (`[]string`)
 - override extension ownership for a language
 - `languages.<id>.filenames` (`[]string`)

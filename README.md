@@ -24,6 +24,9 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Builds and updates a module-level dependency graph
 - Detects import cycles across internal modules
 - Detects unresolved references using local symbols, imports, stdlib, and builtins
+- Treats known cross-language bridge calls (FFI/process/service patterns) as first-class resolver contexts to reduce polyglot false positives
+- Builds a universal cross-language symbol table and runs a second-pass probabilistic resolver for ambiguous references
+- Adds framework-aware service contract linking heuristics (for example gRPC/Thrift-style client/server symbol families)
 - Detects unused imports and appends findings to TSV output
 - Detects potential hardcoded secrets via built-in patterns + entropy/context heuristics
 - Supports unused-import suppression via `exclude.imports` for known false-positive paths
@@ -34,6 +37,7 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Analyzes blast radius for a file/module (`--impact`)
 - Validates optional architecture layer rules
 - Reports top complexity hotspots from parser heuristics
+- Captures enriched definition metadata (visibility, scope, signature, decorators/type hints) across Go/Python/JavaScript/TypeScript/Java/Rust definitions
 - Emits outputs:
   - Graphviz DOT (`graph.dot` by default)
   - TSV edge list (`dependencies.tsv` by default)

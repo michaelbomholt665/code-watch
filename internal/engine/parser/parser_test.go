@@ -21,6 +21,7 @@ from auth.utils import login as auth_login
 from . import local_mod
 from ..parent import parent_mod
 
+@app.route("/health")
 def my_func(a):
     print(a)
     return os.path.join(a, "b")
@@ -29,8 +30,13 @@ def wrapped_params(a: int, b=1, *args, **kwargs):
     return a
 
 class MyClass:
+    @decorator
     def __init__(self):
         pass
+
+def bridge():
+    ctypes.CDLL("libdemo.so")
+    subprocess.run(["worker"])
 `
 	file, err := p.ParseFile("test.py", []byte(code))
 	if err != nil {
@@ -85,11 +91,40 @@ class MyClass:
 	if funcDef.ParameterCount != 1 {
 		t.Errorf("Expected my_func parameter count 1, got %d", funcDef.ParameterCount)
 	}
+	if len(funcDef.Decorators) != 1 || funcDef.Decorators[0] != "app.route(\"/health\")" {
+		t.Errorf("Expected my_func decorator app.route(\"/health\"), got %v", funcDef.Decorators)
+	}
+	if funcDef.Visibility != "public" {
+		t.Errorf("Expected my_func visibility public, got %s", funcDef.Visibility)
+	}
+	if funcDef.Scope != "global" {
+		t.Errorf("Expected my_func scope global, got %s", funcDef.Scope)
+	}
+	if funcDef.TypeHint != "function" {
+		t.Errorf("Expected my_func type hint function, got %s", funcDef.TypeHint)
+	}
 	if wrappedDef.ParameterCount != 4 {
 		t.Errorf("Expected wrapped_params parameter count 4, got %d", wrappedDef.ParameterCount)
 	}
 	if funcDef.LOC < 2 {
 		t.Errorf("Expected my_func LOC >= 2, got %d", funcDef.LOC)
+	}
+
+	foundBridgeFFI := false
+	foundBridgeProcess := false
+	for _, ref := range file.References {
+		if ref.Name == "ctypes.CDLL" && ref.Context == RefContextFFI {
+			foundBridgeFFI = true
+		}
+		if ref.Name == "subprocess.run" && ref.Context == RefContextProcess {
+			foundBridgeProcess = true
+		}
+	}
+	if !foundBridgeFFI {
+		t.Errorf("Expected ctypes.CDLL to be tagged as %s", RefContextFFI)
+	}
+	if !foundBridgeProcess {
+		t.Errorf("Expected subprocess.run to be tagged as %s", RefContextProcess)
 	}
 
 	// Check local symbols
@@ -156,6 +191,120 @@ import (
 
 func Main() {
 	fmt.Println(os.Args)
+}
+
+func TestProfileExtractor_MetadataParityAndBridgeContexts(t *testing.T) {
+	trueVal := true
+	registry, err := BuildLanguageRegistry(map[string]LanguageOverride{
+		"javascript": {Enabled: &trueVal},
+		"typescript": {Enabled: &trueVal},
+		"java":       {Enabled: &trueVal},
+		"rust":       {Enabled: &trueVal},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	loader, err := NewGrammarLoaderWithRegistry("./grammars", registry, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := NewParser(loader)
+	if err := p.RegisterDefaultExtractors(); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name       string
+		path       string
+		code       string
+		defName    string
+		wantHint   string
+		wantScope  string
+		serviceRef string
+	}{
+		{
+			name:       "javascript",
+			path:       "svc.js",
+			code:       "class GreeterService {} function run(){ grpc.connect() }",
+			defName:    "GreeterService",
+			wantHint:   "class",
+			wantScope:  "global",
+			serviceRef: "grpc.connect",
+		},
+		{
+			name:       "typescript",
+			path:       "svc.ts",
+			code:       "interface UserService{}; function exec(){ fetch('/v1') }",
+			defName:    "UserService",
+			wantHint:   "interface",
+			wantScope:  "global",
+			serviceRef: "fetch",
+		},
+		{
+			name:       "java",
+			path:       "Svc.java",
+			code:       "public class GreeterService { void run(){ io.grpc.ClientCalls.blockingUnaryCall(); } }",
+			defName:    "GreeterService",
+			wantHint:   "class",
+			wantScope:  "global",
+			serviceRef: "blockingUnaryCall",
+		},
+		{
+			name:       "rust",
+			path:       "svc.rs",
+			code:       "pub struct GreeterService; fn call(){ tonic::transport::Channel::from_static(\"http://x\"); }",
+			defName:    "GreeterService",
+			wantHint:   "type",
+			wantScope:  "global",
+			serviceRef: "tonic::transport::Channel::from_static",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			file, err := p.ParseFile(tc.path, []byte(tc.code))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var def Definition
+			foundDef := false
+			for _, d := range file.Definitions {
+				if d.Name == tc.defName {
+					foundDef = true
+					def = d
+					break
+				}
+			}
+			if !foundDef {
+				t.Fatalf("expected definition %s", tc.defName)
+			}
+			if def.Visibility == "" {
+				t.Fatalf("expected non-empty visibility for %s", tc.defName)
+			}
+			if def.Scope != tc.wantScope {
+				t.Fatalf("expected scope %s, got %s", tc.wantScope, def.Scope)
+			}
+			if def.Signature == "" {
+				t.Fatalf("expected non-empty signature for %s", tc.defName)
+			}
+			if def.TypeHint != tc.wantHint {
+				t.Fatalf("expected type hint %s, got %s", tc.wantHint, def.TypeHint)
+			}
+
+			foundBridgeRef := false
+			for _, ref := range file.References {
+				if ref.Name == tc.serviceRef && ref.Context == RefContextService {
+					foundBridgeRef = true
+					break
+				}
+			}
+			if !foundBridgeRef {
+				t.Fatalf("expected %s to be tagged as %s", tc.serviceRef, RefContextService)
+			}
+		})
+	}
 }
 
 func TestExtraction_MultiLanguage(t *testing.T) {
@@ -320,6 +469,15 @@ func Sum(base int, extra ...int) int {
 	}
 	if mainDef.LOC < 2 {
 		t.Errorf("Expected Main LOC >= 2, got %d", mainDef.LOC)
+	}
+	if mainDef.Visibility != "public" {
+		t.Errorf("Expected Main visibility public, got %s", mainDef.Visibility)
+	}
+	if mainDef.Signature == "" {
+		t.Error("Expected Main signature to be populated")
+	}
+	if mainDef.TypeHint != "function" {
+		t.Errorf("Expected Main type hint function, got %s", mainDef.TypeHint)
 	}
 	if mainDef.ComplexityScore <= 0 {
 		t.Errorf("Expected Main complexity score > 0, got %d", mainDef.ComplexityScore)

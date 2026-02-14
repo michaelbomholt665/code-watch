@@ -23,6 +23,10 @@ All notable changes to this project will be documented in this file.
 - `config:` Added `output.markdown` and `[output.report]` settings (`verbosity`, `table_of_contents`, `collapsible_sections`, `include_mermaid`) with startup validation.
 - `cli:` Added `--report-md` to force markdown report generation using configured `output.markdown` or default `analysis-report.md`.
 - `mcp:` Added `report.generate_markdown` operation with optional file write support and configurable verbosity.
+- `parser:` Added enriched definition metadata fields (`Visibility`, `Scope`, `Signature`, `TypeHint`, `Decorators`) to improve cross-language analysis context.
+- `parser:` Added bridge-call reference context tagging for known interop patterns (`ffi_bridge`, `process_bridge`, `service_bridge`).
+- `graph:` Added `internal/engine/graph/symbol_table.go` universal symbol table abstraction with canonical and service-key indexes for cross-language symbol matching.
+- `resolver:` Added probabilistic second-pass resolution in `internal/engine/resolver/probabilistic.go` for ambiguous cross-language references.
 
 ### Changed
 - `app:` `ProcessFile` now runs optional secret scanning and stores per-file findings in graph state when `[secrets].enabled=true`.
@@ -36,6 +40,10 @@ All notable changes to this project will be documented in this file.
 - `output:` TSV generation now appends a `secret` findings block with masked values (`Value` never includes raw secret text).
 - `summary:` Terminal summaries now print a bounded list of masked secret findings (kind/severity/location/value-mask) when detections exist.
 - `mcp:` `graph.sync_diagrams` format filtering now accepts `markdown` and includes generated markdown report paths in written targets.
+- `resolver:` Cross-language bridge references tagged by parser contexts are now treated as expected links during unresolved-reference analysis.
+- `graph:` File clone logic now deep-copies definition decorator metadata to avoid slice aliasing across graph snapshots.
+- `parser:` Extended JS/TS/Java/Rust profile extractors to populate definition metadata parity fields (`Visibility`, `Scope`, `Signature`, `TypeHint`) and bridge-call contexts.
+- `resolver:` Added framework-aware service contract linking heuristics (for example client/server/servicer symbol-family matching) backed by universal symbol indexing.
 
 ### Docs
 - Updated `README.md` and `docs/documentation/{README,architecture,configuration,output,limitations,packages,mcp}.md` to document implemented secret-detection behavior, configuration, and current MCP/output scope limits.
@@ -49,6 +57,9 @@ All notable changes to this project will be documented in this file.
 - Updated `README.md`, `docs/documentation/mcp.md`, `docs/documentation/output.md`, `docs/documentation/configuration.md`, and `docs/documentation/limitations.md` to document `secrets.scan`/`secrets.list` and TSV secret-output behavior.
 - Updated `README.md`, `docs/documentation/{README,architecture,cli,configuration,mcp,output,packages}.md`, and both example config files to document markdown report generation and MCP exposure.
 - Updated `docs/plans/markdown-analysis-report-plan.md` with implementation completion status.
+- Updated `README.md` and `docs/documentation/{README,architecture,packages,limitations}.md` to document cross-language bridge heuristics and enriched definition metadata.
+- Updated `docs/plans/cross-language-analysis-optimization-plan.md` with per-phase implementation status and completed-work tracking.
+- Updated `README.md` and `docs/documentation/{README,architecture,configuration,packages,limitations}.md` to document universal symbol-table matching, probabilistic resolution, and service-contract linking behavior.
 
 ## 2026-02-13
 

@@ -24,6 +24,7 @@ type UnusedImport struct {
 
 type Resolver struct {
 	graph            *graph.Graph
+	symbolTable      *graph.UniversalSymbolTable
 	stdlibByLanguage map[string]map[string]bool
 	excludedSymbols  []string
 	excludedImports  []string
@@ -32,6 +33,7 @@ type Resolver struct {
 func NewResolver(g *graph.Graph, excludedSymbols, excludedImports []string) *Resolver {
 	return &Resolver{
 		graph:            g,
+		symbolTable:      g.BuildUniversalSymbolTable(),
 		stdlibByLanguage: getStdlibByLanguage(),
 		excludedSymbols:  excludedSymbols,
 		excludedImports:  excludedImports,
@@ -41,6 +43,11 @@ func NewResolver(g *graph.Graph, excludedSymbols, excludedImports []string) *Res
 func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) bool {
 	// 0. Check local symbols (vars, params, etc)
 	if r.isLocalSymbol(file, ref.Name) {
+		return true
+	}
+
+	// 0.5 Cross-language bridge hints (FFI/process/service calls).
+	if IsCrossLanguageBridgeReference(file.Language, ref) {
 		return true
 	}
 
@@ -59,6 +66,11 @@ func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) boo
 		return true
 	}
 	if file.Language == "go" && goBuiltins[ref.Name] {
+		return true
+	}
+
+	// 5. Multi-pass cross-language probabilistic resolution.
+	if r.resolveProbabilisticReference(file, ref) {
 		return true
 	}
 

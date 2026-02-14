@@ -145,11 +145,15 @@ func (e *jsProfileExtractor) extractFunction(ctx *ExtractionContext, node *sitte
 	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     KindFunction,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       KindFunction,
+		Exported:   isExportedName(name),
+		Visibility: jsVisibility(name),
+		Scope:      "global",
+		Signature:  name + strings.TrimSpace(ctx.Text(params)),
+		TypeHint:   "function",
+		Location:   ctx.Location(node),
 	})
 	return false
 }
@@ -161,11 +165,15 @@ func (e *jsProfileExtractor) extractClass(ctx *ExtractionContext, node *sitter.N
 	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     KindClass,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       KindClass,
+		Exported:   isExportedName(name),
+		Visibility: jsVisibility(name),
+		Scope:      "global",
+		Signature:  "class " + name,
+		TypeHint:   "class",
+		Location:   ctx.Location(node),
 	})
 	return false
 }
@@ -182,11 +190,15 @@ func (e *jsProfileExtractor) extractMethod(ctx *ExtractionContext, node *sitter.
 	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     KindMethod,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       KindMethod,
+		Exported:   isExportedName(name),
+		Visibility: jsVisibility(name),
+		Scope:      "method",
+		Signature:  name + strings.TrimSpace(ctx.Text(params)),
+		TypeHint:   "method",
+		Location:   ctx.Location(node),
 	})
 	return false
 }
@@ -214,6 +226,7 @@ func (e *jsProfileExtractor) extractCall(ctx *ExtractionContext, node *sitter.No
 	ctx.File.References = append(ctx.File.References, Reference{
 		Name:     name,
 		Location: ctx.Location(fn),
+		Context:  callReferenceContext(e.language, name),
 	})
 	return false
 }
@@ -264,11 +277,15 @@ func (e *tsProfileExtractor) extractInterface(ctx *ExtractionContext, node *sitt
 		return false
 	}
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     KindInterface,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       KindInterface,
+		Exported:   isExportedName(name),
+		Visibility: jsVisibility(name),
+		Scope:      "global",
+		Signature:  "interface " + name,
+		TypeHint:   "interface",
+		Location:   ctx.Location(node),
 	})
 	return true
 }
@@ -279,11 +296,15 @@ func (e *tsProfileExtractor) extractTypeAlias(ctx *ExtractionContext, node *sitt
 		return false
 	}
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     KindType,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       KindType,
+		Exported:   isExportedName(name),
+		Visibility: jsVisibility(name),
+		Scope:      "global",
+		Signature:  "type " + name,
+		TypeHint:   "type_alias",
+		Location:   ctx.Location(node),
 	})
 	return true
 }
@@ -294,11 +315,15 @@ func (e *tsProfileExtractor) extractEnum(ctx *ExtractionContext, node *sitter.No
 		return false
 	}
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     KindConstant,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       KindConstant,
+		Exported:   isExportedName(name),
+		Visibility: jsVisibility(name),
+		Scope:      "global",
+		Signature:  "enum " + name,
+		TypeHint:   "enum",
+		Location:   ctx.Location(node),
 	})
 	return true
 }
@@ -403,11 +428,15 @@ func (e *javaProfileExtractor) addNamedDef(ctx *ExtractionContext, node *sitter.
 	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     kind,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       kind,
+		Exported:   isExportedName(name),
+		Visibility: javaVisibility(ctx, node),
+		Scope:      javaScope(kind),
+		Signature:  javaSignature(ctx, node, name),
+		TypeHint:   javaTypeHint(kind),
+		Location:   ctx.Location(node),
 	})
 }
 
@@ -423,15 +452,21 @@ func (e *javaProfileExtractor) extractLocal(ctx *ExtractionContext, node *sitter
 
 func (e *javaProfileExtractor) extractReference(ctx *ExtractionContext, node *sitter.Node) bool {
 	name := strings.TrimSpace(ctx.Text(node.ChildByFieldName("name")))
+	raw := normalizeRefName(ctx.Text(node))
 	if name == "" {
-		name = normalizeRefName(ctx.Text(node))
+		name = raw
 	}
 	if name == "" {
 		return false
 	}
+	context := callReferenceContext("java", name)
+	if context == RefContextDefault && raw != "" && raw != name {
+		context = callReferenceContext("java", raw)
+	}
 	ctx.File.References = append(ctx.File.References, Reference{
 		Name:     name,
 		Location: ctx.Location(node),
+		Context:  context,
 	})
 	return false
 }
@@ -529,11 +564,15 @@ func (e *rustProfileExtractor) addNamedDef(ctx *ExtractionContext, node *sitter.
 	}
 
 	ctx.File.Definitions = append(ctx.File.Definitions, Definition{
-		Name:     name,
-		FullName: name,
-		Kind:     kind,
-		Exported: isExportedName(name),
-		Location: ctx.Location(node),
+		Name:       name,
+		FullName:   name,
+		Kind:       kind,
+		Exported:   isExportedName(name),
+		Visibility: rustVisibility(ctx, node),
+		Scope:      "global",
+		Signature:  rustSignature(ctx, node, name),
+		TypeHint:   rustTypeHint(kind),
+		Location:   ctx.Location(node),
 	})
 }
 
@@ -553,8 +592,101 @@ func (e *rustProfileExtractor) extractCall(ctx *ExtractionContext, node *sitter.
 	ctx.File.References = append(ctx.File.References, Reference{
 		Name:     name,
 		Location: ctx.Location(node),
+		Context:  callReferenceContext("rust", name),
 	})
 	return false
+}
+
+func jsVisibility(name string) string {
+	if strings.HasPrefix(name, "_") || strings.HasPrefix(name, "#") {
+		return "private"
+	}
+	return "public"
+}
+
+func javaVisibility(ctx *ExtractionContext, node *sitter.Node) string {
+	if node == nil || ctx == nil {
+		return "internal"
+	}
+	text := " " + strings.ToLower(ctx.Text(node)) + " "
+	switch {
+	case strings.Contains(text, " private "):
+		return "private"
+	case strings.Contains(text, " protected "):
+		return "internal"
+	case strings.Contains(text, " public "):
+		return "public"
+	default:
+		return "internal"
+	}
+}
+
+func javaScope(kind DefinitionKind) string {
+	switch kind {
+	case KindMethod:
+		return "method"
+	default:
+		return "global"
+	}
+}
+
+func javaSignature(ctx *ExtractionContext, node *sitter.Node, name string) string {
+	if ctx == nil || node == nil {
+		return name
+	}
+	if params := node.ChildByFieldName("parameters"); params != nil {
+		return name + strings.TrimSpace(ctx.Text(params))
+	}
+	return name
+}
+
+func javaTypeHint(kind DefinitionKind) string {
+	switch kind {
+	case KindClass:
+		return "class"
+	case KindInterface:
+		return "interface"
+	case KindMethod:
+		return "method"
+	case KindFunction:
+		return "constructor"
+	case KindConstant:
+		return "enum"
+	default:
+		return "type"
+	}
+}
+
+func rustVisibility(ctx *ExtractionContext, node *sitter.Node) string {
+	if node == nil || ctx == nil {
+		return "private"
+	}
+	text := strings.TrimSpace(ctx.Text(node))
+	if strings.HasPrefix(text, "pub ") || strings.HasPrefix(text, "pub(") {
+		return "public"
+	}
+	return "private"
+}
+
+func rustSignature(ctx *ExtractionContext, node *sitter.Node, name string) string {
+	if ctx == nil || node == nil {
+		return name
+	}
+	if params := node.ChildByFieldName("parameters"); params != nil {
+		return name + strings.TrimSpace(ctx.Text(params))
+	}
+	return name
+}
+
+func rustTypeHint(kind DefinitionKind) string {
+	switch kind {
+	case KindFunction:
+		return "function"
+	case KindConstant:
+		return "const"
+	default:
+		return "type"
+	}
 }
 
 type htmlProfileExtractor struct{}

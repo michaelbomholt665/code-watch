@@ -106,3 +106,71 @@ func ModuleReferenceBase(language, module string) string {
 
 	return module
 }
+
+func callReferenceContext(language, name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return RefContextDefault
+	}
+
+	switch language {
+	case "python":
+		switch {
+		case hasAnyPrefix(name, "ctypes.", "cffi.", "ffi.", "cython."):
+			return RefContextFFI
+		case strings.Contains(name, ".CDLL") || strings.Contains(name, ".PyDLL") || strings.Contains(name, ".dlopen"):
+			return RefContextFFI
+		case hasAnyPrefix(name, "subprocess.", "os.exec", "os.spawn", "multiprocessing."):
+			return RefContextProcess
+		case hasAnyPrefix(name, "grpc.", "thrift.", "requests.", "httpx.", "aiohttp."):
+			return RefContextService
+		}
+	case "go":
+		switch {
+		case hasAnyPrefix(name, "C.", "syscall."):
+			return RefContextFFI
+		case hasAnyPrefix(name, "exec.", "os/exec.") && strings.HasSuffix(name, ".Command"):
+			return RefContextProcess
+		case hasAnyPrefix(name, "grpc.", "rpc.", "http."):
+			return RefContextService
+		}
+	case "javascript", "typescript", "tsx":
+		switch {
+		case hasAnyPrefix(name, "ffi.", "nodeffi.", "koffi.", "napi."):
+			return RefContextFFI
+		case hasAnyPrefix(name, "child_process.", "Bun.spawn", "Deno.Command"):
+			return RefContextProcess
+		case hasAnyPrefix(name, "grpc.", "@grpc/", "thrift.", "axios.", "fetch", "http."):
+			return RefContextService
+		}
+	case "java":
+		switch {
+		case hasAnyPrefix(name, "jni.", "java.lang.foreign.", "foreign."):
+			return RefContextFFI
+		case hasAnyPrefix(name, "processbuilder.", "runtime.getruntime().exec"):
+			return RefContextProcess
+		case hasAnyPrefix(name, "grpc.", "io.grpc.", "thrift.", "retrofit.", "httpclient."):
+			return RefContextService
+		}
+	case "rust":
+		switch {
+		case hasAnyPrefix(name, "libloading.", "jni.", "bindgen."):
+			return RefContextFFI
+		case hasAnyPrefix(name, "std::process::command", "tokio::process::command"):
+			return RefContextProcess
+		case hasAnyPrefix(name, "tonic::", "grpc::", "thrift::", "reqwest::", "hyper::"):
+			return RefContextService
+		}
+	}
+
+	return RefContextDefault
+}
+
+func hasAnyPrefix(value string, prefixes ...string) bool {
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(value, prefix) {
+			return true
+		}
+	}
+	return false
+}

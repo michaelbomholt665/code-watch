@@ -15,6 +15,7 @@ This folder contains implementation-level documentation for `circular`.
 - `limitations.md`: known behavior constraints and tradeoffs
 - `ai-audit.md`: hardening scope and verification baseline
 - `../plans/diagram-expansion-plan.md`: planned architecture/component/flow diagram expansion status
+- `../plans/cross-language-analysis-optimization-plan.md`: cross-language resolver/parser optimization roadmap and session status (currently marked fully implemented as a heuristic baseline)
 
 ## Intended Audience
 

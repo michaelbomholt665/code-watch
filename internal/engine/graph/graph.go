@@ -416,6 +416,12 @@ func cloneFile(file *parser.File) *parser.File {
 	c := *file
 	c.Imports = append([]parser.Import(nil), file.Imports...)
 	c.Definitions = append([]parser.Definition(nil), file.Definitions...)
+	for i := range c.Definitions {
+		if len(c.Definitions[i].Decorators) == 0 {
+			continue
+		}
+		c.Definitions[i].Decorators = append([]string(nil), c.Definitions[i].Decorators...)
+	}
 	c.References = append([]parser.Reference(nil), file.References...)
 	c.Secrets = append([]parser.Secret(nil), file.Secrets...)
 	c.LocalSymbols = append([]string(nil), file.LocalSymbols...)
