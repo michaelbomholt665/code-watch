@@ -50,7 +50,7 @@ config_path = "circular.toml"
 server_name = "circular"
 server_version = "1.0.0"
 exposed_tool_name = ""
-operation_allowlist = ["scan_once", "detect_cycles", "find_unresolved", "trace_import_chain", "generate_reports"]
+operation_allowlist = ["scan.run", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.generate_config", "system.generate_script", "system.select_project", "system.watch", "query.trends"]
 max_response_items = 500
 request_timeout = "30s"
 allow_mutations = false
@@ -135,7 +135,7 @@ top_complexity = 5
 - `db_namespace` must be unique and non-empty after trimming; it scopes SQLite history isolation
 - `config_file` resolves under `paths.config_dir` when set and is used for MCP config sync
 - `mcp.enabled` (`bool`)
-- additive MCP config contract, runtime wiring still disabled
+- enables MCP runtime startup and single-tool operation dispatch
 - `mcp.mode` (`string`)
 - `embedded` or `server`
 - `mcp.transport` (`string`)
@@ -145,6 +145,10 @@ top_complexity = 5
 - `mcp.config_path` (`string`)
 - config file path resolved under `paths.config_dir` for MCP auto-sync
 - defaults to `config.active_file` when empty
+- `mcp.openapi_spec_path` (`string`)
+- optional OpenAPI spec file path; resolved under `paths.config_dir`
+- `mcp.openapi_spec_url` (`string`)
+- optional OpenAPI spec URL (http/https); cannot be set with `mcp.openapi_spec_path`
 - `mcp.server_name` (`string`)
 - required when `mcp.enabled=true`
 - `mcp.server_version` (`string`)
@@ -152,8 +156,9 @@ top_complexity = 5
 - `mcp.exposed_tool_name` (`string`)
 - optional single-tool exposure; must not contain whitespace
 - `mcp.operation_allowlist` (`[]string`)
-- explicit tool allowlist for MCP exposure
+- explicit operation allowlist for MCP exposure (examples: `scan.run`, `graph.cycles`, `graph.sync_diagrams`, `system.generate_config`, `system.generate_script`, `system.watch`)
 - required when `mcp.enabled=true` if `mcp.exposed_tool_name` is empty
+- legacy aliases accepted at runtime: `scan_once`, `detect_cycles`, `trace_import_chain`, `generate_reports`, `system.sync_outputs`
 - `mcp.max_response_items` (`int`)
 - maximum list payload items (default `500`)
 - `mcp.request_timeout` (`duration`)
@@ -163,7 +168,9 @@ top_complexity = 5
 - `mcp.auto_manage_outputs` (`bool`)
 - when `true`, MCP startup auto-writes configured outputs
 - `mcp.auto_sync_config` (`bool`)
-- when `true`, MCP startup writes the active config to the configured MCP config path
+- when `true`, MCP startup ensures project-local bootstrap artifacts exist:
+- `circular.toml` generated from `data/config/circular.example.toml` if missing
+- `circular-mcp` helper script generated if missing
 - `grammars_path` (`string`)
 - normalized to absolute path at runtime relative to resolved project root
 - `grammar_verification.enabled` (`bool`, default `true`)
@@ -215,6 +222,7 @@ Config load fails when:
 - MCP mode/transport combinations are invalid
 - MCP server metadata is missing when enabled
 - MCP tool exposure configuration is missing or duplicated
+- MCP OpenAPI spec path and URL are both set
 - MCP response/timeout limits exceed bounds
 - output markdown targets are malformed
 - architecture rules violate layer/rule constraints

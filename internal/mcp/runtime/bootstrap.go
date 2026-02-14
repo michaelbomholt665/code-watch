@@ -1,34 +1,19 @@
 package runtime
 
 import (
-	"circular/internal/core/app"
 	"circular/internal/core/config"
-	"context"
+	"circular/internal/data/history"
+	"circular/internal/mcp/adapters"
+	"circular/internal/mcp/openapi"
+	"circular/internal/mcp/registry"
+	"circular/internal/mcp/transport"
 	"fmt"
-	"log/slog"
+	"strings"
 )
-
-type AppDeps struct {
-	App        *app.App
-	Logger     *slog.Logger
-	ConfigPath string
-}
-
-type Server struct {
-	cfg     *config.Config
-	deps    AppDeps
-	project ProjectContext
-}
 
 func Build(cfg *config.Config, deps AppDeps) (*Server, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("config is required")
-	}
-	if deps.App == nil {
-		return nil, fmt.Errorf("app dependency is required")
-	}
-	if deps.Logger == nil {
-		deps.Logger = slog.Default()
 	}
 
 	project, err := ResolveActiveProjectContext(cfg, "")
@@ -37,18 +22,76 @@ func Build(cfg *config.Config, deps AppDeps) (*Server, error) {
 	}
 	project.SourceConfigPath = deps.ConfigPath
 
-	return &Server{cfg: cfg, deps: deps, project: project}, nil
-}
-
-func (s *Server) ProjectContext() ProjectContext {
-	return s.project
-}
-
-func (s *Server) Run(ctx context.Context) error {
-	if ctx == nil {
-		ctx = context.Background()
+	paths, err := config.ResolvePaths(cfg, project.Root)
+	if err != nil {
+		return nil, fmt.Errorf("resolve MCP paths: %w", err)
 	}
-	s.deps.Logger.Info("mcp runtime active", "mode", s.cfg.MCP.Mode, "transport", s.cfg.MCP.Transport, "project", s.project.Name)
-	<-ctx.Done()
-	return ctx.Err()
+	project.TemplatePath = config.ResolveRelative(paths.ConfigDir, "circular.example.toml")
+
+	var historyStore *history.Store
+	if cfg.DB.Enabled {
+		store, err := history.Open(paths.DBPath)
+		if err != nil {
+			return nil, fmt.Errorf("open history store: %w", err)
+		}
+		historyStore = store
+	}
+
+	adapter, err := buildTransport(cfg)
+	if err != nil {
+		if historyStore != nil {
+			_ = historyStore.Close()
+		}
+		return nil, err
+	}
+
+	reg := registry.New()
+	toolName := strings.TrimSpace(cfg.MCP.ExposedToolName)
+	allowlist := BuildOperationAllowlist(cfg)
+	if err := loadOpenAPIOperations(cfg); err != nil {
+		if historyStore != nil {
+			_ = historyStore.Close()
+		}
+		return nil, err
+	}
+	toolAdapter := adapters.NewAdapter(deps.App, historyStore, project.Key)
+	server, err := New(cfg, deps, reg, adapter, project, toolName, allowlist, toolAdapter, historyStore)
+	if err != nil && historyStore != nil {
+		_ = historyStore.Close()
+	}
+	return server, err
+}
+
+func buildTransport(cfg *config.Config) (transport.Adapter, error) {
+	transportName := strings.ToLower(strings.TrimSpace(cfg.MCP.Transport))
+	if transportName == "" || transportName == "stdio" {
+		return transport.NewStdio()
+	}
+	return nil, fmt.Errorf("unsupported MCP transport: %s", transportName)
+}
+
+func loadOpenAPIOperations(cfg *config.Config) error {
+	specSource := strings.TrimSpace(cfg.MCP.OpenAPISpecPath)
+	if specSource == "" {
+		specSource = strings.TrimSpace(cfg.MCP.OpenAPISpecURL)
+	}
+	if specSource == "" {
+		return nil
+	}
+
+	spec, err := openapi.LoadSpec(specSource)
+	if err != nil {
+		return fmt.Errorf("load MCP OpenAPI spec: %w", err)
+	}
+
+	ops, err := openapi.Convert(spec)
+	if err != nil {
+		return fmt.Errorf("convert MCP OpenAPI operations: %w", err)
+	}
+
+	filtered := openapi.ApplyAllowlist(ops, cfg.MCP.OperationAllowlist)
+	if len(filtered) == 0 {
+		return fmt.Errorf("MCP OpenAPI conversion produced zero allowlisted operations")
+	}
+	return nil
 }

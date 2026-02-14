@@ -336,17 +336,17 @@ flowchart LR
   circular_internal_engine_resolver["circular/internal/engine/resolver\n(13 funcs, 7 files)\n(d=5 in=3 out=3)"]
   circular_internal_engine_resolver_drivers["circular/internal/engine/resolver/drivers\n(17 funcs, 5 files)\n(d=0 in=1 out=0)"]
   circular_internal_mcp_adapters["circular/internal/mcp/adapters\n(11 funcs, 1 files)\n(d=9 in=4 out=3)"]
-  circular_internal_mcp_contracts["circular/internal/mcp/contracts\n(27 funcs, 1 files)\n(d=0 in=10 out=0)"]
+  circular_internal_mcp_contracts["circular/internal/mcp/contracts\n(33 funcs, 1 files)\n(d=0 in=10 out=0)"]
   circular_internal_mcp_openapi["circular/internal/mcp/openapi\n(3 funcs, 3 files)\n(d=1 in=1 out=1)"]
   circular_internal_mcp_registry["circular/internal/mcp/registry\n(6 funcs, 1 files)\n(d=0 in=1 out=0)"]
-  circular_internal_mcp_runtime["circular/internal/mcp/runtime\n(16 funcs, 4 files)\n(d=11 in=1 out=13)"]
+  circular_internal_mcp_runtime["circular/internal/mcp/runtime\n(21 funcs, 5 files)\n(d=11 in=1 out=13)"]
   circular_internal_mcp_schema["circular/internal/mcp/schema\n(2 funcs, 1 files)\n(d=1 in=1 out=1)"]
   circular_internal_mcp_tools_graph["circular/internal/mcp/tools/graph\n(1 funcs, 1 files)\n(d=10 in=1 out=2)"]
   circular_internal_mcp_tools_query["circular/internal/mcp/tools/query\n(4 funcs, 1 files)\n(d=10 in=1 out=2)"]
   circular_internal_mcp_tools_scan["circular/internal/mcp/tools/scan\n(1 funcs, 1 files)\n(d=10 in=1 out=2)"]
-  circular_internal_mcp_tools_system["circular/internal/mcp/tools/system\n(4 funcs, 1 files)\n(d=1 in=1 out=1)"]
+  circular_internal_mcp_tools_system["circular/internal/mcp/tools/system\n(7 funcs, 1 files)\n(d=1 in=1 out=1)"]
   circular_internal_mcp_transport["circular/internal/mcp/transport\n(6 funcs, 1 files)\n(d=2 in=1 out=2)"]
-  circular_internal_mcp_validate["circular/internal/mcp/validate\n(2 funcs, 1 files)\n(d=1 in=1 out=1)"]
+  circular_internal_mcp_validate["circular/internal/mcp/validate\n(2 funcs, 1 files)\n(d=1 in=1 out=1)\n(cx=81)"]
   circular_internal_shared_util["circular/internal/shared/util\n(5 funcs, 1 files)\n(d=0 in=7 out=0)"]
   circular_internal_shared_version["circular/internal/shared/version\n(0 funcs, 1 files)\n(d=0 in=2 out=0)"]
   circular_internal_ui_cli["circular/internal/ui/cli\n(7 funcs, 6 files)\n(d=12 in=1 out=9)\n(cx=87)"]
@@ -359,7 +359,7 @@ flowchart LR
   classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3,color:#000000;
   class __external_aggregate__ externalNode;
   classDef hotspotNode stroke:#8a4f00,stroke-width:2px,color:#000000;
-  class circular_internal_core_config,circular_internal_ui_cli,circular_internal_ui_report_formats hotspotNode;
+  class circular_internal_core_config,circular_internal_mcp_validate,circular_internal_ui_cli,circular_internal_ui_report_formats hotspotNode;
 
   circular_cmd_circular --> circular_internal_ui_cli
   circular_internal_core_app --> circular_internal_core_config
@@ -437,7 +437,7 @@ flowchart LR
   circular_internal_mcp_contracts -->|ext:1| __external_aggregate__
   circular_internal_mcp_openapi -->|ext:10| __external_aggregate__
   circular_internal_mcp_registry -->|ext:3| __external_aggregate__
-  circular_internal_mcp_runtime -->|ext:8| __external_aggregate__
+  circular_internal_mcp_runtime -->|ext:10| __external_aggregate__
   circular_internal_mcp_tools_graph -->|ext:1| __external_aggregate__
   circular_internal_mcp_tools_query -->|ext:4| __external_aggregate__
   circular_internal_mcp_tools_scan -->|ext:1| __external_aggregate__
@@ -484,17 +484,17 @@ component "circular/internal/engine/parser/registry\n(4 funcs, 1 files)\n(d=1 in
 component "circular/internal/engine/resolver\n(13 funcs, 7 files)\n(d=5 in=3 out=3)" as circular_internal_engine_resolver
 component "circular/internal/engine/resolver/drivers\n(17 funcs, 5 files)\n(d=0 in=1 out=0)" as circular_internal_engine_resolver_drivers
 component "circular/internal/mcp/adapters\n(11 funcs, 1 files)\n(d=9 in=4 out=3)" as circular_internal_mcp_adapters
-component "circular/internal/mcp/contracts\n(27 funcs, 1 files)\n(d=0 in=10 out=0)" as circular_internal_mcp_contracts
+component "circular/internal/mcp/contracts\n(33 funcs, 1 files)\n(d=0 in=10 out=0)" as circular_internal_mcp_contracts
 component "circular/internal/mcp/openapi\n(3 funcs, 3 files)\n(d=1 in=1 out=1)" as circular_internal_mcp_openapi
 component "circular/internal/mcp/registry\n(6 funcs, 1 files)\n(d=0 in=1 out=0)" as circular_internal_mcp_registry
-component "circular/internal/mcp/runtime\n(16 funcs, 4 files)\n(d=11 in=1 out=13)" as circular_internal_mcp_runtime
+component "circular/internal/mcp/runtime\n(21 funcs, 5 files)\n(d=11 in=1 out=13)" as circular_internal_mcp_runtime
 component "circular/internal/mcp/schema\n(2 funcs, 1 files)\n(d=1 in=1 out=1)" as circular_internal_mcp_schema
 component "circular/internal/mcp/tools/graph\n(1 funcs, 1 files)\n(d=10 in=1 out=2)" as circular_internal_mcp_tools_graph
 component "circular/internal/mcp/tools/query\n(4 funcs, 1 files)\n(d=10 in=1 out=2)" as circular_internal_mcp_tools_query
 component "circular/internal/mcp/tools/scan\n(1 funcs, 1 files)\n(d=10 in=1 out=2)" as circular_internal_mcp_tools_scan
-component "circular/internal/mcp/tools/system\n(4 funcs, 1 files)\n(d=1 in=1 out=1)" as circular_internal_mcp_tools_system
+component "circular/internal/mcp/tools/system\n(7 funcs, 1 files)\n(d=1 in=1 out=1)" as circular_internal_mcp_tools_system
 component "circular/internal/mcp/transport\n(6 funcs, 1 files)\n(d=2 in=1 out=2)" as circular_internal_mcp_transport
-component "circular/internal/mcp/validate\n(2 funcs, 1 files)\n(d=1 in=1 out=1)" as circular_internal_mcp_validate
+component "circular/internal/mcp/validate\n(2 funcs, 1 files)\n(d=1 in=1 out=1)\n(cx=81)" as circular_internal_mcp_validate
 component "circular/internal/shared/util\n(5 funcs, 1 files)\n(d=0 in=7 out=0)" as circular_internal_shared_util
 component "circular/internal/shared/version\n(0 funcs, 1 files)\n(d=0 in=2 out=0)" as circular_internal_shared_version
 component "circular/internal/ui/cli\n(7 funcs, 6 files)\n(d=12 in=1 out=9)\n(cx=87)" as circular_internal_ui_cli
@@ -578,7 +578,7 @@ circular_internal_mcp_adapters -[#777777,dashed]-> __external_aggregate__ : ext:
 circular_internal_mcp_contracts -[#777777,dashed]-> __external_aggregate__ : ext:1
 circular_internal_mcp_openapi -[#777777,dashed]-> __external_aggregate__ : ext:10
 circular_internal_mcp_registry -[#777777,dashed]-> __external_aggregate__ : ext:3
-circular_internal_mcp_runtime -[#777777,dashed]-> __external_aggregate__ : ext:8
+circular_internal_mcp_runtime -[#777777,dashed]-> __external_aggregate__ : ext:10
 circular_internal_mcp_tools_graph -[#777777,dashed]-> __external_aggregate__ : ext:1
 circular_internal_mcp_tools_query -[#777777,dashed]-> __external_aggregate__ : ext:4
 circular_internal_mcp_tools_scan -[#777777,dashed]-> __external_aggregate__ : ext:1

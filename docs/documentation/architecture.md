@@ -17,6 +17,18 @@
 10. run analyses, generate outputs, and print summary
 11. if watch mode: start watcher and process updates (with optional UI)
 
+## MCP Runtime Pipeline
+
+When `[mcp].enabled=true`, CLI hands off to the MCP runtime after the initial scan:
+1. resolve active project context and MCP paths
+2. open history store (when DB is enabled)
+3. optionally load + convert OpenAPI operation descriptors (`internal/mcp/openapi`) and apply operation allowlist
+4. build MCP runtime (`internal/mcp/runtime`)
+5. register the single `circular` tool with operation dispatch
+6. enter stdio JSON request loop
+
+Each MCP request is validated, allowlisted, and dispatched to tool handlers that call `internal/core/app` or `internal/data/query`.
+
 ## Core App Responsibilities
 
 `internal/core/app.App` owns orchestration between parser, graph, resolver, output, and watcher.
@@ -83,3 +95,6 @@ Update behavior (`internal/core/app.HandleChanges`):
 - `internal/engine/resolver`: unresolved/unused heuristics
 - `internal/core/watcher`: fsnotify + debounce
 - `internal/ui/report`: DOT/TSV rendering
+- `internal/mcp/runtime`: MCP startup, allowlist enforcement, stdio dispatch loop
+- `internal/mcp/adapters`: app/query bridge for MCP tool handlers
+- `internal/mcp/tools/*`: operation handlers for scan/query/graph/system operations

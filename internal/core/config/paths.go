@@ -8,14 +8,15 @@ import (
 )
 
 type ResolvedPaths struct {
-	ProjectRoot   string
-	ConfigDir     string
-	StateDir      string
-	CacheDir      string
-	DatabaseDir   string
-	DBPath        string
-	MCPConfigPath string
-	OutputRoot    string
+	ProjectRoot        string
+	ConfigDir          string
+	StateDir           string
+	CacheDir           string
+	DatabaseDir        string
+	DBPath             string
+	MCPConfigPath      string
+	MCPOpenAPISpecPath string
+	OutputRoot         string
 }
 
 func ResolvePaths(cfg *Config, cwd string) (ResolvedPaths, error) {
@@ -50,6 +51,10 @@ func ResolvePaths(cfg *Config, cwd string) (ResolvedPaths, error) {
 	if mcpConfigPath != "" {
 		mcpConfigPath = ResolveRelative(configDir, mcpConfigPath)
 	}
+	openapiSpecPath := strings.TrimSpace(cfg.MCP.OpenAPISpecPath)
+	if openapiSpecPath != "" {
+		openapiSpecPath = ResolveRelative(configDir, openapiSpecPath)
+	}
 
 	outputRoot := strings.TrimSpace(cfg.Output.Paths.Root)
 	if outputRoot == "" {
@@ -69,6 +74,9 @@ func ResolvePaths(cfg *Config, cwd string) (ResolvedPaths, error) {
 	}
 	if mcpConfigPath != "" {
 		resolved.MCPConfigPath = filepath.Clean(mcpConfigPath)
+	}
+	if openapiSpecPath != "" {
+		resolved.MCPOpenAPISpecPath = filepath.Clean(openapiSpecPath)
 	}
 	return resolved, nil
 }

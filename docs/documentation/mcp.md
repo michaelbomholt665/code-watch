@@ -106,7 +106,7 @@ Result:
 Notes:
 - Requires DB/history enabled (`[db].enabled = true`).
 
-### `system.sync_outputs`
+### `graph.sync_diagrams`
 
 Writes configured DOT/TSV/Mermaid/PlantUML outputs and optional markdown injections.
 
@@ -118,6 +118,7 @@ Result:
 
 Notes:
 - Requires `mcp.allow_mutations=true`.
+- Legacy operation ID `system.sync_outputs` is accepted and normalized to `graph.sync_diagrams`.
 
 ### `system.sync_config`
 
@@ -129,6 +130,31 @@ Result:
 
 Notes:
 - Requires `mcp.allow_mutations=true`.
+
+### `system.generate_config`
+
+Generates a project-local config file from `data/config/circular.example.toml` if the target file does not already exist.
+
+Result:
+- `generated` (`bool`)
+- `target` (`string`, optional)
+
+Notes:
+- Requires `mcp.allow_mutations=true`.
+- Idempotent: existing config files are preserved.
+
+### `system.generate_script`
+
+Generates a project-local `circular-mcp` helper script if it does not already exist.
+
+Result:
+- `generated` (`bool`)
+- `target` (`string`, optional)
+
+Notes:
+- Requires `mcp.allow_mutations=true`.
+- Idempotent: existing scripts are preserved.
+- Generated script mode is executable (`0755`).
 
 ### `system.select_project`
 
@@ -144,13 +170,26 @@ Notes:
 - Requires `mcp.allow_mutations=true`.
 - Project switch updates history namespace; scan/watch roots are not reloaded automatically in this POC.
 
+### `system.watch`
+
+Starts a non-blocking background watcher for configured watch paths.
+
+Result:
+- `status` (`string`)
+- `already_watching` (`bool`, optional)
+
+Notes:
+- Requires `mcp.allow_mutations=true`.
+- The runtime prevents multiple watcher instances in the same server session.
+
 ## Allowlist Notes
 
 `mcp.operation_allowlist` entries should use operation IDs above. Legacy aliases are accepted:
 - `scan_once` -> `scan.run`
 - `detect_cycles` -> `graph.cycles`
 - `trace_import_chain` -> `query.trace`
-- `generate_reports` -> `system.sync_outputs`
+- `generate_reports` -> `graph.sync_diagrams`
+- `system.sync_outputs` -> `graph.sync_diagrams`
 
 When OpenAPI conversion is enabled, allowlist filtering is applied to converted descriptors at startup and startup fails if no operations remain after filtering.
 
@@ -167,6 +206,20 @@ When OpenAPI conversion is enabled, allowlist filtering is applied to converted 
 cat <<'JSON' | go run ./cmd/circular --config data/config/circular.toml
 {"id":"1","tool":"circular","args":{"operation":"query.modules","params":{"limit":5}}}
 JSON
+```
+
+## Wrapper Script
+
+Use `scripts/circular-mcp` to avoid hand-writing JSON payloads.
+
+Examples:
+
+```bash
+scripts/circular-mcp modules --limit 5
+scripts/circular-mcp generate-config
+scripts/circular-mcp generate-script
+scripts/circular-mcp sync-diagrams --format mermaid --format plantuml
+scripts/circular-mcp watch
 ```
 
 ## Socket-Activated (systemd --user)

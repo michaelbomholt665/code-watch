@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-02-14
+
+### Added
+- `mcp:` Added `system.watch` operation to start a non-blocking background watcher with single-instance protection per MCP server session.
+- `mcp:` Added `system.generate_config` operation to generate project-local `circular.toml` from `data/config/circular.example.toml` when missing.
+- `mcp:` Added `system.generate_script` operation to generate a project-local executable `circular-mcp` helper script when missing.
+- `scripts:` Added `scripts/circular-mcp` command wrapper for operation-based MCP interaction without hand-written JSON payloads.
+
+### Changed
+- `mcp:` Made `graph.sync_diagrams` the canonical diagram sync operation and kept `system.sync_outputs` as a backward-compatible alias.
+- `runtime:` MCP startup bootstrap now auto-generates missing project bootstrap artifacts (`circular.toml` and `circular-mcp`) when `mcp.auto_sync_config=true`.
+
+### Docs
+- Updated `docs/documentation/mcp.md` with `graph.sync_diagrams`, `system.generate_config`, `system.generate_script`, and wrapper usage examples.
+- Updated `docs/documentation/configuration.md` MCP allowlist and `mcp.auto_sync_config` semantics to reflect config+script generation behavior.
+- Updated `docs/plans/mcp-server-expansion-plan.md` implementation status and notes for watcher, config/script generation, and wrapper work.
+
 ## 2026-02-13
 
 ### Added

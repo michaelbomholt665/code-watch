@@ -327,3 +327,21 @@ func TestMCPBootstrapDecision_Disabled(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestValidateModeCompatibility_MCPEmbeddedHTTPRejected(t *testing.T) {
+	cfg := &config.Config{
+		MCP: config.MCP{
+			Enabled:   true,
+			Mode:      "embedded",
+			Transport: "http",
+		},
+	}
+
+	err := validateModeCompatibility(cliOptions{}, cfg)
+	if err == nil {
+		t.Fatal("expected compatibility error")
+	}
+	if !strings.Contains(err.Error(), "does not support mcp.transport=http") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

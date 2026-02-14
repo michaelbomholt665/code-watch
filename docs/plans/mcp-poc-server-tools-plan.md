@@ -66,21 +66,22 @@ Operations inside `circular` tool:
 | `system.select_project` | `projects.entries` + DB namespace | Switch active project context safely | Phase 1 MUST |
 | `query.trends` | `query.Service.TrendSlice` | Optional historical trend window | Phase 2 |
 
-## Plan Overview
+## Plan Overview (Session 3 Update)
 
-| Task ID | Goal | Owner | Depends On | Risk |
-| --- | --- | --- | --- | --- |
-| S1 | Create subpackage skeleton with strict SoC boundaries | Core | Config C1-C3 | Medium |
-| S2 | Define single-tool contracts/schema/validation in dedicated packages | Core | S1 | Medium |
-| S3 | Add OpenAPI-to-operations conversion via kin-openapi | Core | S1,S2 | High |
-| S4 | Implement adapters and tool handlers per concern package | Core | S1,S2,S3 | High |
-| S5 | Integrate runtime startup and graceful shutdown | Core | S1,S4 | Medium |
-| S6 | Add tests, fixtures, and docs for POC usage | Core | S2,S3,S4,S5 | Medium |
+| Task ID | Goal | Owner | Depends On | Risk | Stage Status |
+| --- | --- | --- | --- | --- | --- |
+| S1 | Create subpackage skeleton with strict SoC boundaries | Core | Config C1-C3 | Medium | complete |
+| S2 | Define single-tool contracts/schema/validation in dedicated packages | Core | S1 | Medium | complete |
+| S3 | Add OpenAPI-to-operations conversion via kin-openapi | Core | S1,S2 | High | complete |
+| S4 | Implement adapters and tool handlers per concern package | Core | S1,S2,S3 | High | complete |
+| S5 | Integrate runtime startup and graceful shutdown | Core | S1,S4 | Medium | complete |
+| S6 | Add tests, fixtures, and docs for POC usage | Core | S2,S3,S4,S5 | Medium | complete |
 
 ## Tasks
 
-- S1 Create subpackage skeleton with strict SoC boundaries [ ]
+- S1 Create subpackage skeleton with strict SoC boundaries [x]
 Summary: Create `internal/mcp` as a subpackage tree where each package owns one concern.
+Status: complete (runtime/registry/transport scaffolding added).
 Inputs/outputs: validated MCP config in; SoC-aligned package boundaries and bootstrap entry points out.
 File changes (with classes/functions):
 - `internal/mcp/runtime/server.go` (new)
@@ -102,8 +103,9 @@ Acceptance checks:
 - Tool registration order is deterministic.
 - No analysis logic embedded in runtime/transport/registry packages.
 
-- S2 Define single-tool contracts/schema/validation in dedicated packages [ ]
+- S2 Define single-tool contracts/schema/validation in dedicated packages [x]
 Summary: Keep one MCP tool definition (`circular`) while validating operation-specific argument contracts.
+Status: complete (contracts/schema/validate packages wired with operation dispatch + tests).
 Inputs/outputs: internal API models in; MCP tool schemas and normalized arguments out.
 File changes (with classes/functions):
 - `internal/mcp/contracts/types.go` (new)
@@ -122,9 +124,11 @@ Acceptance checks:
 - Schema generation includes required/optional fields accurately.
 - Exactly one tool definition remains stable across runs.
 
-- S3 Add OpenAPI-to-operations conversion via kin-openapi [ ]
+- S3 Add OpenAPI-to-operations conversion via kin-openapi [x]
 Summary: Parse OpenAPI specs and convert API operations into internal MCP operation descriptors behind the single `circular` tool.
+Status: complete (OpenAPI loader/converter/filter added and wired into MCP bootstrap with allowlist filtering + tests).
 Inputs/outputs: OpenAPI spec (TOML-configured path/URL) in; validated operation descriptors and schemas out.
+Spec source (explicit): Provide OpenAPI spec as a static file path in TOML (repository-local or absolute). Spec generation is out-of-scope for this POC; the plan assumes the spec already exists (e.g., from prior build/CI). If a URL is used, it must be an explicit http(s) URL and fetched once at startup.
 File changes (with classes/functions):
 - `internal/mcp/openapi/loader.go` (new)
   - Main functions: `func LoadSpec(path string) (*openapi3.T, error)`.
@@ -137,22 +141,23 @@ Best practices and standards:
 - Reject ambiguous/invalid operation ids during conversion.
 - Keep conversion deterministic for stable tool contracts.
 - Keep OpenAPI concerns isolated from runtime and handler execution packages.
+ - Config keys (to add in config plan if missing): `mcp.openapi_spec_path` (string, optional), `mcp.openapi_spec_url` (string, optional). Exactly one may be set when `mcp.enabled=true` and OpenAPI conversion is enabled.
 Acceptance checks:
 - Same OpenAPI input produces stable operation descriptors.
 - Unsupported schema shapes fail with actionable conversion errors.
 - Allowlist filtering is deterministic and test-covered.
 
-- S4 Implement adapters and tool handlers per concern package [ ]
+- S4 Implement adapters and tool handlers per concern package [x]
 Summary: Keep business bridges in `adapters` and keep tool implementations split by tool domain.
 Inputs/outputs: App/query services in; MCP tool handler outputs out.
 File changes (with classes/functions):
-- `internal/mcp/adapters/service_adapter.go` (new)
+- `internal/mcp/adapters/adapter.go` (new)
   - Classes/structs: `Adapter` (`RunScan`, `ListModules`, `ModuleDetails`, `Trace`, `Cycles`, `TrendSlice`).
-  - Main functions: `func NewAdapter(app *app.App, q *query.Service) *Adapter`.
+  - Main functions: `func NewAdapter(app *app.App, historyStore *history.Store, projectKey string) *Adapter`.
 - `internal/mcp/tools/scan/handler.go` (new)
   - Main functions: `func HandleRun(ctx context.Context, a *adapters.Adapter, in contracts.ScanRunInput) (contracts.ScanRunOutput, error)`.
 - `internal/mcp/tools/query/handler.go` (new)
-  - Main functions: `HandleQueryModules`, `HandleQueryModuleDetails`, `HandleQueryTrace`.
+  - Main functions: `HandleModules`, `HandleModuleDetails`, `HandleTrace`, `HandleTrends`.
 - `internal/mcp/tools/graph/handler.go` (new)
   - Main functions: `func HandleCycles(ctx context.Context, a *adapters.Adapter, in contracts.GraphCyclesInput) (contracts.GraphCyclesOutput, error)`.
 - `internal/mcp/tools/system/handler.go` (new)
@@ -170,7 +175,7 @@ Acceptance checks:
 - Output artifact sync writes `mermaid`/`plantuml`/`dot`/`tsv` using configured paths without AI prompting each file.
 - Project switching updates context and SQLite namespace safely.
 
-- S5 Integrate runtime startup and graceful shutdown [ ]
+- S5 Integrate runtime startup and graceful shutdown [x]
 Summary: Wire MCP runtime into existing CLI runtime lifecycle when config enables MCP mode.
 Inputs/outputs: CLI runtime state + config in; MCP mode execution path out.
 File changes (with classes/functions):
@@ -189,8 +194,9 @@ Acceptance checks:
 - Shutdown closes resources cleanly (history store, parser, transport).
 - Existing CLI commands still work when MCP disabled.
 
-- S6 Add tests, fixtures, and docs for POC usage [ ]
+- S6 Add tests, fixtures, and docs for POC usage [x]
 Summary: Validate behavior end-to-end and publish a practical POC runbook.
+Status: complete (runtime/handler/openapi tests added and MCP docs/README updated for operator usage).
 Inputs/outputs: implemented MCP layer in; deterministic test coverage and docs out.
 File changes (with classes/functions):
 - `internal/mcp/runtime/server_test.go` (new)
@@ -235,7 +241,7 @@ Acceptance checks:
 | `internal/mcp/openapi/loader.go` | new | n/a | `LoadSpec(path string) (*openapi3.T, error)` | OpenAPI document loading via kin-openapi |
 | `internal/mcp/openapi/converter.go` | new | n/a | `Convert(spec *openapi3.T) ([]contracts.OperationDescriptor, error)` | API-to-operation conversion |
 | `internal/mcp/openapi/filters.go` | new | n/a | `ApplyAllowlist(ops []contracts.OperationDescriptor, allowlist []string) []contracts.OperationDescriptor` | Contract filtering |
-| `internal/mcp/adapters/service_adapter.go` | new | `Adapter` (`RunScan`, `ListModules`, `ModuleDetails`, `Trace`, `Cycles`, `TrendSlice`) | `NewAdapter(app *app.App, q *query.Service) *Adapter` | Bridge domain APIs to tools |
+| `internal/mcp/adapters/adapter.go` | new | `Adapter` (`RunScan`, `ListModules`, `ModuleDetails`, `Trace`, `Cycles`, `TrendSlice`) | `NewAdapter(app *app.App, historyStore *history.Store, projectKey string) *Adapter` | Bridge domain APIs to tools |
 | `internal/mcp/tools/scan/handler.go` | new | n/a | `HandleRun(ctx context.Context, a *adapters.Adapter, in contracts.ScanRunInput) (contracts.ScanRunOutput, error)` | Scan tool handler |
 | `internal/mcp/tools/query/handler.go` | new | n/a | `HandleModules`; `HandleModuleDetails`; `HandleTrace` | Query tool handlers |
 | `internal/mcp/tools/graph/handler.go` | new | n/a | `HandleCycles(ctx context.Context, a *adapters.Adapter, in contracts.GraphCyclesInput) (contracts.GraphCyclesOutput, error)` | Graph tool handler |

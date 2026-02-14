@@ -538,6 +538,19 @@ request_timeout = "500ms"
 `,
 			errSub: "mcp.request_timeout must be between 1s and 2m",
 		},
+		{
+			name: "openapi path and url both set",
+			content: `
+grammars_path = "./grammars"
+
+[mcp]
+enabled = true
+operation_allowlist = ["scan_once"]
+openapi_spec_path = "openapi.yaml"
+openapi_spec_url = "https://example.com/openapi.yaml"
+`,
+			errSub: "mcp.openapi_spec_path cannot be set alongside mcp.openapi_spec_url",
+		},
 	}
 
 	for _, tt := range tests {

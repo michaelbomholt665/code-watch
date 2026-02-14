@@ -5,6 +5,7 @@ import (
 	"circular/internal/shared/util"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -14,7 +15,9 @@ type ProjectContext struct {
 	DBNamespace      string
 	Key              string
 	ConfigFile       string
+	ScriptFile       string
 	SourceConfigPath string
+	TemplatePath     string
 }
 
 func ResolveActiveProjectContext(cfg *config.Config, name string) (ProjectContext, error) {
@@ -61,6 +64,7 @@ func ResolveActiveProjectContext(cfg *config.Config, name string) (ProjectContex
 		DBNamespace: project.DBNamespace,
 		Key:         project.Key,
 		ConfigFile:  configFile,
+		ScriptFile:  filepath.Join(project.Root, "circular-mcp"),
 	}, nil
 }
 
@@ -81,4 +85,46 @@ func SyncProjectConfig(ctx ProjectContext) error {
 		return fmt.Errorf("write config sync %q: %w", target, err)
 	}
 	return nil
+}
+
+func GenerateProjectConfig(ctx ProjectContext) (bool, error) {
+	target := strings.TrimSpace(ctx.ConfigFile)
+	if target == "" {
+		return false, nil
+	}
+	if _, err := os.Stat(target); err == nil {
+		return false, nil
+	} else if !os.IsNotExist(err) {
+		return false, fmt.Errorf("check target config %q: %w", target, err)
+	}
+
+	template := strings.TrimSpace(ctx.TemplatePath)
+	if template == "" {
+		return false, fmt.Errorf("template path is required to generate %q", target)
+	}
+	data, err := os.ReadFile(template)
+	if err != nil {
+		return false, fmt.Errorf("read config template %q: %w", template, err)
+	}
+	if err := util.WriteFileWithDirs(target, data, 0o644); err != nil {
+		return false, fmt.Errorf("write generated config %q: %w", target, err)
+	}
+	return true, nil
+}
+
+func GenerateProjectScript(ctx ProjectContext) (bool, error) {
+	target := strings.TrimSpace(ctx.ScriptFile)
+	if target == "" {
+		return false, nil
+	}
+	if _, err := os.Stat(target); err == nil {
+		return false, nil
+	} else if !os.IsNotExist(err) {
+		return false, fmt.Errorf("check target script %q: %w", target, err)
+	}
+
+	if err := util.WriteFileWithDirs(target, projectScriptTemplate, 0o755); err != nil {
+		return false, fmt.Errorf("write generated script %q: %w", target, err)
+	}
+	return true, nil
 }

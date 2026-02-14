@@ -11,6 +11,7 @@ This folder contains implementation-level documentation for `circular`.
 - `advanced.md`: phase-1 historical snapshots and trend-report workflows
 - `architecture.md`: scan/update pipeline, data model, and subsystem boundaries
 - `packages.md`: package-level ownership and key entrypoints
+- `mcp.md`: MCP POC tool protocol, operations, and examples
 - `limitations.md`: known behavior constraints and tradeoffs
 - `ai-audit.md`: hardening scope and verification baseline
 

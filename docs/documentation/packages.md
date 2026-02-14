@@ -19,6 +19,47 @@
 - MCP runtime bootstrap entrypoint and project context resolution
 - derives active project, config sync targets, and runtime metadata for MCP startup
 
+## `internal/mcp/registry`
+
+- tool handler registry with deterministic registration order
+
+## `internal/mcp/transport`
+
+- transport adapters (stdio stub for POC)
+
+## `internal/mcp/contracts`
+
+- MCP tool request/response DTOs and error codes
+
+## `internal/mcp/schema`
+
+- tool schema definitions (single `circular` tool)
+
+## `internal/mcp/validate`
+
+- tool argument validation and normalization
+
+## `internal/mcp/adapters`
+
+- bridges MCP tool inputs to `internal/core/app` and `internal/data/query`
+- keeps domain calls centralized for scan/query/graph operations
+
+## `internal/mcp/tools/scan`
+
+- scan-related handlers (`scan.run`)
+
+## `internal/mcp/tools/query`
+
+- query handlers for modules, module details, trace, and trends
+
+## `internal/mcp/tools/graph`
+
+- graph handlers for cycle detection
+
+## `internal/mcp/tools/system`
+
+- handlers for output/config sync and project selection
+
 ## `internal/core/app`
 
 - central orchestrator over parser/graph/resolver/output/watcher

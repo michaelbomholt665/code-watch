@@ -621,6 +621,10 @@ func runMCPModeIfEnabled(opts cliOptions, cfg *config.Config, configPath string)
 		return nil
 	}
 
+	// MCP stdio requires stdout to be protocol-only JSON.
+	// Route logs to stderr before any startup work can emit logs.
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
+
 	app, err := coreapp.New(cfg)
 	if err != nil {
 		return fmt.Errorf("init app: %w", err)
@@ -654,8 +658,11 @@ func runMCPModeIfEnabled(opts cliOptions, cfg *config.Config, configPath string)
 
 	project := server.ProjectContext()
 	if cfg.MCP.AutoSyncConfigEnabled() {
-		if err := mcpruntime.SyncProjectConfig(project); err != nil {
-			return fmt.Errorf("auto-sync config: %w", err)
+		if _, err := mcpruntime.GenerateProjectConfig(project); err != nil {
+			return fmt.Errorf("auto-generate project config: %w", err)
+		}
+		if _, err := mcpruntime.GenerateProjectScript(project); err != nil {
+			return fmt.Errorf("auto-generate project script: %w", err)
 		}
 	}
 

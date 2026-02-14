@@ -83,6 +83,9 @@ circular [flags] [path]
 - MCP startup is config-driven via `[mcp].enabled = true`
 - MCP mode cannot be combined with `--once`, `--ui`, `--trace`, `--impact`, `--query-*`, `--history`, `--verify-grammars`, or positional path arguments
 - MCP startup runs an initial scan and can auto-write outputs/config when `mcp.auto_manage_outputs` or `mcp.auto_sync_config` are enabled
+- OpenAPI conversion (when enabled) reads `mcp.openapi_spec_path` or `mcp.openapi_spec_url` (mutually exclusive)
+- MCP runtime uses a stdio JSON request/response loop (one JSON object per line)
+- MCP tool protocol and examples live in `docs/documentation/mcp.md`
 
 ## Execution Order
 

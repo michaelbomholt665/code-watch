@@ -69,6 +69,8 @@ type MCP struct {
 	Transport          string        `toml:"transport"`
 	Address            string        `toml:"address"`
 	ConfigPath         string        `toml:"config_path"`
+	OpenAPISpecPath    string        `toml:"openapi_spec_path"`
+	OpenAPISpecURL     string        `toml:"openapi_spec_url"`
 	ServerName         string        `toml:"server_name"`
 	ServerVersion      string        `toml:"server_version"`
 	ExposedToolName    string        `toml:"exposed_tool_name"`
@@ -398,6 +400,11 @@ func validateMCP(cfg *Config) error {
 	if exposed != "" && strings.ContainsAny(exposed, " \t\n") {
 		return fmt.Errorf("mcp.exposed_tool_name must not contain whitespace")
 	}
+	specPath := strings.TrimSpace(cfg.MCP.OpenAPISpecPath)
+	specURL := strings.TrimSpace(cfg.MCP.OpenAPISpecURL)
+	if specPath != "" && specURL != "" {
+		return fmt.Errorf("mcp.openapi_spec_path cannot be set alongside mcp.openapi_spec_url")
+	}
 	allowlist := cfg.MCP.OperationAllowlist
 	if len(allowlist) > 0 {
 		seen := make(map[string]bool, len(allowlist))
@@ -456,6 +463,8 @@ func normalizeMCP(cfg *Config) {
 	cfg.MCP.Transport = strings.TrimSpace(cfg.MCP.Transport)
 	cfg.MCP.Address = strings.TrimSpace(cfg.MCP.Address)
 	cfg.MCP.ConfigPath = strings.TrimSpace(cfg.MCP.ConfigPath)
+	cfg.MCP.OpenAPISpecPath = strings.TrimSpace(cfg.MCP.OpenAPISpecPath)
+	cfg.MCP.OpenAPISpecURL = strings.TrimSpace(cfg.MCP.OpenAPISpecURL)
 	cfg.MCP.ServerName = strings.TrimSpace(cfg.MCP.ServerName)
 	cfg.MCP.ServerVersion = strings.TrimSpace(cfg.MCP.ServerVersion)
 	cfg.MCP.ExposedToolName = strings.TrimSpace(cfg.MCP.ExposedToolName)

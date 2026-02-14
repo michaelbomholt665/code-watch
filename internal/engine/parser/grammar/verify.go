@@ -66,7 +66,6 @@ func VerifyGrammarArtifacts(baseDir string, manifest GrammarManifest) ([]Verific
 
 func VerifyLanguageRegistryArtifacts(baseDir string, registry map[string]registry.LanguageSpec) ([]VerificationIssue, error) {
 	manifestPath := filepath.Join(baseDir, "manifest.toml")
-	fmt.Printf("DEBUG: manifestPath=%s\n", manifestPath)
 	manifest, err := LoadGrammarManifest(manifestPath)
 	if err != nil {
 		return nil, err

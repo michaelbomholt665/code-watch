@@ -53,6 +53,7 @@ Constraints:
 | C3 | Wire config-driven MCP bootstrap and automatic output/config sync | Core | C1,C2 | Medium |
 | C4 | Add compatibility and migration tests | Core | C1,C2,C3 | Low |
 | C5 | Update docs/examples and rollout notes | Core | C1,C2,C3 | Low |
+| C6 | Add OpenAPI spec source config keys (path/URL) | Core | C1,C2 | Low |
 
 ## Tasks
 
@@ -161,6 +162,27 @@ Acceptance checks:
 - Docs reflect final defaults and validation rules exactly.
 - Changelog entry is user-facing and backward-compatibility aware.
 - No references to gateway architecture in MCP docs.
+
+- C6 Add OpenAPI spec source config keys (path/URL) [ ]
+Summary: Add explicit config keys for the OpenAPI spec source used by MCP operation conversion.
+Inputs/outputs: MCP config in; optional spec path/URL available to OpenAPI loader out.
+File changes (with classes/functions):
+- `internal/core/config/config.go` (update)
+  - Classes/structs: `MCP` add fields: `OpenAPISpecPath`, `OpenAPISpecURL`.
+  - Main functions: `applyDefaults(cfg *Config)` set empty defaults; `validateMCP(cfg *Config) error` enforce mutual exclusivity when OpenAPI conversion is enabled.
+- `internal/core/config/paths.go` (update)
+  - Main functions: `ResolvePaths` resolve `mcp.openapi_spec_path` under `paths.config_dir` when relative.
+- `docs/documentation/configuration.md` (update)
+  - Main sections: document new `mcp.openapi_spec_path`/`mcp.openapi_spec_url` behavior and exclusivity rules.
+- `circular.example.toml` (update)
+  - Main sections: `[mcp]` include commented example for spec path.
+Best practices and standards:
+- Keep keys optional and additive.
+- Enforce mutual exclusivity when conversion is enabled; allow both empty when conversion is disabled.
+- Keep path resolution deterministic relative to `paths.config_dir`.
+Acceptance checks:
+- Config loads unchanged when new keys are unset.
+- Setting both keys fails validation with actionable error text.
 
 ## File Inventory
 
