@@ -1,0 +1,24 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+left to right direction
+
+rectangle "api" as api
+rectangle "ui" as ui
+rectangle "core" as core
+rectangle "engine" as engine
+rectangle "data" as data
+
+
+legend right
+|= Item |= Meaning |
+|Rectangle|Architecture layer|
+|deps:N|Observed inter-layer dependency count|
+|viol:M|Violating dependency count for that layer pair|
+|<color:#a64d00>Brown dashed edge</color>|Layer pair with architecture violations|
+endlegend
+
+@enduml

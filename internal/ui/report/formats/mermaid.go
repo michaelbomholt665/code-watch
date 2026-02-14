@@ -259,6 +259,171 @@ func (m *MermaidGenerator) GenerateArchitecture(model graph.ArchitectureModel, v
 	return b.String(), nil
 }
 
+func (m *MermaidGenerator) GenerateComponent(model graph.ArchitectureModel, showInternal bool) (string, error) {
+	data := buildComponentDiagramData(m.graph, showInternal)
+
+	var b strings.Builder
+	b.WriteString("%%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%\n")
+	b.WriteString("flowchart LR\n")
+
+	moduleIDs := makeIDs(data.ModuleNames)
+	layerByModule := classifyLayers(data.ModuleNames, data.Modules, model)
+	if model.Enabled && len(model.Layers) > 0 {
+		for _, layer := range model.Layers {
+			layerModules := modulesInLayer(data.ModuleNames, layerByModule, layer.Name)
+			if len(layerModules) == 0 {
+				continue
+			}
+			b.WriteString(fmt.Sprintf("  subgraph comp_layer_%s[\"%s\"]\n", sanitizeID(layer.Name), escapeLabel(layer.Name)))
+			for _, moduleName := range layerModules {
+				b.WriteString(fmt.Sprintf("    %s[\"%s\"]\n", moduleIDs[moduleName], escapeLabel(moduleLabel(moduleName, data.Modules[moduleName], m.metrics, m.hotspot))))
+			}
+			b.WriteString("  end\n")
+		}
+		for _, moduleName := range modulesInLayer(data.ModuleNames, layerByModule, "") {
+			b.WriteString(fmt.Sprintf("  %s[\"%s\"]\n", moduleIDs[moduleName], escapeLabel(moduleLabel(moduleName, data.Modules[moduleName], m.metrics, m.hotspot))))
+		}
+	} else {
+		for _, moduleName := range data.ModuleNames {
+			b.WriteString(fmt.Sprintf("  %s[\"%s\"]\n", moduleIDs[moduleName], escapeLabel(moduleLabel(moduleName, data.Modules[moduleName], m.metrics, m.hotspot))))
+		}
+	}
+
+	definitionKeys := make([]string, 0)
+	if showInternal {
+		for _, moduleName := range data.ModuleNames {
+			for _, definition := range data.Definitions[moduleName] {
+				key := moduleName + "::" + definition
+				definitionKeys = append(definitionKeys, key)
+			}
+		}
+	}
+	definitionIDs := makeIDs(definitionKeys)
+	if showInternal && len(definitionKeys) > 0 {
+		for _, moduleName := range data.ModuleNames {
+			for _, definition := range data.Definitions[moduleName] {
+				key := moduleName + "::" + definition
+				b.WriteString(fmt.Sprintf("  %s((\"%s\"))\n", definitionIDs[key], escapeLabel(definition)))
+				b.WriteString(fmt.Sprintf("  %s -.-> %s\n", moduleIDs[moduleName], definitionIDs[key]))
+			}
+		}
+	}
+
+	b.WriteString("\n")
+	b.WriteString("  classDef moduleNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;\n")
+	if len(data.ModuleNames) > 0 {
+		b.WriteString("  class ")
+		b.WriteString(strings.Join(toIDs(data.ModuleNames, moduleIDs), ","))
+		b.WriteString(" moduleNode;\n")
+	}
+	if showInternal && len(definitionKeys) > 0 {
+		b.WriteString("  classDef symbolNode fill:#eef7ee,stroke:#2f7d32,stroke-width:1px,color:#000000;\n")
+		b.WriteString("  class ")
+		b.WriteString(strings.Join(toIDs(definitionKeys, definitionIDs), ","))
+		b.WriteString(" symbolNode;\n")
+	}
+
+	b.WriteString("\n")
+	linkIndex := 0
+	symbolRefIndexes := make([]int, 0)
+	for _, edge := range data.Edges {
+		labelParts := make([]string, 0, 3)
+		if edge.Imports > 0 {
+			labelParts = append(labelParts, fmt.Sprintf("deps:%d", edge.Imports))
+		}
+		if edge.SymbolRefs > 0 {
+			labelParts = append(labelParts, fmt.Sprintf("refs:%d", edge.SymbolRefs))
+		}
+		if showInternal && len(edge.Symbols) > 0 {
+			preview := edge.Symbols
+			if len(preview) > 3 {
+				preview = preview[:3]
+			}
+			labelParts = append(labelParts, "sym:"+strings.Join(preview, ","))
+		}
+		label := ""
+		if len(labelParts) > 0 {
+			label = "|" + strings.Join(labelParts, " ") + "|"
+		}
+		if edge.SymbolRefs > 0 {
+			symbolRefIndexes = append(symbolRefIndexes, linkIndex)
+		}
+		b.WriteString(fmt.Sprintf("  %s -->%s %s\n", moduleIDs[edge.From], label, moduleIDs[edge.To]))
+		linkIndex++
+	}
+	if len(symbolRefIndexes) > 0 {
+		b.WriteString("\n")
+		b.WriteString(fmt.Sprintf("  linkStyle %s stroke:#1f6f8b,stroke-width:2px,stroke-dasharray:4 3;\n", joinInts(symbolRefIndexes)))
+	}
+
+	b.WriteString("\n")
+	b.WriteString("  subgraph legend_info[\"Legend\"]\n")
+	b.WriteString("    legend_nodes[\"Node: module (func/file metrics)\"]\n")
+	b.WriteString("    legend_edges[\"Edge labels: deps:N=import edges refs:M=matched symbol references\"]\n")
+	if showInternal {
+		b.WriteString("    legend_symbols[\"Symbol nodes shown when output.diagrams.component_config.show_internal=true\"]\n")
+	}
+	b.WriteString("  end\n")
+	b.WriteString("  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px,color:#000000;\n")
+	if showInternal {
+		b.WriteString("  class legend_nodes,legend_edges,legend_symbols legendNode;\n")
+	} else {
+		b.WriteString("  class legend_nodes,legend_edges legendNode;\n")
+	}
+	return b.String(), nil
+}
+
+func (m *MermaidGenerator) GenerateFlow(entryPoints []string, maxDepth int) (string, error) {
+	data, err := buildFlowDiagramData(m.graph, entryPoints, maxDepth)
+	if err != nil {
+		return "", err
+	}
+
+	nodeNames := make([]string, 0, len(data.Nodes))
+	for _, node := range data.Nodes {
+		nodeNames = append(nodeNames, node.Name)
+	}
+	ids := makeIDs(nodeNames)
+
+	var b strings.Builder
+	b.WriteString("%%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%\n")
+	b.WriteString("flowchart LR\n")
+	for _, node := range data.Nodes {
+		b.WriteString(fmt.Sprintf("  %s[\"%s\\n(step:%d)\"]\n", ids[node.Name], escapeLabel(node.Name), node.Depth))
+	}
+	b.WriteString("\n")
+	for _, edge := range data.Edges {
+		b.WriteString(fmt.Sprintf("  %s --> %s\n", ids[edge.From], ids[edge.To]))
+	}
+
+	b.WriteString("\n")
+	b.WriteString("  classDef flowNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;\n")
+	b.WriteString("  class ")
+	b.WriteString(strings.Join(toIDs(nodeNames, ids), ","))
+	b.WriteString(" flowNode;\n")
+	entryNames := make([]string, 0)
+	for _, node := range data.Nodes {
+		if node.Entry {
+			entryNames = append(entryNames, node.Name)
+		}
+	}
+	if len(entryNames) > 0 {
+		b.WriteString("  classDef entryNode fill:#e9f5ec,stroke:#2f7d32,stroke-width:2px,color:#000000;\n")
+		b.WriteString("  class ")
+		b.WriteString(strings.Join(toIDs(entryNames, ids), ","))
+		b.WriteString(" entryNode;\n")
+	}
+
+	b.WriteString("\n")
+	b.WriteString("  subgraph legend_info[\"Legend\"]\n")
+	b.WriteString("    legend_nodes[\"Node label step:N = shortest hop distance from nearest entry point\"]\n")
+	b.WriteString("    legend_entries[\"Green nodes = selected flow entry modules\"]\n")
+	b.WriteString("  end\n")
+	b.WriteString("  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px,color:#000000;\n")
+	b.WriteString("  class legend_nodes,legend_entries legendNode;\n")
+	return b.String(), nil
+}
+
 func classifyLayers(moduleNames []string, modules map[string]*graph.Module, model graph.ArchitectureModel) map[string]string {
 	layerByModule := make(map[string]string, len(moduleNames))
 	if !model.Enabled || len(model.Layers) == 0 {

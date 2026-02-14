@@ -13,7 +13,8 @@ type File struct {
 	Imports      []Import
 	Definitions  []Definition
 	References   []Reference // Function/symbol calls
-	LocalSymbols []string    // Variables defined in local scope (vars, params, self)
+	Secrets      []Secret
+	LocalSymbols []string // Variables defined in local scope (vars, params, self)
 	ParsedAt     time.Time
 }
 
@@ -49,6 +50,15 @@ type Reference struct {
 	Location Location
 	Context  string // Where this reference occurs
 	Resolved bool   // Did we find the definition?
+}
+
+type Secret struct {
+	Kind       string
+	Severity   string
+	Value      string
+	Entropy    float64
+	Confidence float64
+	Location   Location
 }
 
 type DefinitionKind int

@@ -3,7 +3,9 @@ package formats
 
 import (
 	"circular/internal/engine/graph"
+	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
+	"circular/internal/engine/secrets"
 	"fmt"
 	"strings"
 )
@@ -66,6 +68,26 @@ func (t *TSVGenerator) GenerateArchitectureViolations(rows []graph.ArchitectureV
 			row.File,
 			row.Line,
 			row.Column,
+		))
+	}
+
+	return buf.String(), nil
+}
+
+func (t *TSVGenerator) GenerateSecrets(rows []parser.Secret) (string, error) {
+	var buf strings.Builder
+
+	buf.WriteString("Type\tKind\tSeverity\tValue\tEntropy\tConfidence\tFile\tLine\tColumn\n")
+	for _, row := range rows {
+		buf.WriteString(fmt.Sprintf("secret\t%s\t%s\t%s\t%.4f\t%.2f\t%s\t%d\t%d\n",
+			row.Kind,
+			row.Severity,
+			secrets.MaskValue(row.Value),
+			row.Entropy,
+			row.Confidence,
+			row.Location.File,
+			row.Location.Line,
+			row.Location.Column,
 		))
 	}
 

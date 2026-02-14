@@ -1,0 +1,18 @@
+%%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
+flowchart LR
+  api["api"]
+  ui["ui"]
+  core["core"]
+  engine["engine"]
+  data["data"]
+
+  classDef layerNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
+  class api,ui,core,engine,data layerNode;
+
+
+  subgraph legend_info["Legend"]
+    legend_nodes["Node: architecture layer"]
+    legend_edges["Edge label deps:N = observed inter-layer imports; viol:M = violating dependencies"]
+  end
+  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px,color:#000000;
+  class legend_nodes,legend_edges legendNode;

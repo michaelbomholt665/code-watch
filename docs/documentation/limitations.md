@@ -15,6 +15,12 @@
 - `exclude.symbols` can hide false positives and true positives
 - stdlib/builtin lists are static snapshots and language-scoped
 
+## Secret Detection Heuristics
+
+- secret detection is heuristic and does not guarantee full credential coverage
+- entropy and context checks can produce false positives/false negatives
+- secret findings are exposed via MCP (`secrets.scan`, `secrets.list`) and TSV output blocks, but are still heuristic
+
 ## Graph Granularity
 
 - dependency graph is module-level, not symbol-level edges

@@ -417,6 +417,7 @@ func cloneFile(file *parser.File) *parser.File {
 	c.Imports = append([]parser.Import(nil), file.Imports...)
 	c.Definitions = append([]parser.Definition(nil), file.Definitions...)
 	c.References = append([]parser.Reference(nil), file.References...)
+	c.Secrets = append([]parser.Secret(nil), file.Secrets...)
 	c.LocalSymbols = append([]string(nil), file.LocalSymbols...)
 	return &c
 }

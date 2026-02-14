@@ -206,3 +206,132 @@ func (p *PlantUMLGenerator) GenerateArchitecture(model graph.ArchitectureModel, 
 	b.WriteString("\n@enduml\n")
 	return b.String(), nil
 }
+
+func (p *PlantUMLGenerator) GenerateComponent(model graph.ArchitectureModel, showInternal bool) (string, error) {
+	data := buildComponentDiagramData(p.graph, showInternal)
+	moduleAliases := makeIDs(data.ModuleNames)
+
+	var b strings.Builder
+	b.WriteString("@startuml\n")
+	b.WriteString("skinparam componentStyle rectangle\n")
+	b.WriteString("skinparam packageStyle rectangle\n")
+	b.WriteString("skinparam linetype ortho\n")
+	b.WriteString("skinparam nodesep 80\n")
+	b.WriteString("skinparam ranksep 100\n")
+	b.WriteString("left to right direction\n\n")
+
+	layerByModule := classifyLayers(data.ModuleNames, data.Modules, model)
+	if model.Enabled && len(model.Layers) > 0 {
+		for _, layer := range model.Layers {
+			layerModules := modulesInLayer(data.ModuleNames, layerByModule, layer.Name)
+			if len(layerModules) == 0 {
+				continue
+			}
+			b.WriteString(fmt.Sprintf("package \"%s\" {\n", escapeLabel(layer.Name)))
+			for _, moduleName := range layerModules {
+				b.WriteString(fmt.Sprintf("  component \"%s\" as %s\n", escapeLabel(moduleLabel(moduleName, data.Modules[moduleName], p.metrics, p.hotspot)), moduleAliases[moduleName]))
+			}
+			b.WriteString("}\n")
+		}
+		for _, moduleName := range modulesInLayer(data.ModuleNames, layerByModule, "") {
+			b.WriteString(fmt.Sprintf("component \"%s\" as %s\n", escapeLabel(moduleLabel(moduleName, data.Modules[moduleName], p.metrics, p.hotspot)), moduleAliases[moduleName]))
+		}
+	} else {
+		for _, moduleName := range data.ModuleNames {
+			b.WriteString(fmt.Sprintf("component \"%s\" as %s\n", escapeLabel(moduleLabel(moduleName, data.Modules[moduleName], p.metrics, p.hotspot)), moduleAliases[moduleName]))
+		}
+	}
+
+	if showInternal {
+		for _, moduleName := range data.ModuleNames {
+			for _, definition := range data.Definitions[moduleName] {
+				defAlias := sanitizeID(moduleName + "__" + definition)
+				b.WriteString(fmt.Sprintf("component \"%s\" as %s <<symbol>>\n", escapeLabel(definition), defAlias))
+				b.WriteString(fmt.Sprintf("%s ..> %s\n", moduleAliases[moduleName], defAlias))
+			}
+		}
+	}
+
+	b.WriteString("\n")
+	for _, edge := range data.Edges {
+		arrow := "-->"
+		labelParts := make([]string, 0, 3)
+		if edge.Imports > 0 {
+			labelParts = append(labelParts, fmt.Sprintf("deps:%d", edge.Imports))
+		}
+		if edge.SymbolRefs > 0 {
+			labelParts = append(labelParts, fmt.Sprintf("refs:%d", edge.SymbolRefs))
+			arrow = "-[#1f6f8b,dashed]->"
+		}
+		if showInternal && len(edge.Symbols) > 0 {
+			preview := edge.Symbols
+			if len(preview) > 3 {
+				preview = preview[:3]
+			}
+			labelParts = append(labelParts, "sym:"+strings.Join(preview, ","))
+		}
+		label := ""
+		if len(labelParts) > 0 {
+			label = " : " + strings.Join(labelParts, " ")
+		}
+		b.WriteString(fmt.Sprintf("%s %s %s%s\n", moduleAliases[edge.From], arrow, moduleAliases[edge.To], label))
+	}
+
+	b.WriteString("\nlegend right\n")
+	b.WriteString("|= Item |= Meaning |\n")
+	b.WriteString("|Component|Module with metrics (func/file counts and optional d/in/out/cx)|\n")
+	b.WriteString("|deps:N|Import edges observed between source and target modules|\n")
+	b.WriteString("|refs:M|Matched symbol references from source module to target module definitions|\n")
+	if showInternal {
+		b.WriteString("|<<symbol>>|Definition node shown when `show_internal=true`|\n")
+		b.WriteString("|sym:a,b,c|Example referenced definitions for that edge (preview)|\n")
+	}
+	b.WriteString("|<color:#1f6f8b>Dashed edge</color>|Edge contains matched symbol references|\n")
+	b.WriteString("endlegend\n")
+
+	b.WriteString("\n@enduml\n")
+	return b.String(), nil
+}
+
+func (p *PlantUMLGenerator) GenerateFlow(entryPoints []string, maxDepth int) (string, error) {
+	data, err := buildFlowDiagramData(p.graph, entryPoints, maxDepth)
+	if err != nil {
+		return "", err
+	}
+
+	nodeNames := make([]string, 0, len(data.Nodes))
+	for _, node := range data.Nodes {
+		nodeNames = append(nodeNames, node.Name)
+	}
+	aliases := makeIDs(nodeNames)
+
+	var b strings.Builder
+	b.WriteString("@startuml\n")
+	b.WriteString("skinparam componentStyle rectangle\n")
+	b.WriteString("skinparam packageStyle rectangle\n")
+	b.WriteString("skinparam linetype ortho\n")
+	b.WriteString("skinparam nodesep 80\n")
+	b.WriteString("skinparam ranksep 100\n")
+	b.WriteString("left to right direction\n\n")
+
+	for _, node := range data.Nodes {
+		color := ""
+		if node.Entry {
+			color = " #E9F5EC"
+		}
+		b.WriteString(fmt.Sprintf("component \"%s\\n(step:%d)\" as %s%s\n", escapeLabel(node.Name), node.Depth, aliases[node.Name], color))
+	}
+
+	b.WriteString("\n")
+	for _, edge := range data.Edges {
+		b.WriteString(fmt.Sprintf("%s --> %s\n", aliases[edge.From], aliases[edge.To]))
+	}
+
+	b.WriteString("\nlegend right\n")
+	b.WriteString("|= Item |= Meaning |\n")
+	b.WriteString("|step:N|Shortest hop distance from nearest entry point|\n")
+	b.WriteString("|Green component|Selected flow entry module|\n")
+	b.WriteString("endlegend\n")
+	b.WriteString("\n@enduml\n")
+	return b.String(), nil
+}
