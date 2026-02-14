@@ -1,8 +1,8 @@
 package runtime
 
 import (
-	"circular/internal/core/app"
 	"circular/internal/core/config"
+	"circular/internal/core/ports"
 	"circular/internal/mcp/adapters"
 	"circular/internal/mcp/contracts"
 	"circular/internal/mcp/registry"
@@ -23,9 +23,10 @@ import (
 )
 
 type Dependencies struct {
-	App        *app.App
-	Logger     *slog.Logger
-	ConfigPath string
+	Analysis     ports.AnalysisService
+	WatchService ports.WatchService
+	Logger       *slog.Logger
+	ConfigPath   string
 }
 
 type AppDeps = Dependencies
@@ -37,6 +38,7 @@ type Server struct {
 	registry  *registry.Registry
 	transport transport.Adapter
 	adapter   *adapters.Adapter
+	watch     ports.WatchService
 	history   historyStore
 	allowlist OperationAllowlist
 	toolName  string
@@ -56,8 +58,17 @@ func New(cfg *config.Config, deps Dependencies, reg *registry.Registry, adapter 
 	if cfg == nil {
 		return nil, fmt.Errorf("config is required")
 	}
-	if deps.App == nil {
-		return nil, fmt.Errorf("app dependency is required")
+	if deps.Analysis == nil {
+		return nil, fmt.Errorf("analysis service dependency is required")
+	}
+	if deps.WatchService == nil {
+		watch := deps.Analysis.WatchService()
+		if watch != nil {
+			deps.WatchService = watch
+		}
+	}
+	if deps.WatchService == nil {
+		return nil, fmt.Errorf("watch service dependency is required")
 	}
 	if deps.Logger == nil {
 		deps.Logger = slog.Default()
@@ -82,6 +93,7 @@ func New(cfg *config.Config, deps Dependencies, reg *registry.Registry, adapter 
 		registry:  reg,
 		transport: adapter,
 		adapter:   toolAdapter,
+		watch:     deps.WatchService,
 		history:   history,
 		allowlist: allowlist,
 		toolName:  toolName,
@@ -235,12 +247,13 @@ func (s *Server) StartWatch(_ context.Context) (contracts.SystemWatchOutput, err
 	s.watchMu.Unlock()
 
 	go func() {
-		if err := s.deps.App.StartWatcher(); err != nil {
+		if err := s.watch.Start(context.Background()); err != nil {
 			s.deps.Logger.Error("mcp background watcher failed", "error", err)
+			s.watchMu.Lock()
+			s.watching = false
+			s.watchMu.Unlock()
+			return
 		}
-		s.watchMu.Lock()
-		s.watching = false
-		s.watchMu.Unlock()
 	}()
 
 	return contracts.SystemWatchOutput{Status: "watching"}, nil

@@ -1,17 +1,14 @@
 package adapters
 
 import (
-	"circular/internal/core/app"
-	"circular/internal/core/config"
+	"circular/internal/core/ports"
 	"circular/internal/data/history"
-	"circular/internal/data/query"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/secrets"
 	"circular/internal/mcp/contracts"
 	"circular/internal/shared/util"
 	"context"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -21,14 +18,14 @@ import (
 
 type Adapter struct {
 	mu         sync.RWMutex
-	app        *app.App
+	analysis   ports.AnalysisService
 	history    *history.Store
 	projectKey string
 }
 
-func NewAdapter(app *app.App, historyStore *history.Store, projectKey string) *Adapter {
+func NewAdapter(analysis ports.AnalysisService, historyStore *history.Store, projectKey string) *Adapter {
 	return &Adapter{
-		app:        app,
+		analysis:   analysis,
 		history:    historyStore,
 		projectKey: strings.TrimSpace(projectKey),
 	}
@@ -53,33 +50,28 @@ func (a *Adapter) RunScan(ctx context.Context, in contracts.ScanRunInput) (contr
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	if a.analysis == nil {
+		return contracts.ScanRunOutput{}, fmt.Errorf("analysis service unavailable")
+	}
 
 	start := time.Now()
-	warnings := make([]string, 0)
-	filesScanned := 0
-
-	if len(in.Paths) > 0 {
-		paths := normalizeScanPaths(in.Paths)
-		files, err := a.app.ScanDirectories(paths, a.app.Config.Exclude.Dirs, a.app.Config.Exclude.Files)
-		if err != nil {
-			return contracts.ScanRunOutput{}, err
+	result, err := a.analysis.RunScan(ctx, ports.ScanRequest{Paths: in.Paths})
+	if err != nil {
+		return contracts.ScanRunOutput{}, err
+	}
+	warnings := append([]string(nil), result.Warnings...)
+	if a.history != nil {
+		if _, err := a.analysis.CaptureHistoryTrend(ctx, a.history, ports.HistoryTrendRequest{
+			ProjectKey: a.projectKey,
+			Window:     24 * time.Hour,
+		}); err != nil {
+			warnings = append(warnings, fmt.Sprintf("capture history trend: %v", err))
 		}
-		filesScanned = len(files)
-		for _, filePath := range files {
-			if err := a.app.ProcessFile(filePath); err != nil {
-				warnings = append(warnings, fmt.Sprintf("process file %s: %v", filePath, err))
-			}
-		}
-	} else {
-		if err := a.app.InitialScan(); err != nil {
-			return contracts.ScanRunOutput{}, err
-		}
-		filesScanned = a.app.Graph.FileCount()
 	}
 
 	return contracts.ScanRunOutput{
-		FilesScanned: filesScanned,
-		Modules:      a.app.Graph.ModuleCount(),
+		FilesScanned: result.FilesScanned,
+		Modules:      result.Modules,
 		DurationMs:   int(time.Since(start).Milliseconds()),
 		Warnings:     warnings,
 	}, nil
@@ -92,35 +84,25 @@ func (a *Adapter) ScanSecrets(ctx context.Context, in contracts.SecretsScanInput
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
-
-	warnings := make([]string, 0)
-	filesScanned := 0
-
-	if len(in.Paths) > 0 {
-		paths := normalizeScanPaths(in.Paths)
-		files, err := a.app.ScanDirectories(paths, a.app.Config.Exclude.Dirs, a.app.Config.Exclude.Files)
-		if err != nil {
-			return contracts.SecretsScanOutput{}, err
-		}
-		filesScanned = len(files)
-		for _, filePath := range files {
-			if err := a.app.ProcessFile(filePath); err != nil {
-				warnings = append(warnings, fmt.Sprintf("process file %s: %v", filePath, err))
-			}
-		}
-	} else {
-		if err := a.app.InitialScan(); err != nil {
-			return contracts.SecretsScanOutput{}, err
-		}
-		filesScanned = a.app.Graph.FileCount()
+	if a.analysis == nil {
+		return contracts.SecretsScanOutput{}, fmt.Errorf("analysis service unavailable")
 	}
 
-	findings, total := secretFindings(a.app.Graph.GetAllFiles(), 0)
+	scanResult, err := a.analysis.RunScan(ctx, ports.ScanRequest{Paths: in.Paths})
+	if err != nil {
+		return contracts.SecretsScanOutput{}, err
+	}
+
+	files, err := a.analysis.ListFiles(ctx)
+	if err != nil {
+		return contracts.SecretsScanOutput{}, err
+	}
+	findings, total := secretFindings(files, 0)
 	return contracts.SecretsScanOutput{
-		FilesScanned: filesScanned,
+		FilesScanned: scanResult.FilesScanned,
 		SecretCount:  total,
 		Findings:     findings,
-		Warnings:     warnings,
+		Warnings:     scanResult.Warnings,
 	}, nil
 }
 
@@ -131,8 +113,15 @@ func (a *Adapter) ListSecrets(ctx context.Context, limit int) (contracts.Secrets
 
 	a.mu.RLock()
 	defer a.mu.RUnlock()
+	if a.analysis == nil {
+		return contracts.SecretsListOutput{}, fmt.Errorf("analysis service unavailable")
+	}
 
-	findings, total := secretFindings(a.app.Graph.GetAllFiles(), limit)
+	files, err := a.analysis.ListFiles(ctx)
+	if err != nil {
+		return contracts.SecretsListOutput{}, err
+	}
+	findings, total := secretFindings(files, limit)
 	return contracts.SecretsListOutput{
 		SecretCount: total,
 		Findings:    findings,
@@ -146,11 +135,13 @@ func (a *Adapter) Cycles(ctx context.Context, limit int) (contracts.GraphCyclesO
 
 	a.mu.RLock()
 	defer a.mu.RUnlock()
+	if a.analysis == nil {
+		return contracts.GraphCyclesOutput{}, fmt.Errorf("analysis service unavailable")
+	}
 
-	cycles := a.app.Graph.DetectCycles()
-	count := len(cycles)
-	if limit > 0 && count > limit {
-		cycles = cycles[:limit]
+	cycles, count, err := a.analysis.DetectCycles(ctx, limit)
+	if err != nil {
+		return contracts.GraphCyclesOutput{}, err
 	}
 
 	return contracts.GraphCyclesOutput{
@@ -163,8 +154,12 @@ func (a *Adapter) ListModules(ctx context.Context, filter string, limit int) (co
 	if err := ctx.Err(); err != nil {
 		return contracts.QueryModulesOutput{}, err
 	}
+	svc := a.queryService()
+	if svc == nil {
+		return contracts.QueryModulesOutput{}, fmt.Errorf("analysis service unavailable")
+	}
 
-	rows, err := a.queryService().ListModules(ctx, filter, limit)
+	rows, err := svc.ListModules(ctx, filter, limit)
 	if err != nil {
 		return contracts.QueryModulesOutput{}, err
 	}
@@ -187,8 +182,12 @@ func (a *Adapter) ModuleDetails(ctx context.Context, module string) (contracts.Q
 	if err := ctx.Err(); err != nil {
 		return contracts.QueryModuleDetailsOutput{}, err
 	}
+	svc := a.queryService()
+	if svc == nil {
+		return contracts.QueryModuleDetailsOutput{}, fmt.Errorf("analysis service unavailable")
+	}
 
-	details, err := a.queryService().ModuleDetails(ctx, module)
+	details, err := svc.ModuleDetails(ctx, module)
 	if err != nil {
 		return contracts.QueryModuleDetailsOutput{}, err
 	}
@@ -219,8 +218,12 @@ func (a *Adapter) Trace(ctx context.Context, from, to string, maxDepth int) (con
 	if err := ctx.Err(); err != nil {
 		return contracts.QueryTraceOutput{}, err
 	}
+	svc := a.queryService()
+	if svc == nil {
+		return contracts.QueryTraceOutput{}, fmt.Errorf("analysis service unavailable")
+	}
 
-	trace, err := a.queryService().DependencyTrace(ctx, from, to, maxDepth)
+	trace, err := svc.DependencyTrace(ctx, from, to, maxDepth)
 	if err != nil {
 		return contracts.QueryTraceOutput{}, err
 	}
@@ -236,8 +239,12 @@ func (a *Adapter) TrendSlice(ctx context.Context, since time.Time, limit int) (c
 	if err := ctx.Err(); err != nil {
 		return contracts.QueryTrendsOutput{}, err
 	}
+	svc := a.queryService()
+	if svc == nil {
+		return contracts.QueryTrendsOutput{}, fmt.Errorf("analysis service unavailable")
+	}
 
-	slice, err := a.queryService().TrendSlice(ctx, since, limit)
+	slice, err := svc.TrendSlice(ctx, since, limit)
 	if err != nil {
 		return contracts.QueryTrendsOutput{}, err
 	}
@@ -266,79 +273,16 @@ func (a *Adapter) SyncOutputs(ctx context.Context, formats []string) ([]string, 
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
-
-	originalOutput := a.app.Config.Output
-	filteredOutput := originalOutput
-	formatSet := formatSet(formats)
-	if len(formatSet) > 0 {
-		if !formatSet["dot"] {
-			filteredOutput.DOT = ""
-		}
-		if !formatSet["tsv"] {
-			filteredOutput.TSV = ""
-		}
-		if !formatSet["mermaid"] {
-			filteredOutput.Mermaid = ""
-		}
-		if !formatSet["plantuml"] {
-			filteredOutput.PlantUML = ""
-		}
-		if !formatSet["markdown"] {
-			filteredOutput.Markdown = ""
-		}
-
-		filteredUpdate := make([]config.MarkdownInjection, 0, len(filteredOutput.UpdateMarkdown))
-		for _, injection := range filteredOutput.UpdateMarkdown {
-			if formatSet[strings.ToLower(strings.TrimSpace(injection.Format))] {
-				filteredUpdate = append(filteredUpdate, injection)
-			}
-		}
-		filteredOutput.UpdateMarkdown = filteredUpdate
+	if a.analysis == nil {
+		return nil, fmt.Errorf("analysis service unavailable")
 	}
-
-	cfgCopy := *a.app.Config
-	cfgCopy.Output = filteredOutput
-	writeTargets, err := resolveOutputTargets(&cfgCopy)
+	result, err := a.analysis.SyncOutputs(ctx, ports.SyncOutputsRequest{
+		Formats: append([]string(nil), formats...),
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	cycles := a.app.Graph.DetectCycles()
-	metrics := a.app.Graph.ComputeModuleMetrics()
-	hotspots := a.app.Graph.TopComplexity(a.app.Config.Architecture.TopComplexity)
-	violations := a.app.ArchitectureViolations()
-	unused := a.app.AnalyzeUnusedImports()
-
-	a.app.Config.Output = filteredOutput
-	err = a.app.GenerateOutputs(cycles, nil, unused, metrics, violations, hotspots)
-	a.app.Config.Output = originalOutput
-	if err != nil {
-		return nil, err
-	}
-
-	written := make([]string, 0, 4)
-	if writeTargets.DOT != "" {
-		written = append(written, writeTargets.DOT)
-	}
-	if writeTargets.TSV != "" {
-		written = append(written, writeTargets.TSV)
-	}
-	if writeTargets.Mermaid != "" {
-		written = append(written, writeTargets.Mermaid)
-	}
-	if writeTargets.PlantUML != "" {
-		written = append(written, writeTargets.PlantUML)
-	}
-	if writeTargets.Markdown != "" {
-		written = append(written, writeTargets.Markdown)
-	}
-	for _, injection := range filteredOutput.UpdateMarkdown {
-		if strings.TrimSpace(injection.File) != "" {
-			written = append(written, injection.File)
-		}
-	}
-
-	return uniqueStrings(written), nil
+	return append([]string(nil), result.Written...), nil
 }
 
 func (a *Adapter) GenerateMarkdownReport(ctx context.Context, in contracts.ReportGenerateMarkdownInput) (contracts.ReportGenerateMarkdownOutput, error) {
@@ -348,11 +292,13 @@ func (a *Adapter) GenerateMarkdownReport(ctx context.Context, in contracts.Repor
 
 	a.mu.Lock()
 	defer a.mu.Unlock()
-
-	result, err := a.app.GenerateMarkdownReport(app.MarkdownReportRequest{
-		OutputPath: in.Path,
-		WriteFile:  in.WriteFile || strings.TrimSpace(in.Path) != "",
-		Verbosity:  in.Verbosity,
+	if a.analysis == nil {
+		return contracts.ReportGenerateMarkdownOutput{}, fmt.Errorf("analysis service unavailable")
+	}
+	result, err := a.analysis.GenerateMarkdownReport(ctx, ports.MarkdownReportRequest{
+		Path:      in.Path,
+		WriteFile: in.WriteFile,
+		Verbosity: in.Verbosity,
 	})
 	if err != nil {
 		return contracts.ReportGenerateMarkdownOutput{}, err
@@ -364,92 +310,11 @@ func (a *Adapter) GenerateMarkdownReport(ctx context.Context, in contracts.Repor
 	}, nil
 }
 
-func (a *Adapter) queryService() *query.Service {
-	return query.NewService(a.app.Graph, a.history, a.ProjectKey())
-}
-
-func normalizeScanPaths(paths []string) []string {
-	cleaned := make([]string, 0, len(paths))
-	seen := make(map[string]bool)
-	for _, p := range paths {
-		trimmed := strings.TrimSpace(p)
-		if trimmed == "" {
-			continue
-		}
-		abs := trimmed
-		if absPath, err := filepath.Abs(trimmed); err == nil {
-			abs = absPath
-		}
-		abs = filepath.Clean(abs)
-		if seen[abs] {
-			continue
-		}
-		seen[abs] = true
-		cleaned = append(cleaned, abs)
-	}
-	return cleaned
-}
-
-func formatSet(formats []string) map[string]bool {
-	if len(formats) == 0 {
+func (a *Adapter) queryService() ports.QueryService {
+	if a.analysis == nil {
 		return nil
 	}
-	out := make(map[string]bool, len(formats))
-	for _, format := range formats {
-		trimmed := strings.ToLower(strings.TrimSpace(format))
-		if trimmed == "" {
-			continue
-		}
-		out[trimmed] = true
-	}
-	return out
-}
-
-type outputTargets struct {
-	DOT      string
-	TSV      string
-	Mermaid  string
-	PlantUML string
-	Markdown string
-}
-
-func resolveOutputTargets(cfg *config.Config) (outputTargets, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return outputTargets{}, err
-	}
-
-	paths, err := config.ResolvePaths(cfg, cwd)
-	if err != nil {
-		return outputTargets{}, fmt.Errorf("resolve output root: %w", err)
-	}
-	root := paths.OutputRoot
-
-	diagramsDir := strings.TrimSpace(cfg.Output.Paths.DiagramsDir)
-	if diagramsDir == "" {
-		diagramsDir = "docs/diagrams"
-	}
-	if !filepath.IsAbs(diagramsDir) {
-		diagramsDir = filepath.Join(root, diagramsDir)
-	}
-
-	return outputTargets{
-		DOT:      resolveOutputPath(strings.TrimSpace(cfg.Output.DOT), root),
-		TSV:      resolveOutputPath(strings.TrimSpace(cfg.Output.TSV), root),
-		Mermaid:  resolveDiagramPath(strings.TrimSpace(cfg.Output.Mermaid), root, diagramsDir),
-		PlantUML: resolveDiagramPath(strings.TrimSpace(cfg.Output.PlantUML), root, diagramsDir),
-		Markdown: resolveOutputPath(strings.TrimSpace(cfg.Output.Markdown), root),
-	}, nil
-}
-
-func resolveOutputPath(path, root string) string {
-	if path == "" {
-		return ""
-	}
-	if filepath.IsAbs(path) {
-		return filepath.Clean(path)
-	}
-	return filepath.Join(root, path)
+	return a.analysis.QueryService(a.history, a.ProjectKey())
 }
 
 func resolveDiagramPath(path, root, diagramsDir string) string {
@@ -463,23 +328,6 @@ func resolveDiagramPath(path, root, diagramsDir string) string {
 		return filepath.Join(root, path)
 	}
 	return filepath.Join(diagramsDir, path)
-}
-
-func uniqueStrings(values []string) []string {
-	seen := make(map[string]bool, len(values))
-	out := make([]string, 0, len(values))
-	for _, value := range values {
-		trimmed := strings.TrimSpace(value)
-		if trimmed == "" {
-			continue
-		}
-		if seen[trimmed] {
-			continue
-		}
-		seen[trimmed] = true
-		out = append(out, trimmed)
-	}
-	return out
 }
 
 func secretFindings(files []*parser.File, limit int) ([]contracts.SecretFinding, int) {

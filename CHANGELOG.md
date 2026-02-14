@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 ## 2026-02-14
 
 ### Added
+- `architecture:` Added `internal/core/ports/ports.go` with initial hexagonal driven ports (`CodeParser`, `SecretScanner`, `HistoryStore`) as the refactor phase-1 baseline.
+- `parser:` Added `internal/engine/parser/adapter.go` to bridge `parser.Parser` to interface-driven consumers.
+- `history:` Added `internal/data/history/adapter.go` to bridge SQLite `history.Store` into the `HistoryStore` port for port-first wiring.
+- `secrets:` Added `internal/engine/secrets/adapter.go` to bridge `secrets.Detector` into the `SecretScanner` port.
 - `secrets:` Added `internal/engine/secrets` detector with built-in credential regex signatures, entropy-based token checks, context-sensitive assignment checks, and finding confidence/severity metadata.
 - `config:` Added `[secrets]` TOML schema (`enabled`, `entropy_threshold`, `min_token_length`, `[[secrets.patterns]]`, `[secrets.exclude]`) with startup validation for thresholds and custom regex patterns.
 - `parser:` Added `parser.File.Secrets` and `parser.Secret` model fields so secret findings are retained in normalized file state.
@@ -27,8 +31,19 @@ All notable changes to this project will be documented in this file.
 - `parser:` Added bridge-call reference context tagging for known interop patterns (`ffi_bridge`, `process_bridge`, `service_bridge`).
 - `graph:` Added `internal/engine/graph/symbol_table.go` universal symbol table abstraction with canonical and service-key indexes for cross-language symbol matching.
 - `resolver:` Added probabilistic second-pass resolution in `internal/engine/resolver/probabilistic.go` for ambiguous cross-language references.
+- `architecture:` Added initial driving-port contracts in `internal/core/ports/ports.go` (`AnalysisService`, `QueryService`, `ScanRequest`, `ScanResult`) for hexagonal phase-2/4 migration.
+- `app:` Added `internal/core/app/service.go` with `NewAnalysisService(...)` and `(*App).AnalysisService()` to expose scan/query use cases as a compatibility-preserving service layer.
+- `architecture:` Added history-trend driving contracts in `internal/core/ports/ports.go` (`HistoryTrendRequest`, `HistoryTrendResult`) and `AnalysisService.CaptureHistoryTrend(...)`.
+- `architecture:` Added watch driving-port contracts in `internal/core/ports/ports.go` (`WatchService`, `WatchUpdate`) and `AnalysisService.WatchService()`.
+- `architecture:` Added output/report driving-port contracts in `internal/core/ports/ports.go` (`SyncOutputsRequest`, `SyncOutputsResult`, `MarkdownReportRequest`, `MarkdownReportResult`) and `AnalysisService` methods for those use cases.
+- `architecture:` Added `SummarySnapshot` driving contract in `internal/core/ports/ports.go` and `AnalysisService.SummarySnapshot(...)` for summary/state reads without direct adapter/runtime graph access.
+- `architecture:` Added `SummaryPrintRequest` driving contract in `internal/core/ports/ports.go` and `AnalysisService.PrintSummary(...)` for summary rendering through driving ports.
 
 ### Changed
+- `app:` Added `NewWithDependencies(...)` constructor to allow dependency injection of parser/secret collaborators while preserving backward-compatible `New(...)` wiring.
+- `app:` Scan/process/watch language filtering now depends on injected `CodeParser` port semantics rather than a hard-wired parser concrete type.
+- `app:` `New(...)` now wires the default secret scanner through the `SecretScanner` adapter path instead of constructing a concrete detector directly in app internals.
+- `app:` Query-service construction now accepts the `HistoryStore` port contract (`BuildQueryService`) instead of an ad-hoc local history interface.
 - `app:` `ProcessFile` now runs optional secret scanning and stores per-file findings in graph state when `[secrets].enabled=true`.
 - `app:` Update payloads now include `SecretCount`, and terminal summaries now report aggregate secret findings.
 - `mcp:` Made `graph.sync_diagrams` the canonical diagram sync operation and kept `system.sync_outputs` as a backward-compatible alias.
@@ -45,11 +60,33 @@ All notable changes to this project will be documented in this file.
 - `parser:` Extended JS/TS/Java/Rust profile extractors to populate definition metadata parity fields (`Visibility`, `Scope`, `Signature`, `TypeHint`) and bridge-call contexts.
 - `resolver:` Added framework-aware service contract linking heuristics (for example client/server/servicer symbol-family matching) backed by universal symbol indexing.
 - `output:` Diagram output path routing now treats both `/` and `\` as relative-path separators so cross-platform config values resolve consistently between app and MCP adapters.
+- `mcp:` `internal/mcp/adapters` scan/query operations now route through `ports.AnalysisService` instead of directly orchestrating scan/query behavior against `App`.
+- `cli:` Query-mode runtime flow now resolves the query service through `App.AnalysisService()`; initial scan startup now uses `AnalysisService.RunScan(...)`.
+- `app:` Moved history snapshot/trend orchestration into `AnalysisService.CaptureHistoryTrend(...)` so adapters can trigger project-scoped history capture through the service layer.
+- `cli:` History mode now calls `AnalysisService.CaptureHistoryTrend(...)` instead of orchestrating snapshot/trend persistence directly in runtime code.
+- `mcp:` `scan.run` now captures a history snapshot through the shared analysis-service history use case when DB/history is available.
+- `cli:` Watch startup and TUI update flow now use `AnalysisService.WatchService()` + `QueryService(...)` instead of direct `App` watch/update orchestration.
+- `mcp:` `system.watch` now starts background watch mode through the watch driving port rather than direct `App.StartWatcher()` calls.
+- `app:` Moved output synchronization and markdown report orchestration into `AnalysisService` (`SyncOutputs`, `GenerateMarkdownReport`) so adapters can consume those use cases through driving ports.
+- `mcp:` `graph.sync_diagrams` and `report.generate_markdown` now dispatch through `AnalysisService` methods instead of direct output/report orchestration against `App`.
+- `app:` Extended `AnalysisService` with trace/impact/cycle/file-list methods (`TraceImportChain`, `AnalyzeImpact`, `DetectCycles`, `ListFiles`) to continue facade thinning in the hexagonal migration.
+- `cli:` `--trace` and `--impact` runtime execution now dispatches through `AnalysisService` instead of direct `App` calls.
+- `mcp:` `secrets.list`, `secrets.scan` findings, and `graph.cycles` now consume `AnalysisService` methods for graph reads instead of direct adapter access to `App.Graph`.
+- `cli:` Runtime summary and output orchestration now route through `AnalysisService` (`SummarySnapshot`, `SyncOutputs`) instead of direct `App.Graph` analysis reads.
+- `mcp:` MCP startup `mcp.auto_manage_outputs` flow now routes output sync through `AnalysisService.SyncOutputs(...)`.
+- `mcp:` Runtime dependency wiring now requires `ports.AnalysisService` (plus optional `ports.WatchService`) instead of concrete `*app.App`.
+- `mcp:` Adapter construction now accepts `ports.AnalysisService` directly, removing concrete app coupling from MCP bootstrap/runtime flow.
+- `cli:` Terminal summary rendering now dispatches through `AnalysisService.PrintSummary(...)` instead of direct `App.PrintSummary(...)` calls.
+- `cli:` Runtime startup (standard + MCP modes) now resolves `ports.AnalysisService` through an interface-first factory (`internal/ui/cli/runtime_factory.go`) instead of constructing concrete `*app.App` directly in orchestration flow.
+- `app:` Summary rendering and markdown report generation orchestration now run through a focused `presentation_service` collaborator shared by `AnalysisService` and the compatibility `App` facade methods.
+- `parity:` Added CLI/MCP contract parity coverage for summary/output flows to ensure `AnalysisService` and MCP adapter results stay equivalent for the same graph state.
 
 ### Fixed
 - `pathing:` Normalized shared prefix/path comparisons to avoid mixed-separator false negatives (for example Windows-style `\` vs slash-normalized patterns).
 
 ### Docs
+- Updated `README.md`, `docs/documentation/{README,architecture,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with phase status tracking for the hexagonal architecture migration and explicit per-session "plan fully implemented" state.
+- Updated `docs/plans/hexagonal-architecture-refactor.md` session-2 checkpoint notes to mark history/secrets adapters complete and keep overall plan status as not fully implemented.
 - Updated `README.md` and `docs/documentation/{README,architecture,configuration,output,limitations,packages,mcp}.md` to document implemented secret-detection behavior, configuration, and current MCP/output scope limits.
 - Updated `docs/documentation/mcp.md` with `graph.sync_diagrams`, `system.generate_config`, `system.generate_script`, and wrapper usage examples.
 - Updated `docs/documentation/configuration.md` MCP allowlist and `mcp.auto_sync_config` semantics to reflect config+script generation behavior.
@@ -65,6 +102,16 @@ All notable changes to this project will be documented in this file.
 - Updated `docs/plans/cross-language-analysis-optimization-plan.md` with per-phase implementation status and completed-work tracking.
 - Updated `README.md` and `docs/documentation/{README,architecture,configuration,packages,limitations}.md` to document universal symbol-table matching, probabilistic resolution, and service-contract linking behavior.
 - Updated `README.md`, `docs/documentation/{README,architecture,configuration,output,limitations}.md`, and `docs/plans/cross-platform-compatibility-plan.md` with cross-platform phase status tracking and separator-agnostic output path behavior.
+- Updated `docs/plans/hexagonal-architecture-refactor.md` with Session 3 checkpoint details, phase-status changes (Phase 2/4 now in progress), and explicit "fully implemented: no" status.
+- Updated `README.md` and `docs/documentation/{README,architecture,cli,mcp,packages}.md` to document the new `AnalysisService` driving-port surface and current migration status.
+- Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 4 hexagonal-refactor progress and current non-complete plan status.
+- Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 5 watch-driving-port migration progress and current non-complete plan status.
+- Updated `README.md`, `docs/documentation/{README,architecture,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 6 output/report driving-port migration status, phase completion estimates, and current non-complete plan status.
+- Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 7 hexagonal-refactor progress, revised phase completion estimates, and current non-complete plan status.
+- Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 8 hexagonal-refactor progress, revised phase completion estimates, and current non-complete plan status.
+- Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 9 hexagonal-refactor progress, revised phase completion estimates, and current non-complete plan status.
+- Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 10 hexagonal-refactor progress (interface-first CLI/MCP startup factory wiring), revised phase completion estimates, and current non-complete plan status.
+- Updated `README.md`, `docs/documentation/{README,architecture,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 11 progress, including presentation-collaborator extraction, parity-test coverage, and final "plan fully implemented" status.
 
 ## 2026-02-13
 

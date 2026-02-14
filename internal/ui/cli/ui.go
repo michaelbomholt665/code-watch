@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"circular/internal/core/ports"
 	"circular/internal/data/history"
 	"circular/internal/data/query"
 	"circular/internal/engine/resolver"
@@ -51,7 +52,7 @@ type model struct {
 	issueList      list.Model
 	moduleList     list.Model
 	mode           panelMode
-	querySvc       *query.Service
+	querySvc       ports.QueryService
 	trendReport    *history.TrendReport
 	showTrend      bool
 	cycles         [][]string
@@ -193,7 +194,7 @@ func (m model) View() string {
 	return docStyle.Render(header + "\n" + help + "\n\n" + body)
 }
 
-func initialModel(service *query.Service, trendReport *history.TrendReport) model {
+func initialModel(service ports.QueryService, trendReport *history.TrendReport) model {
 	issueList := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
 	issueList.Title = "Detected Issues"
 	issueList.SetShowStatusBar(false)

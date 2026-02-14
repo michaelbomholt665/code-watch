@@ -3,8 +3,10 @@ package cli
 import (
 	coreapp "circular/internal/core/app"
 	"circular/internal/core/config"
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -160,16 +162,6 @@ func TestParseQueryTrace(t *testing.T) {
 	}
 }
 
-func TestSummarizeFanMetrics(t *testing.T) {
-	avgIn, avgOut, maxIn, maxOut := summarizeFanMetrics(map[string]graph.ModuleMetrics{
-		"a": {FanIn: 2, FanOut: 4},
-		"b": {FanIn: 0, FanOut: 2},
-	})
-	if avgIn != 1 || avgOut != 3 || maxIn != 2 || maxOut != 4 {
-		t.Fatalf("unexpected fan summary: in=%v out=%v maxIn=%d maxOut=%d", avgIn, avgOut, maxIn, maxOut)
-	}
-}
-
 func TestRunHistoryMode_SQLiteIntegration(t *testing.T) {
 	tmpDir := t.TempDir()
 	wd, err := os.Getwd()
@@ -193,19 +185,14 @@ func TestRunHistoryMode_SQLiteIntegration(t *testing.T) {
 	}
 	defer store.Close()
 
-	app := &coreapp.App{Graph: graph.NewGraph()}
+	app := &coreapp.App{Config: &config.Config{}, Graph: graph.NewGraph()}
 	app.Graph.AddFile(&parser.File{Path: "a.go", Module: "app/a"})
+	analysis := app.AnalysisService()
 
 	report, err := runHistoryMode(
 		cliOptions{history: true, historyWindow: "24h"},
-		app,
+		analysis,
 		config.ActiveProject{Name: "default", Root: tmpDir, Key: "default"},
-		map[string]graph.ModuleMetrics{"app/a": {FanIn: 1, FanOut: 2}},
-		nil,
-		0,
-		0,
-		0,
-		0,
 		store,
 	)
 	if err != nil {
@@ -222,8 +209,8 @@ func TestRunHistoryMode_SQLiteIntegration(t *testing.T) {
 	if len(snapshots) != 1 {
 		t.Fatalf("expected 1 snapshot, got %d", len(snapshots))
 	}
-	if snapshots[0].AvgFanOut != 2 {
-		t.Fatalf("expected saved fan-out metric, got %+v", snapshots[0])
+	if snapshots[0].ModuleCount != 1 || snapshots[0].FileCount != 1 {
+		t.Fatalf("unexpected saved snapshot counts: %+v", snapshots[0])
 	}
 }
 
@@ -328,6 +315,43 @@ func TestMCPBootstrapDecision_Disabled(t *testing.T) {
 	}
 }
 
+func TestRunMCPModeIfEnabledWithFactory_UsesProvidedFactory(t *testing.T) {
+	factory := &recordingAnalysisFactory{
+		err: fmt.Errorf("factory boom"),
+	}
+	cfg := &config.Config{
+		MCP: config.MCP{
+			Enabled:   true,
+			Mode:      "embedded",
+			Transport: "stdio",
+		},
+	}
+
+	err := runMCPModeIfEnabledWithFactory(cliOptions{includeTests: true}, cfg, "circular.toml", factory)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "init app: factory boom") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !factory.called {
+		t.Fatal("expected factory to be invoked")
+	}
+	if !factory.includeTests {
+		t.Fatal("expected include-tests option to be passed to factory")
+	}
+}
+
+func TestInitializeAnalysis_RequiresFactory(t *testing.T) {
+	_, err := initializeAnalysis(&config.Config{}, false, nil)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "analysis factory is required") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestValidateModeCompatibility_MCPEmbeddedHTTPRejected(t *testing.T) {
 	cfg := &config.Config{
 		MCP: config.MCP{
@@ -344,4 +368,16 @@ func TestValidateModeCompatibility_MCPEmbeddedHTTPRejected(t *testing.T) {
 	if !strings.Contains(err.Error(), "does not support mcp.transport=http") {
 		t.Fatalf("unexpected error: %v", err)
 	}
+}
+
+type recordingAnalysisFactory struct {
+	called       bool
+	includeTests bool
+	err          error
+}
+
+func (f *recordingAnalysisFactory) New(_ *config.Config, includeTests bool) (ports.AnalysisService, error) {
+	f.called = true
+	f.includeTests = includeTests
+	return nil, f.err
 }

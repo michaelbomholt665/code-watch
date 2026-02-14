@@ -25,7 +25,7 @@ func TestServer_StartStop(t *testing.T) {
 	}
 
 	testApp := testMCPApp(cfg)
-	toolAdapter := adapters.NewAdapter(testApp, nil, "default")
+	toolAdapter := adapters.NewAdapter(testApp.AnalysisService(), nil, "default")
 
 	var got any
 	transport := &fakeTransport{
@@ -43,8 +43,8 @@ func TestServer_StartStop(t *testing.T) {
 	}
 
 	server, err := New(cfg, Dependencies{
-		App:    testApp,
-		Logger: slog.Default(),
+		Analysis: testApp.AnalysisService(),
+		Logger:   slog.Default(),
 	}, registry.New(), transport, ProjectContext{Name: "default", Root: "."}, contracts.ToolNameCircular, OperationAllowlist{allowAll: true}, toolAdapter, nil)
 	if err != nil {
 		t.Fatalf("new server: %v", err)
@@ -78,12 +78,12 @@ func TestServer_RegisterTools(t *testing.T) {
 		},
 	}
 	testApp := testMCPApp(cfg)
-	toolAdapter := adapters.NewAdapter(testApp, nil, "default")
+	toolAdapter := adapters.NewAdapter(testApp.AnalysisService(), nil, "default")
 	reg := registry.New()
 
 	server, err := New(cfg, Dependencies{
-		App:    testApp,
-		Logger: slog.Default(),
+		Analysis: testApp.AnalysisService(),
+		Logger:   slog.Default(),
 	}, reg, &fakeTransport{}, ProjectContext{Name: "default", Root: "."}, contracts.ToolNameCircular, OperationAllowlist{allowAll: true}, toolAdapter, nil)
 	if err != nil {
 		t.Fatalf("new server: %v", err)

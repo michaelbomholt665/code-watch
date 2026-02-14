@@ -3,8 +3,8 @@ package cli
 import (
 	coreapp "circular/internal/core/app"
 	"circular/internal/core/config"
+	"circular/internal/core/ports"
 	"circular/internal/data/history"
-	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	mcpruntime "circular/internal/mcp/runtime"
 	"circular/internal/shared/util"
@@ -111,19 +111,18 @@ func Run(args []string) int {
 		return 1
 	}
 
-	app, err := coreapp.New(cfg)
+	analysis, err := initializeAnalysis(cfg, opts.includeTests, coreAnalysisFactory{})
 	if err != nil {
 		slog.Error("failed to initialize app", "error", err)
 		return 1
 	}
-	app.IncludeTests = opts.includeTests
 
-	if err := app.InitialScan(); err != nil {
+	if _, err := analysis.RunScan(context.Background(), ports.ScanRequest{}); err != nil {
 		slog.Error("initial scan failed", "error", err)
 		return 1
 	}
 
-	if stop, code := runSingleCommand(app, opts); stop {
+	if stop, code := runSingleCommand(analysis, opts); stop {
 		return code
 	}
 
@@ -136,26 +135,20 @@ func Run(args []string) int {
 		defer queryHistoryStore.Close()
 	}
 
-	cycles := app.Graph.DetectCycles()
-	metrics := app.Graph.ComputeModuleMetrics()
-	hotspots := app.Graph.TopComplexity(cfg.Architecture.TopComplexity)
-	violations := app.ArchitectureViolations()
-	hallucinations := app.AnalyzeHallucinations()
-	unusedImports := app.AnalyzeUnusedImports()
-	if err := app.GenerateOutputs(cycles, hallucinations, unusedImports, metrics, violations, hotspots); err != nil {
+	summary, err := analysis.SummarySnapshot(context.Background())
+	if err != nil {
+		slog.Error("failed to collect summary snapshot", "error", err)
+		return 1
+	}
+
+	if _, err := analysis.SyncOutputs(context.Background(), ports.SyncOutputsRequest{}); err != nil {
 		slog.Error("failed to generate outputs", "error", err)
 	}
 
 	report, err := runHistoryMode(
 		opts,
-		app,
+		analysis,
 		activeProject,
-		metrics,
-		cycles,
-		len(hallucinations),
-		len(unusedImports),
-		len(violations),
-		len(hotspots),
 		queryHistoryStore,
 	)
 	if err != nil {
@@ -163,25 +156,36 @@ func Run(args []string) int {
 		return 1
 	}
 
-	if stop, code := runQueryCommand(app, opts, queryHistoryStore, activeProject.Key); stop {
+	if stop, code := runQueryCommand(analysis, opts, queryHistoryStore, activeProject.Key); stop {
 		return code
 	}
 
 	if !opts.ui {
-		app.PrintSummary(len(app.Graph.GetAllFiles()), app.Graph.ModuleCount(), 0, cycles, hallucinations, unusedImports, metrics, violations, hotspots)
+		if err := analysis.PrintSummary(context.Background(), ports.SummaryPrintRequest{
+			Duration: 0,
+			Snapshot: summary,
+		}); err != nil {
+			slog.Error("failed to print summary", "error", err)
+			return 1
+		}
 	}
 
 	if opts.once {
 		return 0
 	}
 
-	if err := app.StartWatcher(); err != nil {
+	watch := analysis.WatchService()
+	if watch == nil {
+		slog.Error("watch service unavailable")
+		return 1
+	}
+	if err := watch.Start(context.Background()); err != nil {
 		slog.Error("failed to start watcher", "error", err)
 		return 1
 	}
 
 	if opts.ui {
-		if err := runUI(app, report); err != nil {
+		if err := runUI(analysis, queryHistoryStore, activeProject.Key, report); err != nil {
 			slog.Error("failed to run UI", "error", err)
 			return 1
 		}
@@ -191,9 +195,14 @@ func Run(args []string) int {
 	select {}
 }
 
-func runSingleCommand(app *coreapp.App, opts cliOptions) (bool, int) {
+func runSingleCommand(analysis ports.AnalysisService, opts cliOptions) (bool, int) {
+	if analysis == nil {
+		fmt.Fprintln(os.Stderr, "analysis service unavailable")
+		return true, 1
+	}
+
 	if opts.trace {
-		out, err := app.TraceImportChain(opts.args[0], opts.args[1])
+		out, err := analysis.TraceImportChain(context.Background(), opts.args[0], opts.args[1])
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			return true, 1
@@ -203,7 +212,7 @@ func runSingleCommand(app *coreapp.App, opts cliOptions) (bool, int) {
 	}
 
 	if opts.impact != "" {
-		report, err := app.AnalyzeImpact(opts.impact)
+		report, err := analysis.AnalyzeImpact(context.Background(), opts.impact)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			return true, 1
@@ -215,12 +224,20 @@ func runSingleCommand(app *coreapp.App, opts cliOptions) (bool, int) {
 	return false, 0
 }
 
-func runQueryCommand(app *coreapp.App, opts cliOptions, historyStore *history.Store, projectKey string) (bool, int) {
+func runQueryCommand(analysis ports.AnalysisService, opts cliOptions, historyStore ports.HistoryStore, projectKey string) (bool, int) {
 	if !opts.queryModules && opts.queryModule == "" && opts.queryTrace == "" && !opts.queryTrends {
 		return false, 0
 	}
 
-	svc := app.BuildQueryService(historyStore, projectKey)
+	if analysis == nil {
+		fmt.Fprintln(os.Stderr, "analysis service unavailable")
+		return true, 1
+	}
+	svc := analysis.QueryService(historyStore, projectKey)
+	if svc == nil {
+		fmt.Fprintln(os.Stderr, "query service unavailable")
+		return true, 1
+	}
 	ctx := context.Background()
 
 	switch {
@@ -438,18 +455,15 @@ func writeBytes(path string, data []byte) error {
 
 func runHistoryMode(
 	opts cliOptions,
-	app *coreapp.App,
+	analysis ports.AnalysisService,
 	activeProject config.ActiveProject,
-	metrics map[string]graph.ModuleMetrics,
-	cycles [][]string,
-	hallucinations int,
-	unusedImports int,
-	violations int,
-	hotspots int,
-	store *history.Store,
+	store ports.HistoryStore,
 ) (*history.TrendReport, error) {
 	if !opts.history {
 		return nil, nil
+	}
+	if analysis == nil {
+		return nil, fmt.Errorf("analysis service unavailable")
 	}
 
 	since, err := parseSince(opts.since)
@@ -465,45 +479,20 @@ func runHistoryMode(
 		return nil, fmt.Errorf("history store unavailable")
 	}
 
-	projectRoot, rootErr := os.Getwd()
-	if rootErr != nil {
-		projectRoot = activeProject.Root
-	}
-	commitHash, commitTime := history.ResolveGitMetadata(projectRoot)
-	avgFanIn, avgFanOut, maxFanIn, maxFanOut := summarizeFanMetrics(metrics)
-	snapshot := history.Snapshot{
-		Timestamp:         time.Now().UTC(),
-		CommitHash:        commitHash,
-		CommitTimestamp:   commitTime,
-		ModuleCount:       app.Graph.ModuleCount(),
-		FileCount:         app.Graph.FileCount(),
-		CycleCount:        len(cycles),
-		UnresolvedCount:   hallucinations,
-		UnusedImportCount: unusedImports,
-		ViolationCount:    violations,
-		HotspotCount:      hotspots,
-		AvgFanIn:          avgFanIn,
-		AvgFanOut:         avgFanOut,
-		MaxFanIn:          maxFanIn,
-		MaxFanOut:         maxFanOut,
-	}
-	if err := store.SaveSnapshot(activeProject.Key, snapshot); err != nil {
-		return nil, fmt.Errorf("save history snapshot: %w", err)
-	}
-
-	snapshots, err := store.LoadSnapshots(activeProject.Key, since)
+	trend, err := analysis.CaptureHistoryTrend(context.Background(), store, ports.HistoryTrendRequest{
+		ProjectKey:  activeProject.Key,
+		ProjectRoot: activeProject.Root,
+		Since:       since,
+		Window:      window,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("load history snapshots: %w", err)
+		return nil, err
 	}
-	if len(snapshots) == 0 {
+	if trend.Report == nil {
 		fmt.Println("History: no snapshots matched the requested time window.")
 		return nil, nil
 	}
-
-	trendReport, err := history.BuildTrendReport(activeProject.Key, snapshots, window)
-	if err != nil {
-		return nil, fmt.Errorf("build trend report: %w", err)
-	}
+	trendReport := trend.Report
 
 	fmt.Printf(
 		"History: %d snapshots from %s to %s\n",
@@ -525,7 +514,7 @@ func runHistoryMode(
 	}
 
 	if opts.historyTSV != "" {
-		tsv, err := report.RenderTrendTSV(trendReport)
+		tsv, err := report.RenderTrendTSV(*trendReport)
 		if err != nil {
 			return nil, fmt.Errorf("render trend TSV: %w", err)
 		}
@@ -535,7 +524,7 @@ func runHistoryMode(
 	}
 
 	if opts.historyJSON != "" {
-		raw, err := report.RenderTrendJSON(trendReport)
+		raw, err := report.RenderTrendJSON(*trendReport)
 		if err != nil {
 			return nil, fmt.Errorf("render trend JSON: %w", err)
 		}
@@ -544,7 +533,7 @@ func runHistoryMode(
 		}
 	}
 
-	return &trendReport, nil
+	return trendReport, nil
 }
 
 func parseHistoryWindow(value string) (time.Duration, error) {
@@ -620,6 +609,10 @@ func validateModeCompatibility(opts cliOptions, cfg *config.Config) error {
 }
 
 func runMCPModeIfEnabled(opts cliOptions, cfg *config.Config, configPath string) error {
+	return runMCPModeIfEnabledWithFactory(opts, cfg, configPath, coreAnalysisFactory{})
+}
+
+func runMCPModeIfEnabledWithFactory(opts cliOptions, cfg *config.Config, configPath string, factory analysisFactory) error {
 	if !cfg.MCP.Enabled {
 		return nil
 	}
@@ -628,30 +621,23 @@ func runMCPModeIfEnabled(opts cliOptions, cfg *config.Config, configPath string)
 	// Route logs to stderr before any startup work can emit logs.
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo})))
 
-	app, err := coreapp.New(cfg)
+	analysis, err := initializeAnalysis(cfg, opts.includeTests, factory)
 	if err != nil {
 		return fmt.Errorf("init app: %w", err)
 	}
-	app.IncludeTests = opts.includeTests
 
-	if err := app.InitialScan(); err != nil {
+	if _, err := analysis.RunScan(context.Background(), ports.ScanRequest{}); err != nil {
 		return fmt.Errorf("initial scan: %w", err)
 	}
 
-	cycles := app.Graph.DetectCycles()
-	metrics := app.Graph.ComputeModuleMetrics()
-	hotspots := app.Graph.TopComplexity(cfg.Architecture.TopComplexity)
-	violations := app.ArchitectureViolations()
-	unusedImports := app.AnalyzeUnusedImports()
-
 	if cfg.MCP.AutoManageOutputsEnabled() {
-		if err := app.GenerateOutputs(cycles, nil, unusedImports, metrics, violations, hotspots); err != nil {
+		if _, err := analysis.SyncOutputs(context.Background(), ports.SyncOutputsRequest{}); err != nil {
 			return fmt.Errorf("auto-manage outputs: %w", err)
 		}
 	}
 
 	server, err := mcpruntime.Build(cfg, mcpruntime.AppDeps{
-		App:        app,
+		Analysis:   analysis,
 		Logger:     slog.Default(),
 		ConfigPath: configPath,
 	})
@@ -696,25 +682,6 @@ func parseQueryTrace(raw string) (string, string, error) {
 		return "", "", fmt.Errorf("--query-trace must be formatted as <from>:<to>")
 	}
 	return strings.TrimSpace(parts[0]), strings.TrimSpace(parts[1]), nil
-}
-
-func summarizeFanMetrics(metrics map[string]graph.ModuleMetrics) (avgIn, avgOut float64, maxIn, maxOut int) {
-	if len(metrics) == 0 {
-		return 0, 0, 0, 0
-	}
-	var totalIn, totalOut int
-	for _, m := range metrics {
-		totalIn += m.FanIn
-		totalOut += m.FanOut
-		if m.FanIn > maxIn {
-			maxIn = m.FanIn
-		}
-		if m.FanOut > maxOut {
-			maxOut = m.FanOut
-		}
-	}
-	n := float64(len(metrics))
-	return float64(totalIn) / n, float64(totalOut) / n, maxIn, maxOut
 }
 
 func configureLogging(uiMode, verbose bool) func() {

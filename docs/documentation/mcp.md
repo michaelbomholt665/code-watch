@@ -3,6 +3,11 @@
 This repository ships a POC MCP runtime that exposes a single tool (`circular`) over stdio. The protocol is intentionally minimal and designed for local agent integration.
 When `mcp.openapi_spec_path` or `mcp.openapi_spec_url` is configured, startup loads and validates the OpenAPI document with `kin-openapi`, converts operations to descriptors, and applies the MCP operation allowlist.
 
+Internally, MCP runtime wiring and scan/query/secrets/cycles/watch/output/report operations now run through the `internal/core/ports.AnalysisService` driving ports exposed by `internal/core/app`.
+When `mcp.auto_manage_outputs=true`, startup output synchronization also routes through `AnalysisService.SyncOutputs(...)`.
+CLI MCP-mode bootstrap now resolves analysis dependencies via an interface-first runtime factory (`internal/ui/cli/runtime_factory.go`) before handing control to `internal/mcp/runtime`.
+Parity coverage in `internal/mcp/adapters/adapter_test.go` asserts summary/output contract equivalence between CLI-facing `AnalysisService` calls and MCP adapter calls for the same fixture graph.
+
 ## Transport Protocol
 
 - Transport: stdio
@@ -53,6 +58,9 @@ Result:
 - `duration_ms` (`int`)
 - `warnings` (`[]string`, optional)
 
+Notes:
+- when DB/history is enabled, `scan.run` also captures a project-key-scoped snapshot through the shared `AnalysisService` history use case.
+
 ### `secrets.scan`
 
 Runs a scan (full or path-scoped) and returns detected secret findings with masked values.
@@ -83,6 +91,9 @@ Result:
 - `secret_count` (`int`)
 - `findings` (`[]SecretFinding`, optional)
 
+Notes:
+- Secret listing is delegated through `AnalysisService.ListFiles(...)` rather than direct adapter access to graph internals.
+
 ### `graph.cycles`
 
 Params:
@@ -91,6 +102,9 @@ Params:
 Result:
 - `cycle_count` (`int`)
 - `cycles` (`[][]string`, optional)
+
+Notes:
+- Cycle detection is delegated through `AnalysisService.DetectCycles(...)`.
 
 ### `query.modules`
 
@@ -149,6 +163,7 @@ Result:
 Notes:
 - Requires `mcp.allow_mutations=true`.
 - Legacy operation ID `system.sync_outputs` is accepted and normalized to `graph.sync_diagrams`.
+- Output sync orchestration is delegated through `AnalysisService.SyncOutputs(...)`.
 
 ### `system.sync_config`
 
@@ -211,6 +226,7 @@ Result:
 Notes:
 - Requires `mcp.allow_mutations=true`.
 - The runtime prevents multiple watcher instances in the same server session.
+- Watch startup is delegated through `AnalysisService.WatchService().Start(...)` instead of direct app watcher orchestration.
 
 ### `report.generate_markdown`
 
@@ -225,6 +241,9 @@ Result:
 - `markdown` (`string`)
 - `path` (`string`, optional)
 - `written` (`bool`)
+
+Notes:
+- Markdown report generation is delegated through `AnalysisService.GenerateMarkdownReport(...)`.
 
 ## Allowlist Notes
 

@@ -2,13 +2,13 @@ package app
 
 import (
 	"circular/internal/core/config"
+	"circular/internal/core/ports"
 	"circular/internal/core/watcher"
-	"circular/internal/data/history"
 	"circular/internal/data/query"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
-	"circular/internal/engine/secrets"
+	secretengine "circular/internal/engine/secrets"
 	"circular/internal/shared/util"
 	"circular/internal/shared/version"
 	"circular/internal/ui/report"
@@ -46,13 +46,13 @@ type MarkdownReportResult struct {
 }
 
 type App struct {
-	Config       *config.Config
-	Parser       *parser.Parser
-	Graph        *graph.Graph
-	secretEngine *secrets.Detector
-	archEngine   *graph.LayerRuleEngine
-	goModCache   map[string]goModuleCacheEntry
-	IncludeTests bool
+	Config        *config.Config
+	codeParser    ports.CodeParser
+	Graph         *graph.Graph
+	secretScanner ports.SecretScanner
+	archEngine    *graph.LayerRuleEngine
+	goModCache    map[string]goModuleCacheEntry
+	IncludeTests  bool
 
 	secretExcludeDirs  []glob.Glob
 	secretExcludeFiles []glob.Glob
@@ -75,6 +75,11 @@ type goModuleCacheEntry struct {
 	ModulePath string
 }
 
+type Dependencies struct {
+	CodeParser    ports.CodeParser
+	SecretScanner ports.SecretScanner
+}
+
 func New(cfg *config.Config) (*App, error) {
 	registry, err := buildParserRegistry(cfg)
 	if err != nil {
@@ -85,12 +90,24 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 
-	p := parser.NewParser(loader)
-	if err := p.RegisterDefaultExtractors(); err != nil {
+	parserImpl := parser.NewParser(loader)
+	if err := parserImpl.RegisterDefaultExtractors(); err != nil {
 		return nil, err
 	}
 
-	var secretEngine *secrets.Detector
+	return NewWithDependencies(cfg, Dependencies{
+		CodeParser: parser.NewAdapter(parserImpl),
+	})
+}
+
+func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("config must not be nil")
+	}
+	if deps.CodeParser == nil {
+		return nil, fmt.Errorf("code parser dependency must not be nil")
+	}
+
 	secretExcludeDirs, err := compileGlobs(cfg.Secrets.Exclude.Dirs, "secret exclude dir")
 	if err != nil {
 		return nil, err
@@ -99,16 +116,17 @@ func New(cfg *config.Config) (*App, error) {
 	if err != nil {
 		return nil, err
 	}
-	if cfg.Secrets.Enabled {
-		customPatterns := make([]secrets.PatternConfig, 0, len(cfg.Secrets.Patterns))
+	secretScanner := deps.SecretScanner
+	if cfg.Secrets.Enabled && secretScanner == nil {
+		customPatterns := make([]secretengine.PatternConfig, 0, len(cfg.Secrets.Patterns))
 		for _, pattern := range cfg.Secrets.Patterns {
-			customPatterns = append(customPatterns, secrets.PatternConfig{
+			customPatterns = append(customPatterns, secretengine.PatternConfig{
 				Name:     pattern.Name,
 				Regex:    pattern.Regex,
 				Severity: pattern.Severity,
 			})
 		}
-		secretEngine, err = secrets.NewDetector(secrets.Config{
+		secretScanner, err = secretengine.NewAdapter(secretengine.Config{
 			EntropyThreshold: cfg.Secrets.EntropyThreshold,
 			MinTokenLength:   cfg.Secrets.MinTokenLength,
 			Patterns:         customPatterns,
@@ -120,9 +138,9 @@ func New(cfg *config.Config) (*App, error) {
 
 	return &App{
 		Config:             cfg,
-		Parser:             p,
+		codeParser:         deps.CodeParser,
 		Graph:              graph.NewGraph(),
-		secretEngine:       secretEngine,
+		secretScanner:      secretScanner,
 		archEngine:         graph.NewLayerRuleEngine(architectureModelFromConfig(cfg.Architecture)),
 		goModCache:         make(map[string]goModuleCacheEntry),
 		unresolvedByFile:   make(map[string][]resolver.UnresolvedReference),
@@ -260,12 +278,12 @@ func (a *App) ScanDirectories(paths []string, excludeDirs, excludeFiles []string
 				return nil
 			}
 
-			if !a.Parser.IsSupportedPath(path) {
+			if !a.codeParser.IsSupportedPath(path) {
 				return nil
 			}
 
 			// Exclude test files if requested
-			if !a.IncludeTests && a.Parser.IsTestFile(path) {
+			if !a.IncludeTests && a.codeParser.IsTestFile(path) {
 				return nil
 			}
 
@@ -292,7 +310,7 @@ func (a *App) ProcessFile(path string) error {
 		return err
 	}
 
-	file, err := a.Parser.ParseFile(path, content)
+	file, err := a.codeParser.ParseFile(path, content)
 	if err != nil {
 		return err
 	}
@@ -316,8 +334,8 @@ func (a *App) ProcessFile(path string) error {
 			file.Module = moduleName
 		}
 	}
-	if a.secretEngine != nil && !a.shouldSkipSecretScan(path) {
-		file.Secrets = a.secretEngine.Detect(path, content)
+	if a.secretScanner != nil && !a.shouldSkipSecretScan(path) {
+		file.Secrets = a.secretScanner.Detect(path, content)
 	}
 
 	a.Graph.AddFile(file)
@@ -382,11 +400,11 @@ func (a *App) HandleChanges(paths []string) {
 		if filepath.Base(path) == "go.mod" {
 			a.goModCache = make(map[string]goModuleCacheEntry)
 		}
-		if !a.Parser.IsSupportedPath(path) && filepath.Base(path) != "go.mod" {
+		if !a.codeParser.IsSupportedPath(path) && filepath.Base(path) != "go.mod" {
 			continue
 		}
 
-		if !a.IncludeTests && a.Parser.IsTestFile(path) {
+		if !a.IncludeTests && a.codeParser.IsTestFile(path) {
 			continue
 		}
 
@@ -925,9 +943,7 @@ func (a *App) ArchitectureViolations() []graph.ArchitectureViolation {
 	return a.archEngine.Validate(a.Graph)
 }
 
-func (a *App) BuildQueryService(historyStore interface {
-	LoadSnapshots(projectKey string, since time.Time) ([]history.Snapshot, error)
-}, projectKey string) *query.Service {
+func (a *App) BuildQueryService(historyStore ports.HistoryStore, projectKey string) *query.Service {
 	return query.NewService(a.Graph, historyStore, projectKey)
 }
 
@@ -966,78 +982,7 @@ func (a *App) allSecrets(limit int) []parser.Secret {
 }
 
 func (a *App) GenerateMarkdownReport(req MarkdownReportRequest) (MarkdownReportResult, error) {
-	cycles := a.Graph.DetectCycles()
-	metrics := a.Graph.ComputeModuleMetrics()
-	hotspots := a.Graph.TopComplexity(a.Config.Architecture.TopComplexity)
-	violations := a.ArchitectureViolations()
-	unresolved := a.AnalyzeHallucinations()
-	unused := a.AnalyzeUnusedImports()
-
-	root, err := a.resolveOutputRoot()
-	if err != nil {
-		return MarkdownReportResult{}, err
-	}
-
-	var mermaidDiagram string
-	if a.Config.Output.Report.IncludeMermaidEnabled() && a.Config.Output.MermaidEnabled() {
-		mermaidGen := report.NewMermaidGenerator(a.Graph)
-		mermaidGen.SetModuleMetrics(metrics)
-		mermaidGen.SetComplexityHotspots(hotspots)
-		mermaidDiagram, err = mermaidGen.Generate(cycles, violations, architectureModelFromConfig(a.Config.Architecture))
-		if err != nil {
-			return MarkdownReportResult{}, fmt.Errorf("generate mermaid diagram for markdown report: %w", err)
-		}
-	}
-
-	verbosity := strings.TrimSpace(req.Verbosity)
-	if verbosity == "" {
-		verbosity = a.Config.Output.Report.Verbosity
-	}
-	md, err := report.NewMarkdownGenerator().Generate(report.MarkdownReportData{
-		TotalModules:  a.Graph.ModuleCount(),
-		TotalFiles:    a.Graph.FileCount(),
-		Cycles:        cycles,
-		Unresolved:    unresolved,
-		UnusedImports: unused,
-		Violations:    violations,
-		Hotspots:      hotspots,
-	}, report.MarkdownReportOptions{
-		ProjectName:         filepath.Base(root),
-		ProjectRoot:         root,
-		Version:             version.Version,
-		GeneratedAt:         time.Now().UTC(),
-		Verbosity:           verbosity,
-		TableOfContents:     a.Config.Output.Report.TableOfContentsEnabled(),
-		CollapsibleSections: a.Config.Output.Report.CollapsibleSectionsEnabled(),
-		IncludeMermaid:      a.Config.Output.Report.IncludeMermaidEnabled(),
-		MermaidDiagram:      mermaidDiagram,
-	})
-	if err != nil {
-		return MarkdownReportResult{}, fmt.Errorf("generate markdown report: %w", err)
-	}
-
-	outPath := strings.TrimSpace(req.OutputPath)
-	if outPath == "" {
-		outPath = strings.TrimSpace(a.Config.Output.Markdown)
-	}
-	if outPath == "" && req.WriteFile {
-		outPath = "analysis-report.md"
-	}
-	if outPath != "" && !filepath.IsAbs(outPath) {
-		outPath = filepath.Join(root, outPath)
-	}
-
-	result := MarkdownReportResult{Markdown: md, Path: outPath}
-	if req.WriteFile || outPath != "" {
-		if outPath == "" {
-			return MarkdownReportResult{}, fmt.Errorf("output path is required when write_file=true")
-		}
-		if err := writeArtifact(outPath, md); err != nil {
-			return MarkdownReportResult{}, fmt.Errorf("write markdown report %q: %w", outPath, err)
-		}
-		result.Written = true
-	}
-	return result, nil
+	return newPresentationService(a).GenerateMarkdownReport(req)
 }
 
 func (a *App) PrintSummary(
@@ -1050,93 +995,18 @@ func (a *App) PrintSummary(
 	violations []graph.ArchitectureViolation,
 	hotspots []graph.ComplexityHotspot,
 ) {
-	if !a.Config.Alerts.Terminal {
-		return
+	newPresentationService(a).PrintSummary(fileCount, moduleCount, duration, cycles, hallucinations, unusedImports, metrics, violations, hotspots)
+}
+
+func maskSecretValue(value string) string {
+	length := len(value)
+	if length == 0 {
+		return ""
 	}
-
-	fmt.Println(strings.Repeat("-", 40))
-	fmt.Printf("Update: %d files, %d modules in %v\n", fileCount, moduleCount, duration)
-
-	if len(cycles) > 0 {
-		fmt.Printf("⚠️  FOUND %d CIRCULAR IMPORTS:\n", len(cycles))
-		for _, c := range cycles {
-			fmt.Printf("   %s\n", strings.Join(c, " -> "))
-		}
-	} else {
-		fmt.Println("✅ No circular imports found.")
+	if length <= 8 {
+		return strings.Repeat("*", length)
 	}
-
-	if len(hallucinations) > 0 {
-		fmt.Printf("❓ FOUND %d UNRESOLVED REFERENCES:\n", len(hallucinations))
-		for _, h := range hallucinations {
-			fmt.Printf("   %s in %s:%d\n", h.Reference.Name, h.File, h.Reference.Location.Line)
-		}
-	} else {
-		fmt.Println("✅ No unresolved references found.")
-	}
-
-	if len(unusedImports) > 0 {
-		fmt.Printf("🧹 FOUND %d UNUSED IMPORTS:\n", len(unusedImports))
-		for _, u := range unusedImports {
-			target := u.Module
-			if u.Item != "" {
-				target = target + "." + u.Item
-			}
-			fmt.Printf("   %s in %s:%d\n", target, u.File, u.Location.Line)
-		}
-	} else {
-		fmt.Println("✅ No unused imports found.")
-	}
-
-	secretCount := a.SecretCount()
-	if secretCount > 0 {
-		fmt.Printf("🔐 FOUND %d POTENTIAL SECRETS\n", secretCount)
-		for _, finding := range a.allSecrets(5) {
-			fmt.Printf("   %s [%s] %s:%d (%s)\n",
-				finding.Kind,
-				finding.Severity,
-				finding.Location.File,
-				finding.Location.Line,
-				secrets.MaskValue(finding.Value),
-			)
-		}
-	} else {
-		fmt.Println("✅ No hardcoded secrets found.")
-	}
-
-	if len(metrics) > 0 {
-		topDepth := metricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.Depth }, 3, 0)
-		topFanIn := metricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.FanIn }, 3, 1)
-		topFanOut := metricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.FanOut }, 3, 1)
-
-		fmt.Println("📊 Dependency Metrics:")
-		if len(topDepth) > 0 {
-			fmt.Printf("   Deepest modules: %s\n", strings.Join(topDepth, ", "))
-		}
-		if len(topFanIn) > 0 {
-			fmt.Printf("   Highest fan-in: %s\n", strings.Join(topFanIn, ", "))
-		}
-		if len(topFanOut) > 0 {
-			fmt.Printf("   Highest fan-out: %s\n", strings.Join(topFanOut, ", "))
-		}
-	}
-
-	if len(violations) > 0 {
-		fmt.Printf("🏛️  FOUND %d ARCHITECTURE VIOLATIONS:\n", len(violations))
-		for _, v := range violations {
-			fmt.Printf("   %s (%s -> %s) in %s:%d\n", v.RuleName, v.FromLayer, v.ToLayer, v.File, v.Line)
-		}
-	} else if a.Config.Architecture.Enabled {
-		fmt.Println("✅ No architecture violations found.")
-	}
-
-	if len(hotspots) > 0 {
-		fmt.Println("🔥 Top complexity hotspots:")
-		for _, h := range hotspots {
-			fmt.Printf("   %s.%s score=%d (branches=%d params=%d depth=%d loc=%d)\n", h.Module, h.Definition, h.Score, h.Branches, h.Parameters, h.Nesting, h.LOC)
-		}
-	}
-	fmt.Println(strings.Repeat("-", 40))
+	return value[:4] + "..." + value[length-4:]
 }
 
 func (a *App) StartWatcher() error {
@@ -1150,9 +1020,9 @@ func (a *App) StartWatcher() error {
 		return err
 	}
 	w.SetLanguageFilters(
-		a.Parser.SupportedExtensions(),
-		a.Parser.SupportedFilenames(),
-		a.Parser.SupportedTestFileSuffixes(),
+		a.codeParser.SupportedExtensions(),
+		a.codeParser.SupportedFilenames(),
+		a.codeParser.SupportedTestFileSuffixes(),
 	)
 	return w.Watch(a.Config.WatchPaths)
 }

@@ -28,10 +28,11 @@ func TestHandleCyclesLimits(t *testing.T) {
 		},
 	})
 
-	adapter := adapters.NewAdapter(&app.App{
+	appInstance := &app.App{
 		Config: &config.Config{},
 		Graph:  g,
-	}, nil, "default")
+	}
+	adapter := adapters.NewAdapter(appInstance.AnalysisService(), nil, "default")
 
 	out, err := HandleCycles(context.Background(), adapter, contracts.GraphCyclesInput{Limit: 20}, 1)
 	if err != nil {

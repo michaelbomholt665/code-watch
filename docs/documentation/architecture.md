@@ -11,11 +11,11 @@
 4. load config (with default-path fallback)
 5. apply mode constraints (`--trace`/`--impact` conflict and arg checks)
 6. normalize `grammars_path`
-7. build `internal/core/app.App`
-8. run `InitialScan`
+7. initialize `ports.AnalysisService` through `internal/ui/cli` runtime factory wiring (`runtime_factory.go`)
+8. run initial scan through `AnalysisService.RunScan(...)`
 9. optionally run single-command mode (`--trace` or `--impact`) and exit
-10. run analyses, generate outputs, and print summary
-11. if watch mode: start watcher and process updates (with optional UI)
+10. collect summary state + generate outputs through `AnalysisService` (`SummarySnapshot`, `SyncOutputs`) and print summary
+11. if watch mode: start watcher through `AnalysisService.WatchService()` and process updates (with optional UI)
 
 ## MCP Runtime Pipeline
 
@@ -27,7 +27,7 @@ When `[mcp].enabled=true`, CLI hands off to the MCP runtime after the initial sc
 5. register the single `circular` tool with operation dispatch
 6. enter stdio JSON request loop
 
-Each MCP request is validated, allowlisted, and dispatched to tool handlers that call `internal/core/app` or `internal/data/query`.
+Each MCP request is validated, allowlisted, and dispatched to tool handlers through `internal/mcp/adapters`, which routes scan/query/watch/output/report operations via `internal/core/ports.AnalysisService`.
 
 ## Core App Responsibilities
 
@@ -102,5 +102,24 @@ Update behavior (`internal/core/app.HandleChanges`):
 - `internal/core/watcher`: fsnotify + debounce
 - `internal/ui/report`: output rendering (DOT/TSV/Mermaid/PlantUML/Markdown)
 - `internal/mcp/runtime`: MCP startup, allowlist enforcement, stdio dispatch loop
-- `internal/mcp/adapters`: app/query bridge for MCP tool handlers
+- `internal/mcp/adapters`: AnalysisService/query bridge for MCP tool handlers
 - `internal/mcp/tools/*`: operation handlers for scan/query/graph/system/report operations
+
+## Hexagonal Refactor (Implemented)
+
+The codebase is transitioning to a ports-and-adapters model tracked in `docs/plans/hexagonal-architecture-refactor.md`.
+
+Current implementation baseline:
+- `internal/core/ports` defines infrastructure-facing ports (`CodeParser`, `SecretScanner`, `HistoryStore`).
+- `internal/core/ports` also defines driving-port contracts (`AnalysisService`, `QueryService`, `WatchService`, `ScanRequest`, `ScanResult`, `WatchUpdate`, `SummarySnapshot`, `SummaryPrintRequest`, `SyncOutputsRequest`, `SyncOutputsResult`, `MarkdownReportRequest`, `MarkdownReportResult`) plus additional `AnalysisService` trace/impact/graph-read/summary methods (`TraceImportChain`, `AnalyzeImpact`, `DetectCycles`, `ListFiles`, `SummarySnapshot`, `PrintSummary`).
+- `internal/engine/parser/adapter.go` provides a parser adapter that satisfies `CodeParser`.
+- `internal/engine/secrets/adapter.go` provides a secret-scanner adapter that satisfies `SecretScanner`.
+- `internal/data/history/adapter.go` provides a history adapter that satisfies `HistoryStore`.
+- `internal/core/app.NewWithDependencies(...)` supports constructor injection of `CodeParser` and optional `SecretScanner`.
+- `internal/core/app.New(...)` remains backward compatible and wires parser/secret adapters without exposing concrete parser/detector internals to the scan pipeline.
+- `internal/core/app/service.go` provides `NewAnalysisService(...)` and `(*App).AnalysisService()` to expose scan/query/history/watch/output/report/summary use cases without breaking existing `App` consumers.
+- `internal/core/app/presentation_service.go` now owns summary rendering and markdown report generation orchestration shared by the service and compatibility facade methods.
+- CLI query/history/watch/trace/impact/summary flows, TUI update subscriptions, and MCP scan/query/secrets/cycles/watch/output/report operations now use the `AnalysisService` surface.
+- CLI runtime startup now resolves `AnalysisService` through an interface-first factory (`analysisFactory`) so runtime orchestration no longer constructs concrete `*App` directly.
+- MCP runtime dependency wiring now accepts `AnalysisService` directly rather than a concrete `*App`.
+- Cross-surface parity coverage now includes summary/output contract equivalence checks between CLI-facing `AnalysisService` and MCP adapters.

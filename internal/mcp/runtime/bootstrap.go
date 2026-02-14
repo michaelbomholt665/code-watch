@@ -54,7 +54,7 @@ func Build(cfg *config.Config, deps AppDeps) (*Server, error) {
 		}
 		return nil, err
 	}
-	toolAdapter := adapters.NewAdapter(deps.App, historyStore, project.Key)
+	toolAdapter := adapters.NewAdapter(deps.Analysis, historyStore, project.Key)
 	server, err := New(cfg, deps, reg, adapter, project, toolName, allowlist, toolAdapter, historyStore)
 	if err != nil && historyStore != nil {
 		_ = historyStore.Close()

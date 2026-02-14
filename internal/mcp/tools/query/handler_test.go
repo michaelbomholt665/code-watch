@@ -68,5 +68,5 @@ func testQueryAdapter() *adapters.Adapter {
 		Config: &config.Config{},
 		Graph:  g,
 	}
-	return adapters.NewAdapter(appInstance, nil, "default")
+	return adapters.NewAdapter(appInstance.AnalysisService(), nil, "default")
 }

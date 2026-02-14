@@ -85,7 +85,8 @@ circular [flags] [path]
 
 - MCP startup is config-driven via `[mcp].enabled = true`
 - MCP mode cannot be combined with `--once`, `--ui`, `--trace`, `--impact`, `--report-md`, `--query-*`, `--history`, `--verify-grammars`, or positional path arguments
-- MCP startup runs an initial scan and can auto-write outputs/config when `mcp.auto_manage_outputs` or `mcp.auto_sync_config` are enabled
+- MCP startup runs an initial scan and can auto-write outputs/config when `mcp.auto_manage_outputs` or `mcp.auto_sync_config` are enabled; auto-managed outputs are routed through `AnalysisService.SyncOutputs(...)`
+- MCP startup in CLI runtime acquires `AnalysisService` through the same interface-first runtime factory used by normal CLI startup
 - OpenAPI conversion (when enabled) reads `mcp.openapi_spec_path` or `mcp.openapi_spec_url` (mutually exclusive)
 - MCP runtime uses a stdio JSON request/response loop (one JSON object per line)
 - MCP tool protocol and examples live in `docs/documentation/mcp.md`
@@ -97,18 +98,20 @@ For all modes except `--version`, runtime performs:
 2. discover/load config
 3. resolve runtime paths and active project
 4. normalize `grammars_path` to absolute path when relative
-5. initialize app
-6. run initial scan
+5. initialize `ports.AnalysisService` through runtime-factory wiring (`internal/ui/cli/runtime_factory.go`)
+6. run initial scan through `AnalysisService.RunScan(...)`
 
 Then mode-specific behavior:
 - verify mode: run grammar manifest verification and exit
-- trace mode: run shortest-chain query and exit
-- impact mode: run impact analysis and exit
+- trace mode: run shortest-chain query through `AnalysisService.TraceImportChain(...)` and exit
+- impact mode: run impact analysis through `AnalysisService.AnalyzeImpact(...)` and exit
 - query modes: run query-service read operation and exit
-- history mode: append a project-scoped snapshot and print trend summary (plus optional TSV/JSON exports)
-- once mode: run analyses/output generation and exit
-- default watch mode: start watcher and process incremental updates forever
-- UI mode: same watch pipeline, plus interactive issue/module explorer
+- query modes now resolve the query service through the `AnalysisService` driving port
+- history mode: append a project-scoped snapshot and print trend summary (plus optional TSV/JSON exports) via `AnalysisService.CaptureHistoryTrend(...)`
+- once mode: collect summary state via `AnalysisService.SummarySnapshot(...)`, sync outputs via `AnalysisService.SyncOutputs(...)`, render summary via `AnalysisService.PrintSummary(...)`, and exit
+- default watch mode: start watcher through `AnalysisService.WatchService().Start(...)` and process incremental updates forever
+- parity coverage: `internal/mcp/adapters/adapter_test.go` asserts summary/output contract equivalence between CLI-facing `AnalysisService` and MCP adapters for the same fixture graph state
+- UI mode: same watch pipeline, plus interactive issue/module explorer fed by `WatchService` subscriptions and `QueryService` reads
 
 ## Logging
 

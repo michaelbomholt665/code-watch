@@ -1,20 +1,27 @@
 package cli
 
 import (
-	coreapp "circular/internal/core/app"
+	"circular/internal/core/ports"
 	"circular/internal/data/history"
-	"circular/internal/data/query"
 	"context"
+	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func runUI(app *coreapp.App, report *history.TrendReport) error {
-	service := query.NewService(app.Graph, nil, "default")
+func runUI(analysis ports.AnalysisService, historyStore ports.HistoryStore, projectKey string, report *history.TrendReport) error {
+	if analysis == nil {
+		return fmt.Errorf("analysis service unavailable")
+	}
+	service := analysis.QueryService(historyStore, projectKey)
+	watch := analysis.WatchService()
+	if service == nil || watch == nil {
+		return fmt.Errorf("ui services unavailable")
+	}
 	m := initialModel(service, report)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
-	sendUpdate := func(update coreapp.Update) {
+	sendUpdate := func(update ports.WatchUpdate) {
 		modules, err := service.ListModules(context.Background(), "", 0)
 		if err != nil {
 			modules = nil
@@ -28,12 +35,15 @@ func runUI(app *coreapp.App, report *history.TrendReport) error {
 		})
 	}
 
-	app.SetUpdateHandler(func(update coreapp.Update) {
-		sendUpdate(update)
-	})
+	if err := watch.Subscribe(context.Background(), sendUpdate); err != nil {
+		return err
+	}
 
 	go func() {
-		update := app.CurrentUpdate()
+		update, err := watch.CurrentUpdate(context.Background())
+		if err != nil {
+			return
+		}
 		sendUpdate(update)
 	}()
 

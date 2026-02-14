@@ -838,6 +838,10 @@ type historyStoreStub struct {
 	snapshots []history.Snapshot
 }
 
+func (h historyStoreStub) SaveSnapshot(projectKey string, snapshot history.Snapshot) error {
+	return nil
+}
+
 func (h historyStoreStub) LoadSnapshots(projectKey string, since time.Time) ([]history.Snapshot, error) {
 	out := make([]history.Snapshot, 0, len(h.snapshots))
 	for _, snapshot := range h.snapshots {

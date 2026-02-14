@@ -8,9 +8,13 @@
 
 - parses CLI flags/options (`cli.go`)
 - applies mode constraints and config fallback (`runtime.go`)
+- initializes analysis runtime dependencies through an interface-first factory (`runtime_factory.go`)
 - exposes query-service command surface (`--query-*`) for module/details/trace/trend reads
+- routes query command execution through the `internal/core/ports.AnalysisService` driving port
+- routes summary-state and output orchestration through `AnalysisService` (`SummarySnapshot`, `SyncOutputs`) instead of direct graph reads in runtime flow
 - configures slog targets/levels (`runtime.go`)
 - runs Bubble Tea UI loop and update plumbing (`run_ui.go`, `ui.go`)
+- starts watch mode via `AnalysisService.WatchService()` and subscribes UI updates through the same driving surface
 - provides issue + module-explorer UI panels backed by query read models
 - supports module drill-down, trend overlays, and source-jump actions (`ui_actions.go`, `ui_panels.go`)
 
@@ -18,6 +22,8 @@
 
 - MCP runtime bootstrap entrypoint and project context resolution
 - derives active project, config sync targets, and runtime metadata for MCP startup
+- routes `system.watch` through the watch driving port instead of direct watcher startup calls
+- depends on `ports.AnalysisService`/`ports.WatchService` rather than concrete `*app.App` runtime wiring
 
 ## `internal/mcp/registry`
 
@@ -41,8 +47,10 @@
 
 ## `internal/mcp/adapters`
 
-- bridges MCP tool inputs to `internal/core/app` and `internal/data/query`
-- keeps domain calls centralized for scan/query/graph/report operations
+- bridges MCP tool inputs to `internal/core/app` and `internal/core/ports.AnalysisService`
+- keeps domain calls centralized for scan/query/history/graph/report operations
+- routes cycle/secret reads and output/report operations through `AnalysisService` driving methods
+- includes parity coverage in `adapter_test.go` asserting CLI-facing `AnalysisService` and MCP adapter summary/output contract equivalence for shared fixture state
 
 ## `internal/mcp/tools/scan`
 
@@ -76,12 +84,28 @@
 - computes metrics/hotspots/architecture violations
 - supports trace and impact commands
 - writes DOT/TSV/Mermaid/PlantUML/Markdown outputs
+- supports dependency injection for core parsing/secret-scan collaborators via `NewWithDependencies(...)`
+- uses port contracts (`CodeParser`, `SecretScanner`, `HistoryStore`) for injected infrastructure dependencies
+- provides `NewAnalysisService(...)`/`(*App).AnalysisService()` as a compatibility-preserving service extraction surface for scan/query/history/watch plus trace/impact/cycle/file-list/summary use cases
+- uses `presentation_service.go` as a focused collaborator for summary rendering and markdown report generation, keeping `App` methods as compatibility wrappers
+
+## `internal/core/ports`
+
+- defines focused infrastructure ports used by the core orchestration layer
+- includes driven ports (`CodeParser`, `SecretScanner`, `HistoryStore`) and driving ports (`AnalysisService`, `QueryService`, `WatchService`)
+- includes history-trend request/result contracts to drive snapshot capture and trend generation from adapters
+- includes `WatchUpdate` contracts to drive live watch-mode update payloads through ports
+- includes output/report request/result contracts for driving-adapter orchestration (`SyncOutputs*`, `MarkdownReport*`)
+- includes trace/impact/cycle/file-list/summary methods on `AnalysisService` to reduce direct adapter/runtime coupling to `App` internals
+- includes `SummaryPrintRequest` and `AnalysisService.PrintSummary(...)` so CLI summary rendering can route through driving ports
+- serves as the phase-1 baseline plus phase-2/4 kickoff contracts for the hexagonal architecture migration plan
 
 ## `internal/data/history`
 
 - local SQLite snapshot persistence with schema migration/version checks
 - optional git metadata enrichment for snapshots
 - deterministic trend report generation (deltas + moving averages + module growth and fan-in/fan-out drift)
+- `Adapter` bridges `Store` into `internal/core/ports.HistoryStore`
 
 ## `internal/data/query`
 
@@ -102,6 +126,7 @@
 
 - `GrammarLoader` creates enabled runtime languages and validates manifest-bound grammar artifacts
 - `Parser` routes by registry-defined extensions + filename matchers
+- `Adapter` bridges `Parser` into the `internal/core/ports.CodeParser` contract
 - language registry supports additive rollout (`go`/`python` default enabled; additional grammars default disabled)
 - `Parser.RegisterDefaultExtractors()` wires language extractors from registry-enabled languages
 - profile-driven extractor module (`profile_extractors.go`) covers `javascript`, `typescript`, `tsx`, `java`, `rust`, `html`, `css`, `gomod`, and `gosum`
@@ -171,6 +196,7 @@
 - secret detector for hardcoded credential heuristics
 - combines built-in regex signatures, custom regex patterns, context-sensitive assignment checks, and entropy scoring
 - returns location-scoped findings attached to `parser.File.Secrets`
+- `Adapter` bridges `Detector` into `internal/core/ports.SecretScanner`
 
 ## `internal/engine/resolver/drivers`
 

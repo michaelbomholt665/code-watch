@@ -93,6 +93,25 @@ Before a version bump/release:
 - Update root `CHANGELOG.md` with user-facing changes.
 - Keep docs in `docs/documentation/` aligned with released behavior.
 
+## Hexagonal Refactor Status
+
+The hexagonal architecture migration plan is tracked in:
+- `docs/plans/hexagonal-architecture-refactor.md`
+
+Current status (as of 2026-02-14):
+- Phase 1 (driven ports): complete
+- Phase 2 (domain service split): complete (`internal/core/app/service.go` exposes `AnalysisService`, and output/report + summary compatibility behavior is extracted to `internal/core/app/presentation_service.go`)
+- Phase 3 (driven adapters): complete (parser + history + secrets adapters implemented and wired through ports)
+- Phase 4 (driving adapters): complete (CLI/TUI/MCP runtime flows route through `AnalysisService` driving ports; startup uses interface-first analysis factory wiring; parity tests cover summary/output contract equivalence)
+
+Estimated completion (session 11):
+- Phase 1: `100%`
+- Phase 2: `100%`
+- Phase 3: `100%`
+- Phase 4: `100%`
+
+Plan fully implemented: `yes`.
+
 ## Quick Start
 
 1. Review default config:
