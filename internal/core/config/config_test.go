@@ -27,6 +27,18 @@ tsv = "deps.tsv"
 mermaid = "graph.mmd"
 plantuml = "graph.puml"
 
+[output.diagrams]
+architecture = true
+component = true
+flow = false
+
+[output.diagrams.flow_config]
+entry_points = ["cmd/circular/main.go"]
+max_depth = 10
+
+[output.diagrams.component_config]
+show_internal = true
+
 [output.paths]
 root = "."
 diagrams_dir = "docs/diagrams"
@@ -78,6 +90,24 @@ terminal = true
 	}
 	if cfg.Output.Paths.DiagramsDir != "docs/diagrams" {
 		t.Fatalf("Expected diagrams_dir docs/diagrams, got %q", cfg.Output.Paths.DiagramsDir)
+	}
+	if !cfg.Output.Diagrams.Architecture {
+		t.Fatal("expected output.diagrams.architecture=true")
+	}
+	if !cfg.Output.Diagrams.Component {
+		t.Fatal("expected output.diagrams.component=true")
+	}
+	if cfg.Output.Diagrams.Flow {
+		t.Fatal("expected output.diagrams.flow=false")
+	}
+	if cfg.Output.Diagrams.FlowConfig.MaxDepth != 10 {
+		t.Fatalf("expected flow max_depth=10, got %d", cfg.Output.Diagrams.FlowConfig.MaxDepth)
+	}
+	if len(cfg.Output.Diagrams.FlowConfig.EntryPoints) != 1 || cfg.Output.Diagrams.FlowConfig.EntryPoints[0] != "cmd/circular/main.go" {
+		t.Fatalf("unexpected flow entry points: %#v", cfg.Output.Diagrams.FlowConfig.EntryPoints)
+	}
+	if !cfg.Output.Diagrams.ComponentCfg.ShowInternal {
+		t.Fatal("expected component_config.show_internal=true")
 	}
 	if len(cfg.Output.UpdateMarkdown) != 1 {
 		t.Fatalf("Expected 1 markdown update target, got %d", len(cfg.Output.UpdateMarkdown))
@@ -259,6 +289,74 @@ grammars_path = "./grammars"
 	}
 	if cfg.Output.Paths.DiagramsDir != "docs/diagrams" {
 		t.Fatalf("expected default diagrams dir docs/diagrams, got %q", cfg.Output.Paths.DiagramsDir)
+	}
+	if cfg.Output.Diagrams.FlowConfig.MaxDepth != 8 {
+		t.Fatalf("expected default flow max_depth 8, got %d", cfg.Output.Diagrams.FlowConfig.MaxDepth)
+	}
+}
+
+func TestLoadOutputDiagramValidation(t *testing.T) {
+	tests := []struct {
+		name    string
+		content string
+		errSub  string
+	}{
+		{
+			name: "invalid max_depth",
+			content: `
+grammars_path = "./grammars"
+
+[output.diagrams.flow_config]
+max_depth = -1
+`,
+			errSub: "output.diagrams.flow_config.max_depth must be >= 1",
+		},
+		{
+			name: "empty flow entry point",
+			content: `
+grammars_path = "./grammars"
+
+[output.diagrams.flow_config]
+entry_points = ["", "cmd/circular/main.go"]
+max_depth = 4
+`,
+			errSub: "output.diagrams.flow_config.entry_points[0] must not be empty",
+		},
+		{
+			name: "duplicate flow entry points",
+			content: `
+grammars_path = "./grammars"
+
+[output.diagrams.flow_config]
+entry_points = ["cmd/circular/main.go", "cmd/circular/main.go"]
+max_depth = 4
+`,
+			errSub: "duplicate flow entry point",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpfile, err := os.CreateTemp("", "config-output-diagram-validate*.toml")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.Remove(tmpfile.Name())
+			if _, err := tmpfile.Write([]byte(tt.content)); err != nil {
+				t.Fatal(err)
+			}
+			if err := tmpfile.Close(); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = Load(tmpfile.Name())
+			if err == nil {
+				t.Fatal("expected validation error")
+			}
+			if !strings.Contains(err.Error(), tt.errSub) {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
 	}
 }
 

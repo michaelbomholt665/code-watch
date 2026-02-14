@@ -164,3 +164,45 @@ func (p *PlantUMLGenerator) Generate(cycles [][]string, violations []graph.Archi
 	b.WriteString("\n@enduml\n")
 	return b.String(), nil
 }
+
+func (p *PlantUMLGenerator) GenerateArchitecture(model graph.ArchitectureModel, violations []graph.ArchitectureViolation) (string, error) {
+	if !model.Enabled || len(model.Layers) == 0 {
+		return "", fmt.Errorf("architecture diagram mode requires architecture.enabled=true with at least one layer")
+	}
+
+	var b strings.Builder
+	b.WriteString("@startuml\n")
+	b.WriteString("skinparam componentStyle rectangle\n")
+	b.WriteString("skinparam packageStyle rectangle\n")
+	b.WriteString("skinparam linetype ortho\n")
+	b.WriteString("skinparam nodesep 80\n")
+	b.WriteString("skinparam ranksep 100\n")
+	b.WriteString("left to right direction\n\n")
+
+	layers, deps := architectureLayerDependencies(p.graph, model, violations)
+	ids := makeIDs(layers)
+	for _, layer := range layers {
+		b.WriteString(fmt.Sprintf("rectangle \"%s\" as %s\n", escapeLabel(layer), ids[layer]))
+	}
+
+	b.WriteString("\n")
+	for _, dep := range deps {
+		arrow := "-->"
+		label := fmt.Sprintf(" : deps:%d", dep.Count)
+		if dep.Violations > 0 {
+			arrow = "-[#a64d00,dashed]->"
+			label = fmt.Sprintf(" : deps:%d viol:%d", dep.Count, dep.Violations)
+		}
+		b.WriteString(fmt.Sprintf("%s %s %s%s\n", ids[dep.From], arrow, ids[dep.To], label))
+	}
+
+	b.WriteString("\nlegend right\n")
+	b.WriteString("|= Item |= Meaning |\n")
+	b.WriteString("|Rectangle|Architecture layer|\n")
+	b.WriteString("|deps:N|Observed inter-layer dependency count|\n")
+	b.WriteString("|viol:M|Violating dependency count for that layer pair|\n")
+	b.WriteString("|<color:#a64d00>Brown dashed edge</color>|Layer pair with architecture violations|\n")
+	b.WriteString("endlegend\n")
+	b.WriteString("\n@enduml\n")
+	return b.String(), nil
+}

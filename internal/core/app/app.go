@@ -437,6 +437,10 @@ func (a *App) GenerateOutputs(
 	hotspots []graph.ComplexityHotspot,
 ) error {
 	archModel := architectureModelFromConfig(a.Config.Architecture)
+	diagramMode, err := resolveDiagramMode(a.Config.Output.Diagrams)
+	if err != nil {
+		return err
+	}
 	mermaidDiagram := ""
 	plantUMLDiagram := ""
 	targets, err := a.resolveOutputTargets()
@@ -500,7 +504,13 @@ func (a *App) GenerateOutputs(
 		mermaidGen := report.NewMermaidGenerator(a.Graph)
 		mermaidGen.SetModuleMetrics(metrics)
 		mermaidGen.SetComplexityHotspots(hotspots)
-		diagram, err := mermaidGen.Generate(cycles, violations, archModel)
+		var diagram string
+		switch diagramMode {
+		case diagramModeArchitecture:
+			diagram, err = mermaidGen.GenerateArchitecture(archModel, violations)
+		default:
+			diagram, err = mermaidGen.Generate(cycles, violations, archModel)
+		}
 		if err != nil {
 			return fmt.Errorf("generate Mermaid output: %w", err)
 		}
@@ -516,7 +526,13 @@ func (a *App) GenerateOutputs(
 		plantUMLGen := report.NewPlantUMLGenerator(a.Graph)
 		plantUMLGen.SetModuleMetrics(metrics)
 		plantUMLGen.SetComplexityHotspots(hotspots)
-		diagram, err := plantUMLGen.Generate(cycles, violations, archModel)
+		var diagram string
+		switch diagramMode {
+		case diagramModeArchitecture:
+			diagram, err = plantUMLGen.GenerateArchitecture(archModel, violations)
+		default:
+			diagram, err = plantUMLGen.Generate(cycles, violations, archModel)
+		}
 		if err != nil {
 			return fmt.Errorf("generate PlantUML output: %w", err)
 		}
@@ -546,6 +562,40 @@ func (a *App) GenerateOutputs(
 	}
 
 	return nil
+}
+
+type diagramMode int
+
+const (
+	diagramModeDependency diagramMode = iota
+	diagramModeArchitecture
+)
+
+func resolveDiagramMode(diagrams config.DiagramOutput) (diagramMode, error) {
+	enabled := 0
+	if diagrams.Architecture {
+		enabled++
+	}
+	if diagrams.Component {
+		enabled++
+	}
+	if diagrams.Flow {
+		enabled++
+	}
+
+	if enabled == 0 {
+		return diagramModeDependency, nil
+	}
+	if enabled > 1 {
+		return diagramModeDependency, fmt.Errorf("output.diagrams supports one mode at a time; set exactly one of architecture, component, or flow")
+	}
+	if diagrams.Component {
+		return diagramModeDependency, fmt.Errorf("output.diagrams.component is not implemented yet")
+	}
+	if diagrams.Flow {
+		return diagramModeDependency, fmt.Errorf("output.diagrams.flow is not implemented yet")
+	}
+	return diagramModeArchitecture, nil
 }
 
 type outputTargets struct {

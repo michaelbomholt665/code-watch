@@ -83,6 +83,18 @@ tsv = "dependencies.tsv"
 mermaid = "graph.mmd"
 plantuml = "graph.puml"
 
+[output.diagrams]
+architecture = false
+component = false
+flow = false
+
+[output.diagrams.flow_config]
+entry_points = ["cmd/circular/main.go"]
+max_depth = 8
+
+[output.diagrams.component_config]
+show_internal = false
+
 [output.paths]
 root = ""
 diagrams_dir = "docs/diagrams"
@@ -198,8 +210,13 @@ top_complexity = 5
 - defaults to `500ms`
 - diagram output controls currently supported in schema:
 - `output.dot`, `output.tsv`, `output.mermaid`, `output.plantuml`
+- `output.diagrams.architecture`, `output.diagrams.component`, `output.diagrams.flow`
+- `output.diagrams.flow_config.entry_points`, `output.diagrams.flow_config.max_depth`
+- `output.diagrams.component_config.show_internal`
 - `output.paths.*`, `output.update_markdown`
-- planned but not yet available: `[output.diagrams]` typed toggles for architecture/component/flow modes
+- current wiring:
+- `output.diagrams.architecture=true` enables dedicated architecture diagrams for Mermaid/PlantUML outputs
+- `output.diagrams.component=true` and `output.diagrams.flow=true` are parsed/validated but not implemented yet
 - `output.*`, `alerts.*`, `architecture.*`
 - unchanged semantics from prior versions
 
@@ -229,6 +246,8 @@ Config load fails when:
 - MCP OpenAPI spec path and URL are both set
 - MCP response/timeout limits exceed bounds
 - output markdown targets are malformed
+- `output.diagrams.flow_config.max_depth < 1`
+- `output.diagrams.flow_config.entry_points` contains empty or duplicate values
 - architecture rules violate layer/rule constraints
 - `languages.*.extensions` or `languages.*.filenames` include empty values
 

@@ -4,7 +4,9 @@
 
 ## Diagram Scope
 
-Current Mermaid and PlantUML renderers produce module dependency diagrams.
+Mermaid and PlantUML support two output views:
+- default dependency view (module-level graph)
+- architecture view (layer-level graph) when `output.diagrams.architecture=true`
 
 Implemented overlays:
 - cycle highlighting
@@ -12,10 +14,8 @@ Implemented overlays:
 - optional architecture-layer grouping when `[architecture].enabled=true`
 
 Planned (not yet implemented):
-- dedicated architecture diagram mode
 - dedicated component diagram mode
 - dedicated flow/call diagram mode
-- per-diagram config toggles under `[output.diagrams]`
 
 Roadmap source:
 - `docs/plans/diagram-expansion-plan.md`

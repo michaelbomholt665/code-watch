@@ -150,7 +150,8 @@ Dedicated architecture/component/flow diagram modes are tracked in:
 - `docs/plans/diagram-expansion-plan.md`
 
 Note:
-- `[output.diagrams]` is planned and not available in current config schema.
+- `output.diagrams.architecture=true` switches Mermaid/PlantUML to dedicated layer-level architecture diagrams.
+- `output.diagrams.component` and `output.diagrams.flow` are reserved and currently return not-implemented errors.
 
 ## CLI
 
@@ -265,6 +266,18 @@ dot = "graph.dot"
 tsv = "dependencies.tsv"
 mermaid = "graph.mmd"
 plantuml = "graph.puml"
+
+[output.diagrams]
+architecture = false
+component = false
+flow = false
+
+[output.diagrams.flow_config]
+entry_points = ["cmd/circular/main.go"]
+max_depth = 8
+
+[output.diagrams.component_config]
+show_internal = false
 
 [output.paths]
 root = ""

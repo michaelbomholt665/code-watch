@@ -258,6 +258,101 @@ func TestApp_GenerateOutputs_DiagramPathsUseDetectedRootAndDiagramsDir(t *testin
 	}
 }
 
+func TestApp_GenerateOutputs_ArchitectureDiagramMode(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "api.go"), []byte("package api\nimport \"example.com/arch/internal/core\"\nfunc A(){}\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(tmpDir, "internal", "core"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "internal", "core", "core.go"), []byte("package core\nfunc C(){}\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/arch"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output: config.Output{
+			Mermaid: filepath.Join(tmpDir, "graph.mmd"),
+			Diagrams: config.DiagramOutput{
+				Architecture: true,
+			},
+		},
+		Architecture: config.Architecture{
+			Enabled: true,
+			Layers: []config.ArchitectureLayer{
+				{Name: "api", Paths: []string{"example.com/arch"}},
+				{Name: "core", Paths: []string{"example.com/arch/internal/core"}},
+			},
+			Rules: []config.ArchitectureRule{
+				{Name: "api-only-core", From: "api", Allow: []string{"core"}},
+			},
+		},
+	}
+
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.InitialScan(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := app.GenerateOutputs(nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(cfg.Output.Mermaid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := string(data)
+	if !strings.Contains(out, "deps:1") {
+		t.Fatalf("expected architecture dependency labels, got: %s", out)
+	}
+	if strings.Contains(out, "(d=") {
+		t.Fatalf("did not expect module-metric labels in architecture mode, got: %s", out)
+	}
+}
+
+func TestResolveDiagramMode(t *testing.T) {
+	mode, err := resolveDiagramMode(config.DiagramOutput{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode != diagramModeDependency {
+		t.Fatalf("expected dependency mode, got %v", mode)
+	}
+
+	mode, err = resolveDiagramMode(config.DiagramOutput{Architecture: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode != diagramModeArchitecture {
+		t.Fatalf("expected architecture mode, got %v", mode)
+	}
+
+	_, err = resolveDiagramMode(config.DiagramOutput{Architecture: true, Flow: true})
+	if err == nil {
+		t.Fatal("expected conflict error when multiple modes are enabled")
+	}
+	if !strings.Contains(err.Error(), "exactly one") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	_, err = resolveDiagramMode(config.DiagramOutput{Component: true})
+	if err == nil {
+		t.Fatal("expected component not implemented error")
+	}
+	if !strings.Contains(err.Error(), "not implemented") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestUniqueScanRoots_DeduplicatesRelativeAndAbsolute(t *testing.T) {
 	tmpDir := t.TempDir()
 	wd, err := os.Getwd()

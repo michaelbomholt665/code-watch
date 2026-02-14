@@ -14,10 +14,15 @@ Expand diagram support beyond the current module dependency graph so `circular` 
 - MCP supports report refresh through `graph.sync_diagrams`.
 
 ## Gap Summary
-- No dedicated architecture-diagram mode (separate from module graph overlays).
 - No component-diagram mode (module internals and symbol-level relationships).
 - No flow/call-sequence diagram mode.
-- No config block yet for per-diagram-type toggles (`[output.diagrams.*]`).
+- Diagram toggles are partially consumed by output generation:
+- `architecture=true` is implemented
+- `component=true` and `flow=true` return explicit not-implemented errors
+
+Architecture mode status:
+- Dedicated architecture diagram generation is now implemented for Mermaid/PlantUML when `output.diagrams.architecture=true`.
+- Component and flow modes remain pending.
 
 ## Scope and Ownership
 - Config schema and validation: `internal/core/config`
@@ -27,32 +32,32 @@ Expand diagram support beyond the current module dependency graph so `circular` 
 - MCP operation surface updates (if needed): `internal/mcp/*`
 - Docs and examples: `README.md`, `docs/documentation/*`, `data/config/circular.example.toml`
 
-## Proposed Config (Phase 2)
+## Config Baseline (P1 Implemented)
 ```toml
 [output.diagrams]
 architecture = true
 component = false
 flow = false
 
-[output.diagrams.flow]
+[output.diagrams.flow_config]
 entry_points = ["cmd/circular/main.go"]
 max_depth = 8
 
-[output.diagrams.component]
+[output.diagrams.component_config]
 show_internal = false
 ```
 
 Notes:
-- This block is planned and not implemented yet.
+- This block is implemented in config parsing/validation.
 - Existing `output.mermaid` and `output.plantuml` remain backward-compatible.
 
 ## Implementation Phases
 
 | Phase | Focus | Status |
 | :--- | :--- | :--- |
-| P0 | Baseline dependency diagrams, markdown injection, MCP sync operation | Done |
-| P1 | Add `output.diagrams` config schema/defaults/validation | Planned |
-| P2 | Dedicated architecture diagram generation | Planned |
+| P0 | Baseline dependency diagrams, markdown injection, MCP sync operation | Complete |
+| P1 | Add `output.diagrams` config schema/defaults/validation | Complete |
+| P2 | Dedicated architecture diagram generation | Complete |
 | P3 | Dedicated component diagram generation | Planned |
 | P4 | Flow/call diagram generation with entry-point controls | Planned |
 
@@ -60,13 +65,13 @@ Notes:
 - [x] T0: Baseline Mermaid/PlantUML dependency outputs with architecture overlays.
 - [x] T1: Markdown marker injection flow for Mermaid/PlantUML diagrams.
 - [x] T2: MCP sync operation for output regeneration (`graph.sync_diagrams`).
-- [ ] T3: Add `output.diagrams` structs/defaults/validation in `internal/core/config`.
-- [ ] T4: Add diagram mode selection/plumbing in `internal/core/app`.
-- [ ] T5: Add architecture-view emitters in `internal/ui/report/formats/mermaid.go` and `internal/ui/report/formats/plantuml.go`.
+- [x] T3: Add `output.diagrams` structs/defaults/validation in `internal/core/config`.
+- [x] T4: Add diagram mode selection/plumbing in `internal/core/app`.
+- [x] T5: Add architecture-view emitters in `internal/ui/report/formats/mermaid.go` and `internal/ui/report/formats/plantuml.go`.
 - [ ] T6: Add component-view emitters using parser definitions and graph relationships.
 - [ ] T7: Add flow-view emitters using call/reference traversal with bounded depth.
-- [ ] T8: Add/extend tests for config validation, generator output, and backward compatibility.
-- [ ] T9: Update docs and config examples after each phase lands.
+- [x] T8: Add/extend tests for config validation, generator output, and backward compatibility.
+- [x] T9: Update docs and config examples after each phase lands.
 
 ## Constraints
 - Keep existing output keys and default behavior backward-compatible.

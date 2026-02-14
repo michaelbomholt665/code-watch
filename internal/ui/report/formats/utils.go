@@ -2,7 +2,9 @@ package formats
 
 import (
 	"circular/internal/engine/graph"
+	"circular/internal/shared/util"
 	"fmt"
+	"sort"
 	"strings"
 	"unicode"
 )
@@ -66,4 +68,92 @@ func makeIDs(names []string) map[string]string {
 
 func escapeLabel(s string) string {
 	return strings.ReplaceAll(s, "\"", "'")
+}
+
+type layerDependency struct {
+	From       string
+	To         string
+	Count      int
+	Violations int
+}
+
+func architectureLayerDependencies(g *graph.Graph, model graph.ArchitectureModel, violations []graph.ArchitectureViolation) ([]string, []layerDependency) {
+	layers := make([]string, 0, len(model.Layers))
+	layerOrder := make(map[string]int, len(model.Layers))
+	for i, layer := range model.Layers {
+		if _, exists := layerOrder[layer.Name]; exists {
+			continue
+		}
+		layerOrder[layer.Name] = i
+		layers = append(layers, layer.Name)
+	}
+
+	modules := g.Modules()
+	imports := g.GetImports()
+	moduleNames := util.SortedStringKeys(modules)
+	layerByModule := classifyLayers(moduleNames, modules, model)
+
+	depMap := make(map[string]layerDependency)
+	for _, from := range util.SortedStringKeys(imports) {
+		fromLayer := layerByModule[from]
+		if fromLayer == "" {
+			continue
+		}
+		targets := util.SortedStringKeys(imports[from])
+		for _, to := range targets {
+			toLayer := layerByModule[to]
+			if toLayer == "" || toLayer == fromLayer {
+				continue
+			}
+			key := fromLayer + "->" + toLayer
+			dep := depMap[key]
+			dep.From = fromLayer
+			dep.To = toLayer
+			dep.Count++
+			depMap[key] = dep
+		}
+	}
+
+	for _, v := range violations {
+		if v.FromLayer == "" || v.ToLayer == "" || v.FromLayer == v.ToLayer {
+			continue
+		}
+		if _, ok := layerOrder[v.FromLayer]; !ok {
+			layerOrder[v.FromLayer] = len(layers)
+			layers = append(layers, v.FromLayer)
+		}
+		if _, ok := layerOrder[v.ToLayer]; !ok {
+			layerOrder[v.ToLayer] = len(layers)
+			layers = append(layers, v.ToLayer)
+		}
+		key := v.FromLayer + "->" + v.ToLayer
+		dep := depMap[key]
+		dep.From = v.FromLayer
+		dep.To = v.ToLayer
+		dep.Violations++
+		depMap[key] = dep
+	}
+
+	deps := make([]layerDependency, 0, len(depMap))
+	for _, dep := range depMap {
+		deps = append(deps, dep)
+	}
+	sort.Slice(deps, func(i, j int) bool {
+		leftFrom := layerOrder[deps[i].From]
+		rightFrom := layerOrder[deps[j].From]
+		if leftFrom != rightFrom {
+			return leftFrom < rightFrom
+		}
+		leftTo := layerOrder[deps[i].To]
+		rightTo := layerOrder[deps[j].To]
+		if leftTo != rightTo {
+			return leftTo < rightTo
+		}
+		if deps[i].From != deps[j].From {
+			return deps[i].From < deps[j].From
+		}
+		return deps[i].To < deps[j].To
+	})
+
+	return layers, deps
 }

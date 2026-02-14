@@ -214,6 +214,51 @@ func (m *MermaidGenerator) Generate(cycles [][]string, violations []graph.Archit
 	return b.String(), nil
 }
 
+func (m *MermaidGenerator) GenerateArchitecture(model graph.ArchitectureModel, violations []graph.ArchitectureViolation) (string, error) {
+	if !model.Enabled || len(model.Layers) == 0 {
+		return "", fmt.Errorf("architecture diagram mode requires architecture.enabled=true with at least one layer")
+	}
+
+	var b strings.Builder
+	b.WriteString("%%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%\n")
+	b.WriteString("flowchart LR\n")
+
+	layers, deps := architectureLayerDependencies(m.graph, model, violations)
+	ids := makeIDs(layers)
+	for _, layer := range layers {
+		b.WriteString(fmt.Sprintf("  %s[\"%s\"]\n", ids[layer], escapeLabel(layer)))
+	}
+	b.WriteString("\n")
+	b.WriteString("  classDef layerNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;\n")
+	b.WriteString("  class ")
+	b.WriteString(strings.Join(toIDs(layers, ids), ","))
+	b.WriteString(" layerNode;\n\n")
+
+	violationIndexes := make([]int, 0)
+	for i, dep := range deps {
+		label := fmt.Sprintf("|deps:%d|", dep.Count)
+		if dep.Violations > 0 {
+			label = fmt.Sprintf("|deps:%d viol:%d|", dep.Count, dep.Violations)
+			violationIndexes = append(violationIndexes, i)
+		}
+		b.WriteString(fmt.Sprintf("  %s -->%s %s\n", ids[dep.From], label, ids[dep.To]))
+	}
+
+	if len(violationIndexes) > 0 {
+		b.WriteString("\n")
+		b.WriteString(fmt.Sprintf("  linkStyle %s stroke:#a64d00,stroke-width:2px,stroke-dasharray:5 3;\n", joinInts(violationIndexes)))
+	}
+
+	b.WriteString("\n")
+	b.WriteString("  subgraph legend_info[\"Legend\"]\n")
+	b.WriteString("    legend_nodes[\"Node: architecture layer\"]\n")
+	b.WriteString("    legend_edges[\"Edge label deps:N = observed inter-layer imports; viol:M = violating dependencies\"]\n")
+	b.WriteString("  end\n")
+	b.WriteString("  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px,color:#000000;\n")
+	b.WriteString("  class legend_nodes,legend_edges legendNode;\n")
+	return b.String(), nil
+}
+
 func classifyLayers(moduleNames []string, modules map[string]*graph.Module, model graph.ArchitectureModel) map[string]string {
 	layerByModule := make(map[string]string, len(moduleNames))
 	if !model.Enabled || len(model.Layers) == 0 {

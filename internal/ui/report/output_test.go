@@ -289,6 +289,91 @@ func TestPlantUMLGenerator(t *testing.T) {
 	}
 }
 
+func TestMermaidGenerator_GenerateArchitecture(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:   "internal/api/a.go",
+		Module: "internal/api",
+		Imports: []parser.Import{
+			{Module: "internal/core"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:   "internal/core/b.go",
+		Module: "internal/core",
+	})
+
+	model := graph.ArchitectureModel{
+		Enabled: true,
+		Layers: []graph.ArchitectureLayer{
+			{Name: "api", Paths: []string{"internal/api"}},
+			{Name: "core", Paths: []string{"internal/core"}},
+		},
+	}
+	violations := []graph.ArchitectureViolation{
+		{FromLayer: "api", ToLayer: "core"},
+	}
+
+	gen := NewMermaidGenerator(g)
+	out, err := gen.GenerateArchitecture(model, violations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "flowchart LR") {
+		t.Fatalf("expected flowchart output, got: %s", out)
+	}
+	if !strings.Contains(out, "deps:1 viol:1") {
+		t.Fatalf("expected aggregated layer dependency label, got: %s", out)
+	}
+	if !strings.Contains(out, "linkStyle 0 stroke:#a64d00") {
+		t.Fatalf("expected violation link style in architecture mode, got: %s", out)
+	}
+}
+
+func TestPlantUMLGenerator_GenerateArchitecture(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:   "internal/api/a.go",
+		Module: "internal/api",
+		Imports: []parser.Import{
+			{Module: "internal/core"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:   "internal/core/b.go",
+		Module: "internal/core",
+	})
+
+	model := graph.ArchitectureModel{
+		Enabled: true,
+		Layers: []graph.ArchitectureLayer{
+			{Name: "api", Paths: []string{"internal/api"}},
+			{Name: "core", Paths: []string{"internal/core"}},
+		},
+	}
+	violations := []graph.ArchitectureViolation{
+		{FromLayer: "api", ToLayer: "core"},
+	}
+
+	gen := NewPlantUMLGenerator(g)
+	out, err := gen.GenerateArchitecture(model, violations)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(out, "@startuml") {
+		t.Fatalf("expected plantuml header, got: %s", out)
+	}
+	if !strings.Contains(out, "rectangle \"api\"") {
+		t.Fatalf("expected architecture layer node, got: %s", out)
+	}
+	if !strings.Contains(out, "deps:1 viol:1") {
+		t.Fatalf("expected aggregated layer dependency label, got: %s", out)
+	}
+	if !strings.Contains(out, "-[#a64d00,dashed]->") {
+		t.Fatalf("expected violation edge styling in architecture mode, got: %s", out)
+	}
+}
+
 func TestMermaidGenerator_AggregatesExternalsWhenLarge(t *testing.T) {
 	g := graph.NewGraph()
 	imports := make([]parser.Import, 0, 12)

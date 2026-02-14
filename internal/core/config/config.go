@@ -108,8 +108,26 @@ type Output struct {
 	TSV            string              `toml:"tsv"`
 	Mermaid        string              `toml:"mermaid"`
 	PlantUML       string              `toml:"plantuml"`
+	Diagrams       DiagramOutput       `toml:"diagrams"`
 	UpdateMarkdown []MarkdownInjection `toml:"update_markdown"`
 	Paths          OutputPaths         `toml:"paths"`
+}
+
+type DiagramOutput struct {
+	Architecture bool                   `toml:"architecture"`
+	Component    bool                   `toml:"component"`
+	Flow         bool                   `toml:"flow"`
+	FlowConfig   FlowDiagramConfig      `toml:"flow_config"`
+	ComponentCfg ComponentDiagramConfig `toml:"component_config"`
+}
+
+type FlowDiagramConfig struct {
+	EntryPoints []string `toml:"entry_points"`
+	MaxDepth    int      `toml:"max_depth"`
+}
+
+type ComponentDiagramConfig struct {
+	ShowInternal bool `toml:"show_internal"`
 }
 
 type MarkdownInjection struct {
@@ -276,6 +294,9 @@ func applyDefaults(cfg *Config) {
 	}
 	if strings.TrimSpace(cfg.Output.Paths.DiagramsDir) == "" {
 		cfg.Output.Paths.DiagramsDir = "docs/diagrams"
+	}
+	if cfg.Output.Diagrams.FlowConfig.MaxDepth == 0 {
+		cfg.Output.Diagrams.FlowConfig.MaxDepth = 8
 	}
 }
 
@@ -485,6 +506,22 @@ func normalizeMCP(cfg *Config) {
 func validateOutput(cfg *Config) error {
 	if strings.TrimSpace(cfg.Output.Paths.DiagramsDir) == "" {
 		return fmt.Errorf("output.paths.diagrams_dir must not be empty")
+	}
+	if cfg.Output.Diagrams.FlowConfig.MaxDepth < 1 {
+		return fmt.Errorf("output.diagrams.flow_config.max_depth must be >= 1")
+	}
+
+	seenEntryPoints := make(map[string]bool, len(cfg.Output.Diagrams.FlowConfig.EntryPoints))
+	for i, entry := range cfg.Output.Diagrams.FlowConfig.EntryPoints {
+		ref := fmt.Sprintf("output.diagrams.flow_config.entry_points[%d]", i)
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			return fmt.Errorf("%s must not be empty", ref)
+		}
+		if seenEntryPoints[entry] {
+			return fmt.Errorf("duplicate flow entry point %q", entry)
+		}
+		seenEntryPoints[entry] = true
 	}
 
 	seen := make(map[string]bool, len(cfg.Output.UpdateMarkdown))
