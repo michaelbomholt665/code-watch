@@ -57,6 +57,9 @@ func Run(args []string) int {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return 1
 	}
+	if opts.reportMarkdown && strings.TrimSpace(cfg.Output.Markdown) == "" {
+		cfg.Output.Markdown = "analysis-report.md"
+	}
 
 	if err := validateModeCompatibility(opts, cfg); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
@@ -139,7 +142,7 @@ func Run(args []string) int {
 	violations := app.ArchitectureViolations()
 	hallucinations := app.AnalyzeHallucinations()
 	unusedImports := app.AnalyzeUnusedImports()
-	if err := app.GenerateOutputs(cycles, unusedImports, metrics, violations, hotspots); err != nil {
+	if err := app.GenerateOutputs(cycles, hallucinations, unusedImports, metrics, violations, hotspots); err != nil {
 		slog.Error("failed to generate outputs", "error", err)
 	}
 
@@ -605,7 +608,7 @@ func resolveRuntimeProject(cfg *config.Config, paths config.ResolvedPaths, cwd s
 
 func validateModeCompatibility(opts cliOptions, cfg *config.Config) error {
 	if cfg.MCP.Enabled {
-		if opts.ui || opts.once || opts.verifyGrammars || opts.trace || opts.impact != "" || opts.history ||
+		if opts.ui || opts.once || opts.verifyGrammars || opts.trace || opts.impact != "" || opts.history || opts.reportMarkdown ||
 			opts.queryModules || opts.queryModule != "" || opts.queryTrace != "" || opts.queryTrends || len(opts.args) > 0 {
 			return fmt.Errorf("mcp.enabled=true cannot be combined with CLI modes or positional path arguments")
 		}
@@ -642,7 +645,7 @@ func runMCPModeIfEnabled(opts cliOptions, cfg *config.Config, configPath string)
 	unusedImports := app.AnalyzeUnusedImports()
 
 	if cfg.MCP.AutoManageOutputsEnabled() {
-		if err := app.GenerateOutputs(cycles, unusedImports, metrics, violations, hotspots); err != nil {
+		if err := app.GenerateOutputs(cycles, nil, unusedImports, metrics, violations, hotspots); err != nil {
 			return fmt.Errorf("auto-manage outputs: %w", err)
 		}
 	}

@@ -26,6 +26,13 @@ dot = "graph.dot"
 tsv = "deps.tsv"
 mermaid = "graph.mmd"
 plantuml = "graph.puml"
+markdown = "analysis-report.md"
+
+[output.report]
+verbosity = "detailed"
+table_of_contents = true
+collapsible_sections = true
+include_mermaid = true
 
 [output.diagrams]
 architecture = true
@@ -51,6 +58,20 @@ format = "mermaid"
 [alerts]
 beep = true
 terminal = true
+
+[secrets]
+enabled = true
+entropy_threshold = 4.2
+min_token_length = 18
+
+[[secrets.patterns]]
+name = "custom-test-token"
+regex = "CTK_[A-Z0-9]{12}"
+severity = "high"
+
+[secrets.exclude]
+dirs = [".secrets"]
+files = ["*.pem"]
 `
 	tmpfile, err := os.CreateTemp("", "config*.toml")
 	if err != nil {
@@ -88,6 +109,21 @@ terminal = true
 	if cfg.Output.PlantUML != "graph.puml" {
 		t.Errorf("Expected PlantUML graph.puml, got %s", cfg.Output.PlantUML)
 	}
+	if cfg.Output.Markdown != "analysis-report.md" {
+		t.Errorf("Expected Markdown analysis-report.md, got %s", cfg.Output.Markdown)
+	}
+	if cfg.Output.Report.Verbosity != "detailed" {
+		t.Fatalf("expected output.report.verbosity=detailed, got %q", cfg.Output.Report.Verbosity)
+	}
+	if !cfg.Output.Report.TableOfContentsEnabled() {
+		t.Fatal("expected output.report.table_of_contents=true")
+	}
+	if !cfg.Output.Report.CollapsibleSectionsEnabled() {
+		t.Fatal("expected output.report.collapsible_sections=true")
+	}
+	if !cfg.Output.Report.IncludeMermaidEnabled() {
+		t.Fatal("expected output.report.include_mermaid=true")
+	}
 	if cfg.Output.Paths.DiagramsDir != "docs/diagrams" {
 		t.Fatalf("Expected diagrams_dir docs/diagrams, got %q", cfg.Output.Paths.DiagramsDir)
 	}
@@ -114,6 +150,24 @@ terminal = true
 	}
 	if cfg.Output.UpdateMarkdown[0].Format != "mermaid" {
 		t.Fatalf("Expected markdown format mermaid, got %s", cfg.Output.UpdateMarkdown[0].Format)
+	}
+	if !cfg.Secrets.Enabled {
+		t.Fatal("expected secrets.enabled=true")
+	}
+	if cfg.Secrets.EntropyThreshold != 4.2 {
+		t.Fatalf("expected secrets.entropy_threshold=4.2, got %v", cfg.Secrets.EntropyThreshold)
+	}
+	if cfg.Secrets.MinTokenLength != 18 {
+		t.Fatalf("expected secrets.min_token_length=18, got %d", cfg.Secrets.MinTokenLength)
+	}
+	if len(cfg.Secrets.Patterns) != 1 || cfg.Secrets.Patterns[0].Name != "custom-test-token" {
+		t.Fatalf("unexpected secrets.patterns: %#v", cfg.Secrets.Patterns)
+	}
+	if len(cfg.Secrets.Exclude.Dirs) != 1 || cfg.Secrets.Exclude.Dirs[0] != ".secrets" {
+		t.Fatalf("unexpected secrets.exclude.dirs: %#v", cfg.Secrets.Exclude.Dirs)
+	}
+	if len(cfg.Secrets.Exclude.Files) != 1 || cfg.Secrets.Exclude.Files[0] != "*.pem" {
+		t.Fatalf("unexpected secrets.exclude.files: %#v", cfg.Secrets.Exclude.Files)
 	}
 }
 
@@ -267,6 +321,39 @@ format = "mermaid"
 	}
 }
 
+func TestLoadSecretsValidation_InvalidRegex(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[secrets]
+enabled = true
+
+[[secrets.patterns]]
+name = "bad"
+regex = "("
+`
+
+	tmpfile, err := os.CreateTemp("", "config-secrets-bad*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Load(tmpfile.Name())
+	if err == nil {
+		t.Fatal("expected invalid secrets pattern regex error")
+	}
+	if !strings.Contains(err.Error(), "secrets.patterns[0].regex is invalid") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestLoadOutputPathsDefault(t *testing.T) {
 	content := `
 grammars_path = "./grammars"
@@ -290,8 +377,64 @@ grammars_path = "./grammars"
 	if cfg.Output.Paths.DiagramsDir != "docs/diagrams" {
 		t.Fatalf("expected default diagrams dir docs/diagrams, got %q", cfg.Output.Paths.DiagramsDir)
 	}
+	if cfg.Output.Report.Verbosity != "standard" {
+		t.Fatalf("expected default report verbosity standard, got %q", cfg.Output.Report.Verbosity)
+	}
+	if !cfg.Output.Report.TableOfContentsEnabled() {
+		t.Fatal("expected output.report.table_of_contents default true")
+	}
+	if !cfg.Output.Report.CollapsibleSectionsEnabled() {
+		t.Fatal("expected output.report.collapsible_sections default true")
+	}
+	if cfg.Output.Report.IncludeMermaidEnabled() {
+		t.Fatal("expected output.report.include_mermaid default false")
+	}
+	if cfg.Output.Mermaid != "graph.mmd" {
+		t.Fatalf("expected default mermaid path graph.mmd, got %q", cfg.Output.Mermaid)
+	}
+	if !cfg.Output.MermaidEnabled() {
+		t.Fatal("expected mermaid output enabled by default")
+	}
+	if cfg.Output.PlantUMLEnabled() {
+		t.Fatal("expected plantuml output disabled by default")
+	}
 	if cfg.Output.Diagrams.FlowConfig.MaxDepth != 8 {
 		t.Fatalf("expected default flow max_depth 8, got %d", cfg.Output.Diagrams.FlowConfig.MaxDepth)
+	}
+}
+
+func TestOutputFormatsExplicitEnablement(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[output]
+plantuml = "graph.puml"
+
+[output.formats]
+mermaid = false
+plantuml = true
+`
+	tmpfile, err := os.CreateTemp("", "config-output-format-validate*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Output.MermaidEnabled() {
+		t.Fatal("expected mermaid disabled from output.formats")
+	}
+	if !cfg.Output.PlantUMLEnabled() {
+		t.Fatal("expected plantuml enabled from output.formats")
 	}
 }
 
@@ -321,6 +464,16 @@ entry_points = ["", "cmd/circular/main.go"]
 max_depth = 4
 `,
 			errSub: "output.diagrams.flow_config.entry_points[0] must not be empty",
+		},
+		{
+			name: "invalid report verbosity",
+			content: `
+grammars_path = "./grammars"
+
+[output.report]
+verbosity = "loud"
+`,
+			errSub: "output.report.verbosity must be one of: summary, standard, detailed",
 		},
 		{
 			name: "duplicate flow entry points",

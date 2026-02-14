@@ -30,6 +30,9 @@ circular [flags] [path]
 - usage: `circular --impact <file-path-or-module>`
 - prints direct importers, transitive importers, and externally used exported symbols
 - cannot be combined with `--trace`
+- `--report-md`
+- forces markdown report generation during output emission
+- uses configured `output.markdown` path, or defaults to `analysis-report.md` at output root when unset
 - `--verify-grammars`
 - verifies enabled-language grammar artifacts against `grammars/manifest.toml` and exits
 - language enablement is controlled by `[languages.<id>]` in config (defaults keep only `go`/`python` enabled)
@@ -81,7 +84,7 @@ circular [flags] [path]
 ## MCP Mode
 
 - MCP startup is config-driven via `[mcp].enabled = true`
-- MCP mode cannot be combined with `--once`, `--ui`, `--trace`, `--impact`, `--query-*`, `--history`, `--verify-grammars`, or positional path arguments
+- MCP mode cannot be combined with `--once`, `--ui`, `--trace`, `--impact`, `--report-md`, `--query-*`, `--history`, `--verify-grammars`, or positional path arguments
 - MCP startup runs an initial scan and can auto-write outputs/config when `mcp.auto_manage_outputs` or `mcp.auto_sync_config` are enabled
 - OpenAPI conversion (when enabled) reads `mcp.openapi_spec_path` or `mcp.openapi_spec_url` (mutually exclusive)
 - MCP runtime uses a stdio JSON request/response loop (one JSON object per line)

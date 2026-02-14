@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestDOTGenerator(t *testing.T) {
@@ -185,6 +186,36 @@ func TestTSVGenerator_GenerateArchitectureViolations(t *testing.T) {
 	}
 	if !strings.Contains(lines[1], "architecture_violation\tapi-to-core-only\tinternal/core\tcore\tinternal/api\tapi\tinternal/core/service.go\t12\t4") {
 		t.Fatalf("Unexpected architecture TSV row: %s", lines[1])
+	}
+}
+
+func TestTSVGenerator_GenerateSecrets(t *testing.T) {
+	g := graph.NewGraph()
+	gen := NewTSVGenerator(g)
+
+	tsv, err := gen.GenerateSecrets([]parser.Secret{
+		{
+			Kind:       "aws-access-key-id",
+			Severity:   "high",
+			Value:      "AKIA1234567890ABCDEF",
+			Entropy:    3.7,
+			Confidence: 0.99,
+			Location:   parser.Location{File: "a.go", Line: 7, Column: 2},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(tsv), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("Expected 2 lines in secrets TSV, got %d", len(lines))
+	}
+	if !strings.Contains(lines[0], "Type\tKind\tSeverity\tValue\tEntropy\tConfidence\tFile\tLine\tColumn") {
+		t.Fatalf("Unexpected secrets TSV header: %s", lines[0])
+	}
+	if !strings.Contains(lines[1], "secret\taws-access-key-id\thigh\tAKIA...CDEF\t3.7000\t0.99\ta.go\t7\t2") {
+		t.Fatalf("Unexpected secrets TSV row: %s", lines[1])
 	}
 }
 
@@ -374,6 +405,85 @@ func TestPlantUMLGenerator_GenerateArchitecture(t *testing.T) {
 	}
 }
 
+func TestMermaidGenerator_GenerateComponent(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:   "a.go",
+		Module: "modA",
+		Imports: []parser.Import{
+			{Module: "modB", Alias: "b"},
+		},
+		References: []parser.Reference{
+			{Name: "b.DoThing"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:   "b.go",
+		Module: "modB",
+		Definitions: []parser.Definition{
+			{Name: "DoThing", FullName: "modB.DoThing"},
+		},
+	})
+
+	gen := NewMermaidGenerator(g)
+	out, err := gen.GenerateComponent(graph.ArchitectureModel{}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "flowchart LR") {
+		t.Fatalf("expected flowchart output, got: %s", out)
+	}
+	if !strings.Contains(out, "refs:1") {
+		t.Fatalf("expected symbol reference edge label, got: %s", out)
+	}
+	if !strings.Contains(out, "sym:DoThing") {
+		t.Fatalf("expected symbol preview in edge label, got: %s", out)
+	}
+	if !strings.Contains(out, "symbolNode") {
+		t.Fatalf("expected symbol node style class when show_internal=true, got: %s", out)
+	}
+}
+
+func TestPlantUMLGenerator_GenerateFlow(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:   "a.go",
+		Module: "modA",
+		Imports: []parser.Import{
+			{Module: "modB"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:   "b.go",
+		Module: "modB",
+		Imports: []parser.Import{
+			{Module: "modC"},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:   "c.go",
+		Module: "modC",
+	})
+
+	gen := NewPlantUMLGenerator(g)
+	out, err := gen.GenerateFlow([]string{"modA"}, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "@startuml") {
+		t.Fatalf("expected plantuml header, got: %s", out)
+	}
+	if !strings.Contains(out, "modA\\n(step:0)") {
+		t.Fatalf("expected entry node step annotation, got: %s", out)
+	}
+	if !strings.Contains(out, "modB\\n(step:1)") {
+		t.Fatalf("expected depth annotation for downstream node, got: %s", out)
+	}
+	if !strings.Contains(out, "-->") {
+		t.Fatalf("expected flow edges, got: %s", out)
+	}
+}
+
 func TestMermaidGenerator_AggregatesExternalsWhenLarge(t *testing.T) {
 	g := graph.NewGraph()
 	imports := make([]parser.Import, 0, 12)
@@ -464,5 +574,78 @@ func TestInjectDiagram(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "flowchart LR") {
 		t.Fatalf("expected updated markdown diagram, got: %s", string(data))
+	}
+}
+
+func TestMarkdownGenerator(t *testing.T) {
+	gen := NewMarkdownGenerator()
+	out, err := gen.Generate(MarkdownReportData{
+		TotalModules: 2,
+		TotalFiles:   3,
+		Cycles:       [][]string{{"modA", "modB", "modA"}},
+		Unresolved: []resolver.UnresolvedReference{
+			{
+				File: "a.go",
+				Reference: parser.Reference{
+					Name:     "pkg.Missing",
+					Location: parser.Location{Line: 9, Column: 2},
+				},
+			},
+		},
+		UnusedImports: []resolver.UnusedImport{
+			{
+				File:       "a.go",
+				Language:   "go",
+				Module:     "fmt",
+				Location:   parser.Location{Line: 3, Column: 1},
+				Confidence: "medium",
+			},
+		},
+		Violations: []graph.ArchitectureViolation{
+			{
+				RuleName:   "api-only-core",
+				FromLayer:  "api",
+				ToLayer:    "infra",
+				FromModule: "app/api",
+				ToModule:   "app/infra",
+				File:       "internal/api/a.go",
+				Line:       12,
+				Column:     2,
+			},
+		},
+		Hotspots: []graph.ComplexityHotspot{
+			{Module: "app/api", Definition: "DoThing", File: "internal/api/a.go", Score: 42, Branches: 4, Parameters: 3, Nesting: 3, LOC: 120},
+		},
+	}, MarkdownReportOptions{
+		ProjectName:         "code-watch",
+		ProjectRoot:         ".",
+		Version:             "1.0.0",
+		GeneratedAt:         time.Date(2026, 2, 14, 11, 0, 0, 0, time.UTC),
+		Verbosity:           "detailed",
+		TableOfContents:     true,
+		CollapsibleSections: true,
+		IncludeMermaid:      true,
+		MermaidDiagram:      "flowchart LR\n  A --> B",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out, "generated_at: 2026-02-14T11:00:00Z") {
+		t.Fatalf("expected frontmatter timestamp, got: %s", out)
+	}
+	if !strings.Contains(out, "## Executive Summary") {
+		t.Fatalf("expected summary section, got: %s", out)
+	}
+	if !strings.Contains(out, "## Circular Imports") {
+		t.Fatalf("expected cycles section, got: %s", out)
+	}
+	if !strings.Contains(out, "🔴 High") && !strings.Contains(out, "🟡 Medium") {
+		t.Fatalf("expected severity label, got: %s", out)
+	}
+	if !strings.Contains(out, "## Dependency Diagram") {
+		t.Fatalf("expected mermaid section, got: %s", out)
+	}
+	if !strings.Contains(out, "```mermaid") {
+		t.Fatalf("expected mermaid fenced code block, got: %s", out)
 	}
 }

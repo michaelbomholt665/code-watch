@@ -6,6 +6,7 @@ It scans source files, builds a module import graph, then reports:
 - circular imports
 - unresolved symbol references ("hallucinations")
 - unused imports
+- potential hardcoded secrets
 - dependency depth/fan-in/fan-out metrics
 - architecture layer-rule violations
 - change impact (direct + transitive importers)
@@ -24,6 +25,7 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Detects import cycles across internal modules
 - Detects unresolved references using local symbols, imports, stdlib, and builtins
 - Detects unused imports and appends findings to TSV output
+- Detects potential hardcoded secrets via built-in patterns + entropy/context heuristics
 - Supports unused-import suppression via `exclude.imports` for known false-positive paths
 - Applies language-scoped resolver policies for `go`, `python`, `javascript`/`typescript`/`tsx`, `java`, and `rust`
 - Disables unused-import checks for unsupported/metadata-only languages to reduce false positives
@@ -37,8 +39,10 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
   - TSV edge list (`dependencies.tsv` by default)
   - Mermaid module dependency diagram (`graph.mmd`, optional)
   - PlantUML module dependency diagram (`graph.puml`, optional)
+  - Markdown analysis report (`analysis-report.md`, optional)
   - Marker-based Markdown diagram injection (optional)
 - MCP POC runtime with stdio JSON tool protocol and allowlisted operations
+  - includes secret operations: `secrets.scan`, `secrets.list`
 - Live filesystem watch mode with debounce
 - Optional Bubble Tea terminal UI for live issue monitoring
 - Grammar provenance manifest verification (`grammars/manifest.toml`) with `--verify-grammars`
@@ -49,6 +53,7 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - `--once`: run initial scan + analysis once, then exit
 - `--trace <from-module> <to-module>`: print shortest internal import chain, then exit
 - `--impact <file-or-module>`: print direct/transitive importer impact, then exit
+- `--report-md`: force markdown report generation (`output.markdown` path or `analysis-report.md`)
 - `--ui`: run watch mode with Bubble Tea UI
 - MCP mode: set `[mcp].enabled=true` in config to start the MCP runtime (CLI modes are disabled)
 - OpenAPI conversion uses `mcp.openapi_spec_path` or `mcp.openapi_spec_url` (mutually exclusive), validates with `kin-openapi`, and applies `mcp.operation_allowlist`
@@ -120,7 +125,7 @@ go run ./cmd/circular --ui
 [mcp]
 enabled = true
 allow_mutations = true
-operation_allowlist = ["scan.run", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.select_project", "query.trends"]
+operation_allowlist = ["scan.run", "secrets.scan", "secrets.list", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.select_project", "query.trends", "report.generate_markdown"]
 ```
 
 2. Send a request over stdio:
@@ -144,14 +149,21 @@ go run ./cmd/circular --config data/config/circular.toml --once
 
 ## Diagram Scope
 
-Current Mermaid and PlantUML outputs are module-level dependency diagrams with cycle and architecture-violation annotations.
+Mermaid and PlantUML outputs support dedicated diagram modes:
+- dependency view (default)
+- architecture view (`output.diagrams.architecture=true`)
+- component view (`output.diagrams.component=true`)
+- flow view (`output.diagrams.flow=true`)
 
 Dedicated architecture/component/flow diagram modes are tracked in:
 - `docs/plans/diagram-expansion-plan.md`
 
 Note:
-- `output.diagrams.architecture=true` switches Mermaid/PlantUML to dedicated layer-level architecture diagrams.
-- `output.diagrams.component` and `output.diagrams.flow` are reserved and currently return not-implemented errors.
+- Multiple modes can be enabled together under `[output.diagrams]`.
+- When multiple modes are enabled, mode-suffixed diagram files are written (for example, `graph-dependency.mmd`, `graph-flow.puml`).
+- `output.diagrams.component_config.show_internal=true` adds definition-level symbol nodes/links in component diagrams.
+- `output.diagrams.flow_config.entry_points` and `max_depth` bound traversal for flow diagrams.
+- Mermaid output is enabled by default; PlantUML is disabled by default unless explicitly enabled.
 
 ## CLI
 
@@ -166,6 +178,7 @@ Flags:
 - `--ui` start terminal UI mode
 - `--trace` print shortest import chain from one module to another, then exit
 - `--impact` analyze direct/transitive impact for a file path or module, then exit
+- `--report-md` generate markdown analysis report output
 - `--verify-grammars` verify enabled language grammar artifacts and exit
 - `--include-tests` include test files in analysis (default excludes tests)
 - `--verbose` enable debug logs
@@ -231,7 +244,7 @@ openapi_spec_url = ""
 server_name = "circular"
 server_version = "1.0.0"
 exposed_tool_name = ""
-operation_allowlist = ["scan.run", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.select_project", "query.trends"]
+operation_allowlist = ["scan.run", "secrets.scan", "secrets.list", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.select_project", "query.trends", "report.generate_markdown"]
 max_response_items = 500
 request_timeout = "30s"
 allow_mutations = false
@@ -261,11 +274,36 @@ imports = ["fmt", "sort", "strings"]
 [watch]
 debounce = "1s"
 
+[secrets]
+enabled = false
+entropy_threshold = 4.0
+min_token_length = 20
+
+[[secrets.patterns]]
+name = "custom-token"
+regex = "CTK_[A-Za-z0-9]{20}"
+severity = "medium"
+
+[secrets.exclude]
+dirs = []
+files = []
+
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
 mermaid = "graph.mmd"
-plantuml = "graph.puml"
+# plantuml = "graph.puml"
+markdown = "analysis-report.md"
+
+[output.formats]
+mermaid = true
+plantuml = false
+
+[output.report]
+verbosity = "standard"
+table_of_contents = true
+collapsible_sections = true
+include_mermaid = false
 
 [output.diagrams]
 architecture = false
@@ -327,6 +365,13 @@ allow = ["core"]
   - `From`, `To`, `File`, `Line`, `Column`
 - Mermaid graph (optional `graph.mmd`) using `flowchart LR`
 - PlantUML graph (optional `graph.puml`) using component/package view
+- Markdown report (optional `analysis-report.md`) with frontmatter, summary table, and issue sections
+- Mermaid/PlantUML diagram mode is controlled by `[output.diagrams]`:
+  - default dependency graph
+  - architecture layer graph (`architecture=true`)
+  - component relationship graph (`component=true`)
+  - bounded flow graph (`flow=true`)
+- Multiple enabled modes write mode-suffixed files based on configured output path(s).
 - Optional markdown diagram injection via `[[output.update_markdown]]` markers:
   - `<!-- circular:<marker>:start -->`
   - `<!-- circular:<marker>:end -->`
@@ -334,6 +379,8 @@ allow = ["core"]
   - `Type`, `File`, `Language`, `Module`, `Alias`, `Item`, `Line`, `Column`, `Confidence`
 - TSV architecture violation rows appended when findings exist:
   - `Type`, `Rule`, `FromModule`, `FromLayer`, `ToModule`, `ToLayer`, `File`, `Line`, `Column`
+- TSV secret rows appended when findings exist (masked value only):
+  - `Type`, `Kind`, `Severity`, `Value`, `Entropy`, `Confidence`, `File`, `Line`, `Column`
 - row ordering in DOT/TSV is map-iteration based and not guaranteed stable
 - DOT module labels may include metrics:
   - `d=<depth> in=<fan-in> out=<fan-out>`
@@ -657,5 +704,5 @@ AI audit reports are in `docs/reviews/`:
 - `internal/engine/resolver/drivers/` language-specific resolver drivers
 - `internal/core/watcher/` fsnotify watch + debounce
 - `internal/mcp/runtime/` MCP runtime bootstrap + project context sync
-- `internal/ui/report/` DOT/TSV/Mermaid/PlantUML generators + markdown injection
-- `internal/ui/report/formats/` report format generators (DOT/TSV/Mermaid/PlantUML)
+- `internal/ui/report/` DOT/TSV/Mermaid/PlantUML/Markdown generators + markdown injection
+- `internal/ui/report/formats/` report format generators (DOT/TSV/Mermaid/PlantUML/Markdown)

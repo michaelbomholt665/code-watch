@@ -50,7 +50,7 @@ config_path = "circular.toml"
 server_name = "circular"
 server_version = "1.0.0"
 exposed_tool_name = ""
-operation_allowlist = ["scan.run", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.generate_config", "system.generate_script", "system.select_project", "system.watch", "query.trends"]
+operation_allowlist = ["scan.run", "secrets.scan", "secrets.list", "graph.cycles", "graph.sync_diagrams", "query.modules", "query.module_details", "query.trace", "system.sync_config", "system.generate_config", "system.generate_script", "system.select_project", "system.watch", "query.trends", "report.generate_markdown"]
 max_response_items = 500
 request_timeout = "30s"
 allow_mutations = false
@@ -77,11 +77,36 @@ imports = ["fmt", "sort", "strings"]
 [watch]
 debounce = "500ms"
 
+[secrets]
+enabled = false
+entropy_threshold = 4.0
+min_token_length = 20
+
+[[secrets.patterns]]
+name = "custom-token"
+regex = "CTK_[A-Za-z0-9]{20}"
+severity = "medium"
+
+[secrets.exclude]
+dirs = []
+files = []
+
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
 mermaid = "graph.mmd"
-plantuml = "graph.puml"
+# plantuml = "graph.puml"
+markdown = "analysis-report.md"
+
+[output.formats]
+mermaid = true
+plantuml = false
+
+[output.report]
+verbosity = "standard"
+table_of_contents = true
+collapsible_sections = true
+include_mermaid = false
 
 [output.diagrams]
 architecture = false
@@ -168,7 +193,7 @@ top_complexity = 5
 - `mcp.exposed_tool_name` (`string`)
 - optional single-tool exposure; must not contain whitespace
 - `mcp.operation_allowlist` (`[]string`)
-- explicit operation allowlist for MCP exposure (examples: `scan.run`, `graph.cycles`, `graph.sync_diagrams`, `system.generate_config`, `system.generate_script`, `system.watch`)
+- explicit operation allowlist for MCP exposure (examples: `scan.run`, `secrets.scan`, `secrets.list`, `graph.cycles`, `graph.sync_diagrams`, `system.generate_config`, `system.generate_script`, `system.watch`, `report.generate_markdown`)
 - required when `mcp.enabled=true` if `mcp.exposed_tool_name` is empty
 - legacy aliases accepted at runtime: `scan_once`, `detect_cycles`, `trace_import_chain`, `generate_reports`, `system.sync_outputs`
 - `mcp.max_response_items` (`int`)
@@ -208,15 +233,38 @@ top_complexity = 5
 - keep lists minimal and prefer project-specific overrides when embedding MCP configs
 - `watch.debounce` (`duration`)
 - defaults to `500ms`
+- `secrets.enabled` (`bool`)
+- enables/disables hardcoded secret scanning during `ProcessFile`
+- `secrets.entropy_threshold` (`float`)
+- Shannon entropy threshold used by high-entropy token checks
+- bounds: `1.0` to `8.0` (default `4.0`)
+- `secrets.min_token_length` (`int`)
+- minimum token length for entropy/context candidate strings
+- bounds: `8` to `256` (default `20`)
+- `secrets.patterns` (`[]table`)
+- custom regex rules with `name`, `regex`, optional `severity`
+- regex values are compile-validated at startup
+- `secrets.exclude.dirs` (`[]string`)
+- directory basename globs skipped by secret scanning
+- `secrets.exclude.files` (`[]string`)
+- file basename globs skipped by secret scanning
 - diagram output controls currently supported in schema:
-- `output.dot`, `output.tsv`, `output.mermaid`, `output.plantuml`
+- `output.dot`, `output.tsv`, `output.mermaid`, `output.plantuml`, `output.markdown`
+- `output.formats.mermaid`, `output.formats.plantuml`
+- `output.report.verbosity`, `output.report.table_of_contents`, `output.report.collapsible_sections`, `output.report.include_mermaid`
 - `output.diagrams.architecture`, `output.diagrams.component`, `output.diagrams.flow`
 - `output.diagrams.flow_config.entry_points`, `output.diagrams.flow_config.max_depth`
 - `output.diagrams.component_config.show_internal`
 - `output.paths.*`, `output.update_markdown`
 - current wiring:
-- `output.diagrams.architecture=true` enables dedicated architecture diagrams for Mermaid/PlantUML outputs
-- `output.diagrams.component=true` and `output.diagrams.flow=true` are parsed/validated but not implemented yet
+- `output.diagrams.architecture=true` enables dedicated architecture diagrams (layer-level)
+- `output.diagrams.component=true` enables component diagrams (module internals + symbol-reference overlays)
+- `output.diagrams.flow=true` enables bounded flow diagrams rooted at configured entry points
+- multiple diagram modes may be enabled together
+- when multiple modes are enabled, output file names are mode-suffixed (`-dependency`, `-architecture`, `-component`, `-flow`)
+- Mermaid is enabled by default; PlantUML is disabled by default unless `output.formats.plantuml=true`
+- `output.diagrams.component_config.show_internal=true` includes definition-level symbol nodes
+- `output.diagrams.flow_config.max_depth` limits traversal depth from entry points
 - `output.*`, `alerts.*`, `architecture.*`
 - unchanged semantics from prior versions
 
@@ -246,6 +294,7 @@ Config load fails when:
 - MCP OpenAPI spec path and URL are both set
 - MCP response/timeout limits exceed bounds
 - output markdown targets are malformed
+- `output.report.verbosity` is not `summary|standard|detailed`
 - `output.diagrams.flow_config.max_depth < 1`
 - `output.diagrams.flow_config.entry_points` contains empty or duplicate values
 - architecture rules violate layer/rule constraints

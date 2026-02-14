@@ -42,7 +42,7 @@
 ## `internal/mcp/adapters`
 
 - bridges MCP tool inputs to `internal/core/app` and `internal/data/query`
-- keeps domain calls centralized for scan/query/graph operations
+- keeps domain calls centralized for scan/query/graph/report operations
 
 ## `internal/mcp/tools/scan`
 
@@ -60,6 +60,10 @@
 
 - handlers for output/config sync and project selection
 
+## `internal/mcp/tools/report`
+
+- handlers for markdown report generation (`report.generate_markdown`)
+
 ## `internal/core/app`
 
 - central orchestrator over parser/graph/resolver/output/watcher
@@ -68,9 +72,10 @@
 - registers available extractors for enabled languages
 - performs initial scan and incremental change handling
 - maintains incremental caches for unresolved refs and unused imports
+- runs optional secret detection and publishes aggregate secret counts in UI update payloads
 - computes metrics/hotspots/architecture violations
 - supports trace and impact commands
-- writes DOT/TSV outputs
+- writes DOT/TSV/Mermaid/PlantUML/Markdown outputs
 
 ## `internal/data/history`
 
@@ -153,6 +158,12 @@
 - unused-import detection with confidence levels
 - unused-import checks disabled for unsupported languages to avoid noisy output
 
+## `internal/engine/secrets`
+
+- secret detector for hardcoded credential heuristics
+- combines built-in regex signatures, custom regex patterns, context-sensitive assignment checks, and entropy scoring
+- returns location-scoped findings attached to `parser.File.Secrets`
+
 ## `internal/engine/resolver/drivers`
 
 - language-specific module-name and import-resolution drivers (`go`, `python`, `javascript`, `java`, `rust`)
@@ -179,4 +190,4 @@
 
 ## `internal/ui/report/formats`
 
-- concrete format generators: `DOTGenerator`, `TSVGenerator`, `MermaidGenerator`, `PlantUMLGenerator`
+- concrete format generators: `DOTGenerator`, `TSVGenerator`, `MermaidGenerator`, `PlantUMLGenerator`, `MarkdownGenerator`

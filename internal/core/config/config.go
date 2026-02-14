@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -27,6 +28,7 @@ type Config struct {
 	Output              Output              `toml:"output"`
 	Alerts              Alerts              `toml:"alerts"`
 	Architecture        Architecture        `toml:"architecture"`
+	Secrets             Secrets             `toml:"secrets"`
 }
 
 type Paths struct {
@@ -108,9 +110,24 @@ type Output struct {
 	TSV            string              `toml:"tsv"`
 	Mermaid        string              `toml:"mermaid"`
 	PlantUML       string              `toml:"plantuml"`
+	Markdown       string              `toml:"markdown"`
+	Formats        DiagramFormats      `toml:"formats"`
 	Diagrams       DiagramOutput       `toml:"diagrams"`
+	Report         ReportOutput        `toml:"report"`
 	UpdateMarkdown []MarkdownInjection `toml:"update_markdown"`
 	Paths          OutputPaths         `toml:"paths"`
+}
+
+type ReportOutput struct {
+	Verbosity           string `toml:"verbosity"`
+	TableOfContents     *bool  `toml:"table_of_contents"`
+	CollapsibleSections *bool  `toml:"collapsible_sections"`
+	IncludeMermaid      *bool  `toml:"include_mermaid"`
+}
+
+type DiagramFormats struct {
+	Mermaid  *bool `toml:"mermaid"`
+	PlantUML *bool `toml:"plantuml"`
 }
 
 type DiagramOutput struct {
@@ -164,6 +181,25 @@ type ArchitectureRule struct {
 	Allow []string `toml:"allow"`
 }
 
+type Secrets struct {
+	Enabled          bool                 `toml:"enabled"`
+	EntropyThreshold float64              `toml:"entropy_threshold"`
+	MinTokenLength   int                  `toml:"min_token_length"`
+	Patterns         []SecretPattern      `toml:"patterns"`
+	Exclude          SecretExcludePattern `toml:"exclude"`
+}
+
+type SecretPattern struct {
+	Name     string `toml:"name"`
+	Regex    string `toml:"regex"`
+	Severity string `toml:"severity"`
+}
+
+type SecretExcludePattern struct {
+	Dirs  []string `toml:"dirs"`
+	Files []string `toml:"files"`
+}
+
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -198,6 +234,9 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 	if err := validateLanguages(&cfg); err != nil {
+		return nil, err
+	}
+	if err := validateSecrets(&cfg); err != nil {
 		return nil, err
 	}
 
@@ -295,8 +334,32 @@ func applyDefaults(cfg *Config) {
 	if strings.TrimSpace(cfg.Output.Paths.DiagramsDir) == "" {
 		cfg.Output.Paths.DiagramsDir = "docs/diagrams"
 	}
+	if strings.TrimSpace(cfg.Output.Mermaid) == "" {
+		cfg.Output.Mermaid = "graph.mmd"
+	}
 	if cfg.Output.Diagrams.FlowConfig.MaxDepth == 0 {
 		cfg.Output.Diagrams.FlowConfig.MaxDepth = 8
+	}
+	if strings.TrimSpace(cfg.Output.Report.Verbosity) == "" {
+		cfg.Output.Report.Verbosity = "standard"
+	}
+	if cfg.Output.Report.TableOfContents == nil {
+		enabled := true
+		cfg.Output.Report.TableOfContents = &enabled
+	}
+	if cfg.Output.Report.CollapsibleSections == nil {
+		enabled := true
+		cfg.Output.Report.CollapsibleSections = &enabled
+	}
+	if cfg.Output.Report.IncludeMermaid == nil {
+		enabled := false
+		cfg.Output.Report.IncludeMermaid = &enabled
+	}
+	if cfg.Secrets.EntropyThreshold <= 0 {
+		cfg.Secrets.EntropyThreshold = 4.0
+	}
+	if cfg.Secrets.MinTokenLength <= 0 {
+		cfg.Secrets.MinTokenLength = 20
 	}
 }
 
@@ -507,6 +570,10 @@ func validateOutput(cfg *Config) error {
 	if strings.TrimSpace(cfg.Output.Paths.DiagramsDir) == "" {
 		return fmt.Errorf("output.paths.diagrams_dir must not be empty")
 	}
+	verbosity := strings.ToLower(strings.TrimSpace(cfg.Output.Report.Verbosity))
+	if verbosity != "summary" && verbosity != "standard" && verbosity != "detailed" {
+		return fmt.Errorf("output.report.verbosity must be one of: summary, standard, detailed")
+	}
 	if cfg.Output.Diagrams.FlowConfig.MaxDepth < 1 {
 		return fmt.Errorf("output.diagrams.flow_config.max_depth must be >= 1")
 	}
@@ -546,6 +613,73 @@ func validateOutput(cfg *Config) error {
 		seen[key] = true
 	}
 	return nil
+}
+
+func validateSecrets(cfg *Config) error {
+	if cfg.Secrets.EntropyThreshold < 1.0 || cfg.Secrets.EntropyThreshold > 8.0 {
+		return fmt.Errorf("secrets.entropy_threshold must be between 1.0 and 8.0")
+	}
+	if cfg.Secrets.MinTokenLength < 8 || cfg.Secrets.MinTokenLength > 256 {
+		return fmt.Errorf("secrets.min_token_length must be between 8 and 256")
+	}
+
+	seen := make(map[string]bool, len(cfg.Secrets.Patterns))
+	for i, pattern := range cfg.Secrets.Patterns {
+		ref := fmt.Sprintf("secrets.patterns[%d]", i)
+		name := strings.TrimSpace(pattern.Name)
+		if name == "" {
+			return fmt.Errorf("%s.name must not be empty", ref)
+		}
+		if seen[name] {
+			return fmt.Errorf("duplicate secret pattern name %q", name)
+		}
+		seen[name] = true
+
+		expr := strings.TrimSpace(pattern.Regex)
+		if expr == "" {
+			return fmt.Errorf("%s.regex must not be empty", ref)
+		}
+		if _, err := regexp.Compile(expr); err != nil {
+			return fmt.Errorf("%s.regex is invalid: %w", ref, err)
+		}
+	}
+
+	return nil
+}
+
+func (o Output) MermaidEnabled() bool {
+	if o.Formats.Mermaid != nil {
+		return *o.Formats.Mermaid
+	}
+	return true
+}
+
+func (o Output) PlantUMLEnabled() bool {
+	if o.Formats.PlantUML != nil {
+		return *o.Formats.PlantUML
+	}
+	return false
+}
+
+func (r ReportOutput) TableOfContentsEnabled() bool {
+	if r.TableOfContents == nil {
+		return true
+	}
+	return *r.TableOfContents
+}
+
+func (r ReportOutput) CollapsibleSectionsEnabled() bool {
+	if r.CollapsibleSections == nil {
+		return true
+	}
+	return *r.CollapsibleSections
+}
+
+func (r ReportOutput) IncludeMermaidEnabled() bool {
+	if r.IncludeMermaid == nil {
+		return false
+	}
+	return *r.IncludeMermaid
 }
 
 func validateArchitecture(cfg *Config) error {

@@ -9,6 +9,9 @@ type DOTGenerator = formats.DOTGenerator
 type TSVGenerator = formats.TSVGenerator
 type MermaidGenerator = formats.MermaidGenerator
 type PlantUMLGenerator = formats.PlantUMLGenerator
+type MarkdownGenerator = formats.MarkdownGenerator
+type MarkdownReportData = formats.MarkdownReportData
+type MarkdownReportOptions = formats.MarkdownReportOptions
 
 func NewDOTGenerator(g *graph.Graph) *DOTGenerator {
 	return formats.NewDOTGenerator(g)
@@ -24,4 +27,8 @@ func NewMermaidGenerator(g *graph.Graph) *MermaidGenerator {
 
 func NewPlantUMLGenerator(g *graph.Graph) *PlantUMLGenerator {
 	return formats.NewPlantUMLGenerator(g)
+}
+
+func NewMarkdownGenerator() *MarkdownGenerator {
+	return formats.NewMarkdownGenerator()
 }

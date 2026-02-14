@@ -15,6 +15,12 @@ const (
 	maxTraceDepth   = 100
 )
 
+var allowedReportVerbosity = map[string]bool{
+	"summary":  true,
+	"standard": true,
+	"detailed": true,
+}
+
 func ValidateToolArgs(tool string, raw map[string]any) (any, error) {
 	_, input, err := ParseToolArgs(tool, raw)
 	return input, err
@@ -56,6 +62,22 @@ func ParseToolArgs(tool string, raw map[string]any) (contracts.OperationID, any,
 			return "", nil, err
 		}
 		input.Paths = normalizeStrings(input.Paths, maxPathCount)
+		return operation, input, nil
+	case contracts.OperationSecretsScan:
+		var input contracts.SecretsScanInput
+		if err := decodeParams(params, &input); err != nil {
+			return "", nil, err
+		}
+		input.Paths = normalizeStrings(input.Paths, maxPathCount)
+		return operation, input, nil
+	case contracts.OperationSecretsList:
+		var input contracts.SecretsListInput
+		if err := decodeParams(params, &input); err != nil {
+			return "", nil, err
+		}
+		if input.Limit < 0 || input.Limit > maxLimitValue {
+			return "", nil, invalidLimitError("limit")
+		}
 		return operation, input, nil
 	case contracts.OperationGraphCycles:
 		var input contracts.GraphCyclesInput
@@ -167,6 +189,17 @@ func ParseToolArgs(tool string, raw map[string]any) (contracts.OperationID, any,
 			return "", nil, err
 		}
 		return operation, input, nil
+	case contracts.OperationReportGenMD:
+		var input contracts.ReportGenerateMarkdownInput
+		if err := decodeParams(params, &input); err != nil {
+			return "", nil, err
+		}
+		input.Path = strings.TrimSpace(input.Path)
+		input.Verbosity = strings.ToLower(strings.TrimSpace(input.Verbosity))
+		if input.Verbosity != "" && !allowedReportVerbosity[input.Verbosity] {
+			return "", nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: "verbosity must be one of: summary, standard, detailed"}
+		}
+		return operation, input, nil
 	default:
 		return "", nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: fmt.Sprintf("unsupported operation: %s", operation)}
 	}
@@ -212,7 +245,7 @@ func normalizeFormats(values []string) []string {
 			continue
 		}
 		switch trimmed {
-		case "dot", "tsv", "mermaid", "plantuml":
+		case "dot", "tsv", "mermaid", "plantuml", "markdown":
 			if !seen[trimmed] {
 				seen[trimmed] = true
 				out = append(out, trimmed)

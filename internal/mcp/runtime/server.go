@@ -8,7 +8,9 @@ import (
 	"circular/internal/mcp/registry"
 	"circular/internal/mcp/tools/graph"
 	"circular/internal/mcp/tools/query"
+	"circular/internal/mcp/tools/report"
 	"circular/internal/mcp/tools/scan"
+	"circular/internal/mcp/tools/secrets"
 	"circular/internal/mcp/tools/system"
 	"circular/internal/mcp/transport"
 	"circular/internal/mcp/validate"
@@ -298,6 +300,12 @@ func (s *Server) dispatchOperation(ctx context.Context, raw map[string]any) (any
 	case contracts.OperationScanRun:
 		out, err := scan.HandleRun(ctx, s.adapter, input.(contracts.ScanRunInput))
 		return wrapToolResult(operation, out), err
+	case contracts.OperationSecretsScan:
+		out, err := secrets.HandleScan(ctx, s.adapter, input.(contracts.SecretsScanInput), maxItems)
+		return wrapToolResult(operation, out), err
+	case contracts.OperationSecretsList:
+		out, err := secrets.HandleList(ctx, s.adapter, input.(contracts.SecretsListInput), maxItems)
+		return wrapToolResult(operation, out), err
 	case contracts.OperationGraphCycles:
 		out, err := graph.HandleCycles(ctx, s.adapter, input.(contracts.GraphCyclesInput), maxItems)
 		return wrapToolResult(operation, out), err
@@ -330,6 +338,9 @@ func (s *Server) dispatchOperation(ctx context.Context, raw map[string]any) (any
 		return wrapToolResult(operation, out), err
 	case contracts.OperationQueryTrends:
 		out, err := query.HandleTrends(ctx, s.adapter, input.(contracts.QueryTrendsInput), maxItems)
+		return wrapToolResult(operation, out), err
+	case contracts.OperationReportGenMD:
+		out, err := report.HandleGenerateMarkdown(ctx, s.adapter, input.(contracts.ReportGenerateMarkdownInput))
 		return wrapToolResult(operation, out), err
 	default:
 		return nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: fmt.Sprintf("unsupported operation: %s", operation)}

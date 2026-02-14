@@ -31,6 +31,45 @@ func TestParseToolArgs_ScanRun(t *testing.T) {
 	}
 }
 
+func TestParseToolArgs_SecretsScan(t *testing.T) {
+	raw := map[string]any{
+		"operation": string(contracts.OperationSecretsScan),
+		"params": map[string]any{
+			"paths": []any{"./a", "./b", "./a"},
+		},
+	}
+
+	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if op != contracts.OperationSecretsScan {
+		t.Fatalf("expected operation %s, got %s", contracts.OperationSecretsScan, op)
+	}
+
+	scanInput, ok := input.(contracts.SecretsScanInput)
+	if !ok {
+		t.Fatalf("expected SecretsScanInput, got %T", input)
+	}
+	if len(scanInput.Paths) != 2 {
+		t.Fatalf("expected deduped paths, got %v", scanInput.Paths)
+	}
+}
+
+func TestParseToolArgs_SecretsList_InvalidLimit(t *testing.T) {
+	raw := map[string]any{
+		"operation": string(contracts.OperationSecretsList),
+		"params": map[string]any{
+			"limit": 9001,
+		},
+	}
+
+	_, _, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
+
 func TestParseToolArgs_InvalidOperation(t *testing.T) {
 	raw := map[string]any{"operation": "nope"}
 	_, _, err := ParseToolArgs(contracts.ToolNameCircular, raw)
@@ -103,5 +142,31 @@ func TestParseToolArgs_SystemGenerateScript(t *testing.T) {
 	}
 	if op != contracts.OperationSystemGenScript {
 		t.Fatalf("expected operation %s, got %s", contracts.OperationSystemGenScript, op)
+	}
+}
+
+func TestParseToolArgs_ReportGenerateMarkdown(t *testing.T) {
+	raw := map[string]any{
+		"operation": string(contracts.OperationReportGenMD),
+		"params": map[string]any{
+			"write_file": true,
+			"path":       "docs/reports/analysis.md",
+			"verbosity":  "DETAILED",
+		},
+	}
+
+	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if op != contracts.OperationReportGenMD {
+		t.Fatalf("expected operation %s, got %s", contracts.OperationReportGenMD, op)
+	}
+	got, ok := input.(contracts.ReportGenerateMarkdownInput)
+	if !ok {
+		t.Fatalf("expected ReportGenerateMarkdownInput, got %T", input)
+	}
+	if !got.WriteFile || got.Path != "docs/reports/analysis.md" || got.Verbosity != "detailed" {
+		t.Fatalf("unexpected parsed input: %+v", got)
 	}
 }

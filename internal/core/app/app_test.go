@@ -55,7 +55,7 @@ func TestApp(t *testing.T) {
 	}
 
 	// Test GenerateOutputs
-	err = app.GenerateOutputs(nil, nil, nil, nil, nil)
+	err = app.GenerateOutputs(nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +108,7 @@ func TestApp_GenerateOutputs_IncludesUnusedImportRows(t *testing.T) {
 		t.Fatal("expected at least one unused import")
 	}
 
-	if err := app.GenerateOutputs(nil, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(nil, nil, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -122,6 +122,96 @@ func TestApp_GenerateOutputs_IncludesUnusedImportRows(t *testing.T) {
 	}
 	if !strings.Contains(out, "Type\tFile\tLanguage\tModule\tAlias\tItem\tLine\tColumn\tConfidence") {
 		t.Fatalf("expected unused import header in TSV output, got: %s", out)
+	}
+}
+
+func TestApp_ProcessFile_DetectsSecretsWhenEnabled(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "main.go")
+	source := "package main\nconst apiKey = \"AKIA1234567890ABCDEF\"\nfunc main() {}\n"
+	if err := os.WriteFile(filePath, []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/secrets"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Secrets: config.Secrets{
+			Enabled: true,
+		},
+	}
+
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.ProcessFile(filePath); err != nil {
+		t.Fatal(err)
+	}
+
+	parsed, ok := app.Graph.GetFile(filePath)
+	if !ok {
+		t.Fatalf("expected file %q in graph", filePath)
+	}
+	if len(parsed.Secrets) == 0 {
+		t.Fatal("expected detected secrets on parsed file")
+	}
+	if got := app.SecretCount(); got == 0 {
+		t.Fatalf("expected non-zero secret count, got %d", got)
+	}
+
+	update := app.CurrentUpdate()
+	if update.SecretCount == 0 {
+		t.Fatalf("expected non-zero update.SecretCount, got %d", update.SecretCount)
+	}
+}
+
+func TestApp_GenerateOutputs_IncludesSecretRows(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "main.go")
+	source := "package main\nconst apiKey = \"AKIA1234567890ABCDEF\"\nfunc main() {}\n"
+	if err := os.WriteFile(filePath, []byte(source), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/secrettsv"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output: config.Output{
+			TSV: filepath.Join(tmpDir, "dependencies.tsv"),
+		},
+		Secrets: config.Secrets{
+			Enabled: true,
+		},
+	}
+
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.InitialScan(); err != nil {
+		t.Fatal(err)
+	}
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(cfg.Output.TSV)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := string(data)
+	if !strings.Contains(out, "Type\tKind\tSeverity\tValue\tEntropy\tConfidence\tFile\tLine\tColumn") {
+		t.Fatalf("expected secret TSV header in output, got: %s", out)
+	}
+	if !strings.Contains(out, "secret\taws-access-key-id\thigh\tAKIA...CDEF") {
+		t.Fatalf("expected secret row in output, got: %s", out)
 	}
 }
 
@@ -162,6 +252,10 @@ func TestApp_GenerateOutputs_MermaidPlantUMLAndMarkdownInjection(t *testing.T) {
 			TSV:      filepath.Join(tmpDir, "dependencies.tsv"),
 			Mermaid:  filepath.Join(tmpDir, "graph.mmd"),
 			PlantUML: filepath.Join(tmpDir, "graph.puml"),
+			Formats: config.DiagramFormats{
+				Mermaid:  boolPtr(true),
+				PlantUML: boolPtr(true),
+			},
 			UpdateMarkdown: []config.MarkdownInjection{
 				{File: readmePath, Marker: "deps-mermaid", Format: "mermaid"},
 				{File: readmePath, Marker: "deps-plantuml", Format: "plantuml"},
@@ -177,7 +271,7 @@ func TestApp_GenerateOutputs_MermaidPlantUMLAndMarkdownInjection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -210,6 +304,98 @@ func TestApp_GenerateOutputs_MermaidPlantUMLAndMarkdownInjection(t *testing.T) {
 	}
 }
 
+func TestApp_GenerateOutputs_WritesMarkdownReport(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte("package main\nimport \"fmt\"\nfunc main(){}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/md"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output: config.Output{
+			Markdown: "analysis-report.md",
+			Report: config.ReportOutput{
+				IncludeMermaid: boolPtr(true),
+			},
+		},
+	}
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.InitialScan(); err != nil {
+		t.Fatal(err)
+	}
+
+	cycles := app.Graph.DetectCycles()
+	unresolved := app.AnalyzeHallucinations()
+	unused := app.AnalyzeUnusedImports()
+	if err := app.GenerateOutputs(cycles, unresolved, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	reportPath := filepath.Join(tmpDir, "analysis-report.md")
+	data, err := os.ReadFile(reportPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := string(data)
+	if !strings.Contains(out, "# Analysis Report") {
+		t.Fatalf("expected report heading, got: %s", out)
+	}
+	if !strings.Contains(out, "## Executive Summary") {
+		t.Fatalf("expected summary section, got: %s", out)
+	}
+	if !strings.Contains(out, "## Unused Imports") {
+		t.Fatalf("expected unused imports section, got: %s", out)
+	}
+}
+
+func TestApp_GenerateMarkdownReport_WriteFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/mdapi"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output: config.Output{
+			Report: config.ReportOutput{
+				IncludeMermaid: boolPtr(false),
+			},
+		},
+	}
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.InitialScan(); err != nil {
+		t.Fatal(err)
+	}
+	result, err := app.GenerateMarkdownReport(MarkdownReportRequest{
+		WriteFile: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.Written {
+		t.Fatal("expected written=true")
+	}
+	if !strings.HasSuffix(result.Path, "analysis-report.md") {
+		t.Fatalf("expected default report path, got %q", result.Path)
+	}
+	if _, err := os.Stat(result.Path); err != nil {
+		t.Fatalf("expected report file to exist: %v", err)
+	}
+}
+
 func TestApp_GenerateOutputs_DiagramPathsUseDetectedRootAndDiagramsDir(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "app-diagram-paths")
 	if err != nil {
@@ -230,8 +416,21 @@ func TestApp_GenerateOutputs_DiagramPathsUseDetectedRootAndDiagramsDir(t *testin
 		Output: config.Output{
 			Mermaid:  "graph.mmd",
 			PlantUML: "graph.puml",
+			Formats: config.DiagramFormats{
+				Mermaid:  boolPtr(true),
+				PlantUML: boolPtr(true),
+			},
 			Paths: config.OutputPaths{
 				DiagramsDir: "docs/diagrams",
+			},
+		},
+		Architecture: config.Architecture{
+			Enabled: true,
+			Layers: []config.ArchitectureLayer{
+				{Name: "app", Paths: []string{"example.com/multi"}},
+			},
+			Rules: []config.ArchitectureRule{
+				{Name: "app-self", From: "app", Allow: []string{"app"}},
 			},
 		},
 	}
@@ -244,7 +443,7 @@ func TestApp_GenerateOutputs_DiagramPathsUseDetectedRootAndDiagramsDir(t *testin
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -302,7 +501,7 @@ func TestApp_GenerateOutputs_ArchitectureDiagramMode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -316,6 +515,72 @@ func TestApp_GenerateOutputs_ArchitectureDiagramMode(t *testing.T) {
 	}
 	if strings.Contains(out, "(d=") {
 		t.Fatalf("did not expect module-metric labels in architecture mode, got: %s", out)
+	}
+}
+
+func TestApp_GenerateOutputs_ComponentAndFlowDiagramModes(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "a.go"), []byte("package main\nimport \"example.com/flow/modb\"\nfunc main(){modb.Do()}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(tmpDir, "modb"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "modb", "b.go"), []byte("package modb\nfunc Do(){}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/flow"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output: config.Output{
+			Mermaid: filepath.Join(tmpDir, "graph.mmd"),
+			Diagrams: config.DiagramOutput{
+				Component: true,
+				ComponentCfg: config.ComponentDiagramConfig{
+					ShowInternal: true,
+				},
+			},
+		},
+	}
+
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.InitialScan(); err != nil {
+		t.Fatal(err)
+	}
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	componentOut, err := os.ReadFile(cfg.Output.Mermaid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(componentOut), "refs:") {
+		t.Fatalf("expected component diagram edge labels, got: %s", string(componentOut))
+	}
+
+	cfg.Output.Diagrams = config.DiagramOutput{
+		Flow: true,
+		FlowConfig: config.FlowDiagramConfig{
+			EntryPoints: []string{"a.go"},
+			MaxDepth:    4,
+		},
+	}
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+	flowOut, err := os.ReadFile(cfg.Output.Mermaid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(flowOut), "step:0") {
+		t.Fatalf("expected flow step annotation, got: %s", string(flowOut))
 	}
 }
 
@@ -336,22 +601,99 @@ func TestResolveDiagramMode(t *testing.T) {
 		t.Fatalf("expected architecture mode, got %v", mode)
 	}
 
-	_, err = resolveDiagramMode(config.DiagramOutput{Architecture: true, Flow: true})
-	if err == nil {
-		t.Fatal("expected conflict error when multiple modes are enabled")
+	mode, err = resolveDiagramMode(config.DiagramOutput{Component: true})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(err.Error(), "exactly one") {
-		t.Fatalf("unexpected error: %v", err)
+	if mode != diagramModeComponent {
+		t.Fatalf("expected component mode, got %v", mode)
 	}
 
-	_, err = resolveDiagramMode(config.DiagramOutput{Component: true})
-	if err == nil {
-		t.Fatal("expected component not implemented error")
+	mode, err = resolveDiagramMode(config.DiagramOutput{Flow: true})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if !strings.Contains(err.Error(), "not implemented") {
-		t.Fatalf("unexpected error: %v", err)
+	if mode != diagramModeFlow {
+		t.Fatalf("expected flow mode, got %v", mode)
+	}
+
+	mode, err = resolveDiagramMode(config.DiagramOutput{Architecture: true, Flow: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode != diagramModeDependency {
+		t.Fatalf("expected dependency mode when multiple modes enabled, got %v", mode)
+	}
+
+	modes, err := resolveDiagramModes(config.DiagramOutput{Architecture: true, Component: true, Flow: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(modes) != 4 {
+		t.Fatalf("expected 4 modes with dependency baseline, got %d", len(modes))
+	}
+	if modes[0] != diagramModeDependency || modes[1] != diagramModeArchitecture || modes[2] != diagramModeComponent || modes[3] != diagramModeFlow {
+		t.Fatalf("unexpected multi-mode ordering: %#v", modes)
 	}
 }
+
+func TestApp_GenerateOutputs_MultipleDiagramModesCreateSuffixedFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(tmpDir, "main.go"), []byte("package main\nfunc main(){}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte("module example.com/multi"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output: config.Output{
+			Mermaid: "graph.mmd",
+			Diagrams: config.DiagramOutput{
+				Architecture: true,
+				Component:    true,
+				Flow:         true,
+				FlowConfig: config.FlowDiagramConfig{
+					EntryPoints: []string{"main.go"},
+					MaxDepth:    3,
+				},
+			},
+			Paths: config.OutputPaths{
+				DiagramsDir: "docs/diagrams",
+			},
+		},
+		Architecture: config.Architecture{
+			Enabled: true,
+			Layers: []config.ArchitectureLayer{
+				{Name: "app", Paths: []string{"example.com/multi"}},
+			},
+			Rules: []config.ArchitectureRule{
+				{Name: "app-self", From: "app", Allow: []string{"app"}},
+			},
+		},
+	}
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := app.InitialScan(); err != nil {
+		t.Fatal(err)
+	}
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, name := range []string{"graph-dependency.mmd", "graph-architecture.mmd", "graph-component.mmd", "graph-flow.mmd"} {
+		path := filepath.Join(tmpDir, "docs", "diagrams", name)
+		if _, err := os.Stat(path); err != nil {
+			t.Fatalf("expected generated diagram %q: %v", path, err)
+		}
+	}
+}
+
+func boolPtr(v bool) *bool { return &v }
 
 func TestUniqueScanRoots_DeduplicatesRelativeAndAbsolute(t *testing.T) {
 	tmpDir := t.TempDir()

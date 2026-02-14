@@ -12,6 +12,8 @@ type ToolDefinition struct {
 func BuildToolDefinitions() []ToolDefinition {
 	operations := []string{
 		string(contracts.OperationScanRun),
+		string(contracts.OperationSecretsScan),
+		string(contracts.OperationSecretsList),
 		string(contracts.OperationGraphCycles),
 		string(contracts.OperationGraphSyncDiag),
 		string(contracts.OperationQueryModules),
@@ -23,6 +25,7 @@ func BuildToolDefinitions() []ToolDefinition {
 		string(contracts.OperationSystemSelect),
 		string(contracts.OperationSystemWatch),
 		string(contracts.OperationQueryTrends),
+		string(contracts.OperationReportGenMD),
 	}
 
 	return []ToolDefinition{

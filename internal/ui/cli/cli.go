@@ -27,6 +27,7 @@ type cliOptions struct {
 	queryLimit     int
 	includeTests   bool
 	verifyGrammars bool
+	reportMarkdown bool
 	verbose        bool
 	version        bool
 	args           []string
@@ -54,6 +55,7 @@ func parseOptions(args []string) (cliOptions, error) {
 	fs.IntVar(&opts.queryLimit, "query-limit", 0, "Optional limit/depth control for query modes")
 	fs.BoolVar(&opts.includeTests, "include-tests", false, "Include test files in analysis (Go: _test.go, Python: test_*.py)")
 	fs.BoolVar(&opts.verifyGrammars, "verify-grammars", false, "Verify grammar artifacts against grammars/manifest.toml and exit")
+	fs.BoolVar(&opts.reportMarkdown, "report-md", false, "Generate markdown analysis report output (uses output.markdown or analysis-report.md)")
 	fs.BoolVar(&opts.verbose, "verbose", false, "Enable verbose logging")
 	fs.BoolVar(&opts.version, "version", false, "Print version and exit")
 

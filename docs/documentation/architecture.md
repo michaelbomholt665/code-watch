@@ -41,21 +41,23 @@ Main responsibilities:
 - cycle detection
 - unresolved references
 - unused imports
+- secret detection (pattern + entropy/context heuristics)
 - module metrics
 - complexity hotspots
 - architecture rule violations
 - impact analysis
-- emit DOT/TSV outputs
+- emit DOT/TSV/Mermaid/PlantUML/Markdown outputs
 - publish update payloads for UI mode
 
 ## Data Flow
 
 1. `ScanDirectories` discovers registry-enabled files by extension/filename routes (respecting excludes).
 2. `ProcessFile` parses AST and normalizes a `parser.File`.
-3. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
-4. Analyses run against graph snapshots.
-5. Output generators serialize graph + findings.
-6. In watch mode, changed paths trigger `HandleChanges`, which reprocesses affected files and importer chains.
+3. When `[secrets].enabled=true`, `ProcessFile` runs secret detection and attaches findings to `parser.File.Secrets`.
+4. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
+5. Analyses run against graph snapshots.
+6. Output generators serialize graph + findings.
+7. In watch mode, changed paths trigger `HandleChanges`, which reprocesses affected files and importer chains.
 
 ## Module Naming
 
@@ -94,7 +96,7 @@ Update behavior (`internal/core/app.HandleChanges`):
 - `internal/engine/graph`: dependency state + graph algorithms
 - `internal/engine/resolver`: unresolved/unused heuristics
 - `internal/core/watcher`: fsnotify + debounce
-- `internal/ui/report`: DOT/TSV rendering
+- `internal/ui/report`: output rendering (DOT/TSV/Mermaid/PlantUML/Markdown)
 - `internal/mcp/runtime`: MCP startup, allowlist enforcement, stdio dispatch loop
 - `internal/mcp/adapters`: app/query bridge for MCP tool handlers
-- `internal/mcp/tools/*`: operation handlers for scan/query/graph/system operations
+- `internal/mcp/tools/*`: operation handlers for scan/query/graph/system/report operations

@@ -8,7 +8,9 @@ import (
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
+	"circular/internal/engine/secrets"
 	"circular/internal/shared/util"
+	"circular/internal/shared/version"
 	"circular/internal/ui/report"
 	"fmt"
 	"io/fs"
@@ -28,15 +30,32 @@ type Update struct {
 	Hallucinations []resolver.UnresolvedReference
 	ModuleCount    int
 	FileCount      int
+	SecretCount    int
+}
+
+type MarkdownReportRequest struct {
+	OutputPath string
+	WriteFile  bool
+	Verbosity  string
+}
+
+type MarkdownReportResult struct {
+	Markdown string
+	Path     string
+	Written  bool
 }
 
 type App struct {
 	Config       *config.Config
 	Parser       *parser.Parser
 	Graph        *graph.Graph
+	secretEngine *secrets.Detector
 	archEngine   *graph.LayerRuleEngine
 	goModCache   map[string]goModuleCacheEntry
 	IncludeTests bool
+
+	secretExcludeDirs  []glob.Glob
+	secretExcludeFiles []glob.Glob
 
 	updateMu sync.RWMutex
 	onUpdate func(Update)
@@ -71,14 +90,45 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 
+	var secretEngine *secrets.Detector
+	secretExcludeDirs, err := compileGlobs(cfg.Secrets.Exclude.Dirs, "secret exclude dir")
+	if err != nil {
+		return nil, err
+	}
+	secretExcludeFiles, err := compileGlobs(cfg.Secrets.Exclude.Files, "secret exclude file")
+	if err != nil {
+		return nil, err
+	}
+	if cfg.Secrets.Enabled {
+		customPatterns := make([]secrets.PatternConfig, 0, len(cfg.Secrets.Patterns))
+		for _, pattern := range cfg.Secrets.Patterns {
+			customPatterns = append(customPatterns, secrets.PatternConfig{
+				Name:     pattern.Name,
+				Regex:    pattern.Regex,
+				Severity: pattern.Severity,
+			})
+		}
+		secretEngine, err = secrets.NewDetector(secrets.Config{
+			EntropyThreshold: cfg.Secrets.EntropyThreshold,
+			MinTokenLength:   cfg.Secrets.MinTokenLength,
+			Patterns:         customPatterns,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &App{
-		Config:           cfg,
-		Parser:           p,
-		Graph:            graph.NewGraph(),
-		archEngine:       graph.NewLayerRuleEngine(architectureModelFromConfig(cfg.Architecture)),
-		goModCache:       make(map[string]goModuleCacheEntry),
-		unresolvedByFile: make(map[string][]resolver.UnresolvedReference),
-		unusedByFile:     make(map[string][]resolver.UnusedImport),
+		Config:             cfg,
+		Parser:             p,
+		Graph:              graph.NewGraph(),
+		secretEngine:       secretEngine,
+		archEngine:         graph.NewLayerRuleEngine(architectureModelFromConfig(cfg.Architecture)),
+		goModCache:         make(map[string]goModuleCacheEntry),
+		unresolvedByFile:   make(map[string][]resolver.UnresolvedReference),
+		unusedByFile:       make(map[string][]resolver.UnusedImport),
+		secretExcludeDirs:  secretExcludeDirs,
+		secretExcludeFiles: secretExcludeFiles,
 	}, nil
 }
 
@@ -94,6 +144,18 @@ func buildParserRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, er
 	return parser.BuildLanguageRegistry(overrides)
 }
 
+func compileGlobs(patterns []string, label string) ([]glob.Glob, error) {
+	out := make([]glob.Glob, 0, len(patterns))
+	for _, p := range patterns {
+		g, err := glob.Compile(p)
+		if err != nil {
+			return nil, fmt.Errorf("invalid %s pattern %q: %w", label, p, err)
+		}
+		out = append(out, g)
+	}
+	return out, nil
+}
+
 func (a *App) SetUpdateHandler(handler func(Update)) {
 	a.updateMu.Lock()
 	defer a.updateMu.Unlock()
@@ -106,6 +168,7 @@ func (a *App) CurrentUpdate() Update {
 		Hallucinations: a.AnalyzeHallucinations(),
 		ModuleCount:    a.Graph.ModuleCount(),
 		FileCount:      a.Graph.FileCount(),
+		SecretCount:    a.SecretCount(),
 	}
 }
 
@@ -253,9 +316,37 @@ func (a *App) ProcessFile(path string) error {
 			file.Module = moduleName
 		}
 	}
+	if a.secretEngine != nil && !a.shouldSkipSecretScan(path) {
+		file.Secrets = a.secretEngine.Detect(path, content)
+	}
 
 	a.Graph.AddFile(file)
 	return nil
+}
+
+func (a *App) shouldSkipSecretScan(path string) bool {
+	base := filepath.Base(path)
+	for _, g := range a.secretExcludeFiles {
+		if g.Match(base) {
+			return true
+		}
+	}
+
+	dir := filepath.Dir(path)
+	for {
+		name := filepath.Base(dir)
+		for _, g := range a.secretExcludeDirs {
+			if g.Match(name) {
+				return true
+			}
+		}
+		next := filepath.Dir(dir)
+		if next == dir {
+			break
+		}
+		dir = next
+	}
+	return false
 }
 
 func findContainingWatchPath(path string, watchPaths []string) (string, error) {
@@ -327,7 +418,7 @@ func (a *App) HandleChanges(paths []string) {
 	hallucinations := a.AnalyzeHallucinationsIncremental(affectedSet)
 	unusedImports := a.AnalyzeUnusedImportsIncremental(affectedSet)
 
-	if err := a.GenerateOutputs(cycles, unusedImports, metrics, violations, hotspots); err != nil {
+	if err := a.GenerateOutputs(cycles, hallucinations, unusedImports, metrics, violations, hotspots); err != nil {
 		slog.Error("failed to generate outputs", "error", err)
 	}
 
@@ -338,6 +429,7 @@ func (a *App) HandleChanges(paths []string) {
 		Hallucinations: hallucinations,
 		ModuleCount:    a.Graph.ModuleCount(),
 		FileCount:      a.Graph.FileCount(),
+		SecretCount:    a.SecretCount(),
 	})
 
 	if a.Config.Alerts.Beep && (len(cycles) > 0 || len(hallucinations) > 0 || len(unusedImports) > 0 || len(violations) > 0) {
@@ -431,18 +523,19 @@ func (a *App) AnalyzeUnusedImportsIncremental(affectedSet map[string]bool) []res
 
 func (a *App) GenerateOutputs(
 	cycles [][]string,
+	unresolved []resolver.UnresolvedReference,
 	unusedImports []resolver.UnusedImport,
 	metrics map[string]graph.ModuleMetrics,
 	violations []graph.ArchitectureViolation,
 	hotspots []graph.ComplexityHotspot,
 ) error {
 	archModel := architectureModelFromConfig(a.Config.Architecture)
-	diagramMode, err := resolveDiagramMode(a.Config.Output.Diagrams)
+	diagramModes, err := resolveDiagramModes(a.Config.Output.Diagrams)
 	if err != nil {
 		return err
 	}
-	mermaidDiagram := ""
-	plantUMLDiagram := ""
+	mermaidDiagrams := make(map[diagramMode]string, len(diagramModes))
+	plantUMLDiagrams := make(map[diagramMode]string, len(diagramModes))
 	targets, err := a.resolveOutputTargets()
 	if err != nil {
 		return err
@@ -483,20 +576,35 @@ func (a *App) GenerateOutputs(
 			}
 			tsv = strings.TrimRight(tsv, "\n") + "\n\n" + strings.TrimRight(violationsTSV, "\n") + "\n"
 		}
+		allSecrets := a.allSecrets(0)
+		if len(allSecrets) > 0 {
+			secretsTSV, err := tsvGen.GenerateSecrets(allSecrets)
+			if err != nil {
+				return fmt.Errorf("generate secrets TSV block: %w", err)
+			}
+			tsv = strings.TrimRight(tsv, "\n") + "\n\n" + strings.TrimRight(secretsTSV, "\n") + "\n"
+		}
 
 		if err := writeArtifact(targets.TSV, tsv); err != nil {
 			return fmt.Errorf("write TSV output %q: %w", targets.TSV, err)
 		}
 	}
 
-	needMermaid := targets.Mermaid != ""
-	needPlantUML := targets.PlantUML != ""
+	needMermaid := targets.Mermaid != "" && a.Config.Output.MermaidEnabled()
+	needPlantUML := targets.PlantUML != "" && a.Config.Output.PlantUMLEnabled()
+	if targets.Markdown != "" && a.Config.Output.Report.IncludeMermaidEnabled() && a.Config.Output.MermaidEnabled() {
+		needMermaid = true
+	}
 	for _, injection := range a.Config.Output.UpdateMarkdown {
 		switch strings.ToLower(strings.TrimSpace(injection.Format)) {
 		case "mermaid":
-			needMermaid = true
+			if a.Config.Output.MermaidEnabled() {
+				needMermaid = true
+			}
 		case "plantuml":
-			needPlantUML = true
+			if a.Config.Output.PlantUMLEnabled() {
+				needPlantUML = true
+			}
 		}
 	}
 
@@ -504,20 +612,17 @@ func (a *App) GenerateOutputs(
 		mermaidGen := report.NewMermaidGenerator(a.Graph)
 		mermaidGen.SetModuleMetrics(metrics)
 		mermaidGen.SetComplexityHotspots(hotspots)
-		var diagram string
-		switch diagramMode {
-		case diagramModeArchitecture:
-			diagram, err = mermaidGen.GenerateArchitecture(archModel, violations)
-		default:
-			diagram, err = mermaidGen.Generate(cycles, violations, archModel)
-		}
-		if err != nil {
-			return fmt.Errorf("generate Mermaid output: %w", err)
-		}
-		mermaidDiagram = diagram
-		if targets.Mermaid != "" {
-			if err := writeArtifact(targets.Mermaid, mermaidDiagram); err != nil {
-				return fmt.Errorf("write Mermaid output %q: %w", targets.Mermaid, err)
+		for _, mode := range diagramModes {
+			diagram, genErr := generateMermaidByMode(mermaidGen, mode, archModel, cycles, violations, a.Config.Output.Diagrams)
+			if genErr != nil {
+				return fmt.Errorf("generate Mermaid output (%s): %w", mode.Suffix(), genErr)
+			}
+			mermaidDiagrams[mode] = diagram
+			if targets.Mermaid != "" {
+				outPath := diagramOutputPath(targets.Mermaid, mode, len(diagramModes) > 1)
+				if err := writeArtifact(outPath, diagram); err != nil {
+					return fmt.Errorf("write Mermaid output %q: %w", outPath, err)
+				}
 			}
 		}
 	}
@@ -526,38 +631,72 @@ func (a *App) GenerateOutputs(
 		plantUMLGen := report.NewPlantUMLGenerator(a.Graph)
 		plantUMLGen.SetModuleMetrics(metrics)
 		plantUMLGen.SetComplexityHotspots(hotspots)
-		var diagram string
-		switch diagramMode {
-		case diagramModeArchitecture:
-			diagram, err = plantUMLGen.GenerateArchitecture(archModel, violations)
-		default:
-			diagram, err = plantUMLGen.Generate(cycles, violations, archModel)
-		}
-		if err != nil {
-			return fmt.Errorf("generate PlantUML output: %w", err)
-		}
-		plantUMLDiagram = diagram
-		if targets.PlantUML != "" {
-			if err := writeArtifact(targets.PlantUML, plantUMLDiagram); err != nil {
-				return fmt.Errorf("write PlantUML output %q: %w", targets.PlantUML, err)
+		for _, mode := range diagramModes {
+			diagram, genErr := generatePlantUMLByMode(plantUMLGen, mode, archModel, cycles, violations, a.Config.Output.Diagrams)
+			if genErr != nil {
+				return fmt.Errorf("generate PlantUML output (%s): %w", mode.Suffix(), genErr)
+			}
+			plantUMLDiagrams[mode] = diagram
+			if targets.PlantUML != "" {
+				outPath := diagramOutputPath(targets.PlantUML, mode, len(diagramModes) > 1)
+				if err := writeArtifact(outPath, diagram); err != nil {
+					return fmt.Errorf("write PlantUML output %q: %w", outPath, err)
+				}
 			}
 		}
 	}
 
+	injectionMode := preferredInjectionMode(diagramModes)
 	for _, injection := range a.Config.Output.UpdateMarkdown {
 		format := strings.ToLower(strings.TrimSpace(injection.Format))
 		diagram := ""
 		switch format {
 		case "mermaid":
-			diagram = markdownDiagramBlock("mermaid", mermaidDiagram)
+			diagram = markdownDiagramBlock("mermaid", mermaidDiagrams[injectionMode])
 		case "plantuml":
-			diagram = markdownDiagramBlock("plantuml", plantUMLDiagram)
+			diagram = markdownDiagramBlock("plantuml", plantUMLDiagrams[injectionMode])
 		default:
 			continue
 		}
 
 		if err := report.InjectDiagram(injection.File, injection.Marker, diagram); err != nil {
 			return fmt.Errorf("inject %s diagram into %q with marker %q: %w", format, injection.File, injection.Marker, err)
+		}
+	}
+
+	if targets.Markdown != "" {
+		if unresolved == nil {
+			unresolved = a.AnalyzeHallucinations()
+		}
+		root, err := a.resolveOutputRoot()
+		if err != nil {
+			return err
+		}
+		reportGen := report.NewMarkdownGenerator()
+		md, err := reportGen.Generate(report.MarkdownReportData{
+			TotalModules:  a.Graph.ModuleCount(),
+			TotalFiles:    a.Graph.FileCount(),
+			Cycles:        cycles,
+			Unresolved:    unresolved,
+			UnusedImports: unusedImports,
+			Violations:    violations,
+			Hotspots:      hotspots,
+		}, report.MarkdownReportOptions{
+			ProjectName:         filepath.Base(root),
+			ProjectRoot:         root,
+			Version:             version.Version,
+			GeneratedAt:         time.Now().UTC(),
+			Verbosity:           a.Config.Output.Report.Verbosity,
+			TableOfContents:     a.Config.Output.Report.TableOfContentsEnabled(),
+			CollapsibleSections: a.Config.Output.Report.CollapsibleSectionsEnabled(),
+			IncludeMermaid:      a.Config.Output.Report.IncludeMermaidEnabled(),
+			MermaidDiagram:      mermaidDiagrams[preferredInjectionMode(diagramModes)],
+		})
+		if err != nil {
+			return fmt.Errorf("generate markdown report: %w", err)
+		}
+		if err := writeArtifact(targets.Markdown, md); err != nil {
+			return fmt.Errorf("write markdown report %q: %w", targets.Markdown, err)
 		}
 	}
 
@@ -569,33 +708,117 @@ type diagramMode int
 const (
 	diagramModeDependency diagramMode = iota
 	diagramModeArchitecture
+	diagramModeComponent
+	diagramModeFlow
 )
 
 func resolveDiagramMode(diagrams config.DiagramOutput) (diagramMode, error) {
-	enabled := 0
-	if diagrams.Architecture {
-		enabled++
+	modes, err := resolveDiagramModes(diagrams)
+	if err != nil {
+		return diagramModeDependency, err
 	}
-	if diagrams.Component {
-		enabled++
-	}
-	if diagrams.Flow {
-		enabled++
-	}
-
-	if enabled == 0 {
+	if len(modes) == 0 {
 		return diagramModeDependency, nil
 	}
-	if enabled > 1 {
-		return diagramModeDependency, fmt.Errorf("output.diagrams supports one mode at a time; set exactly one of architecture, component, or flow")
+	return modes[0], nil
+}
+
+func resolveDiagramModes(diagrams config.DiagramOutput) ([]diagramMode, error) {
+	modes := make([]diagramMode, 0, 4)
+	selected := 0
+	if diagrams.Architecture {
+		selected++
+		modes = append(modes, diagramModeArchitecture)
 	}
 	if diagrams.Component {
-		return diagramModeDependency, fmt.Errorf("output.diagrams.component is not implemented yet")
+		selected++
+		modes = append(modes, diagramModeComponent)
 	}
 	if diagrams.Flow {
-		return diagramModeDependency, fmt.Errorf("output.diagrams.flow is not implemented yet")
+		selected++
+		modes = append(modes, diagramModeFlow)
 	}
-	return diagramModeArchitecture, nil
+	if selected == 0 {
+		return []diagramMode{diagramModeDependency}, nil
+	}
+	if selected > 1 {
+		return append([]diagramMode{diagramModeDependency}, modes...), nil
+	}
+	return modes, nil
+}
+
+func (m diagramMode) Suffix() string {
+	switch m {
+	case diagramModeArchitecture:
+		return "architecture"
+	case diagramModeComponent:
+		return "component"
+	case diagramModeFlow:
+		return "flow"
+	default:
+		return "dependency"
+	}
+}
+
+func preferredInjectionMode(modes []diagramMode) diagramMode {
+	if len(modes) == 0 {
+		return diagramModeDependency
+	}
+	for _, mode := range modes {
+		if mode == diagramModeDependency {
+			return mode
+		}
+	}
+	return modes[0]
+}
+
+func diagramOutputPath(base string, mode diagramMode, suffixOutput bool) string {
+	if !suffixOutput {
+		return base
+	}
+	ext := filepath.Ext(base)
+	stem := strings.TrimSuffix(base, ext)
+	return stem + "-" + mode.Suffix() + ext
+}
+
+func generateMermaidByMode(
+	gen *report.MermaidGenerator,
+	mode diagramMode,
+	archModel graph.ArchitectureModel,
+	cycles [][]string,
+	violations []graph.ArchitectureViolation,
+	diagrams config.DiagramOutput,
+) (string, error) {
+	switch mode {
+	case diagramModeArchitecture:
+		return gen.GenerateArchitecture(archModel, violations)
+	case diagramModeComponent:
+		return gen.GenerateComponent(archModel, diagrams.ComponentCfg.ShowInternal)
+	case diagramModeFlow:
+		return gen.GenerateFlow(diagrams.FlowConfig.EntryPoints, diagrams.FlowConfig.MaxDepth)
+	default:
+		return gen.Generate(cycles, violations, archModel)
+	}
+}
+
+func generatePlantUMLByMode(
+	gen *report.PlantUMLGenerator,
+	mode diagramMode,
+	archModel graph.ArchitectureModel,
+	cycles [][]string,
+	violations []graph.ArchitectureViolation,
+	diagrams config.DiagramOutput,
+) (string, error) {
+	switch mode {
+	case diagramModeArchitecture:
+		return gen.GenerateArchitecture(archModel, violations)
+	case diagramModeComponent:
+		return gen.GenerateComponent(archModel, diagrams.ComponentCfg.ShowInternal)
+	case diagramModeFlow:
+		return gen.GenerateFlow(diagrams.FlowConfig.EntryPoints, diagrams.FlowConfig.MaxDepth)
+	default:
+		return gen.Generate(cycles, violations, archModel)
+	}
 }
 
 type outputTargets struct {
@@ -603,20 +826,14 @@ type outputTargets struct {
 	TSV      string
 	Mermaid  string
 	PlantUML string
+	Markdown string
 }
 
 func (a *App) resolveOutputTargets() (outputTargets, error) {
-	cwd, err := os.Getwd()
+	root, err := a.resolveOutputRoot()
 	if err != nil {
 		return outputTargets{}, err
 	}
-
-	paths, err := config.ResolvePaths(a.Config, cwd)
-	if err != nil {
-		return outputTargets{}, fmt.Errorf("resolve output root: %w", err)
-	}
-	root := paths.OutputRoot
-
 	diagramsDir := strings.TrimSpace(a.Config.Output.Paths.DiagramsDir)
 	if diagramsDir == "" {
 		diagramsDir = "docs/diagrams"
@@ -624,14 +841,27 @@ func (a *App) resolveOutputTargets() (outputTargets, error) {
 	if !filepath.IsAbs(diagramsDir) {
 		diagramsDir = filepath.Join(root, diagramsDir)
 	}
-
 	targets := outputTargets{
 		DOT:      resolveOutputPath(strings.TrimSpace(a.Config.Output.DOT), root),
 		TSV:      resolveOutputPath(strings.TrimSpace(a.Config.Output.TSV), root),
 		Mermaid:  resolveDiagramPath(strings.TrimSpace(a.Config.Output.Mermaid), root, diagramsDir),
 		PlantUML: resolveDiagramPath(strings.TrimSpace(a.Config.Output.PlantUML), root, diagramsDir),
+		Markdown: resolveOutputPath(strings.TrimSpace(a.Config.Output.Markdown), root),
 	}
 	return targets, nil
+}
+
+func (a *App) resolveOutputRoot() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	paths, err := config.ResolvePaths(a.Config, cwd)
+	if err != nil {
+		return "", fmt.Errorf("resolve output root: %w", err)
+	}
+	return paths.OutputRoot, nil
 }
 
 func resolveOutputPath(path, root string) string {
@@ -701,6 +931,115 @@ func (a *App) BuildQueryService(historyStore interface {
 	return query.NewService(a.Graph, historyStore, projectKey)
 }
 
+func (a *App) SecretCount() int {
+	total := 0
+	for _, file := range a.Graph.GetAllFiles() {
+		total += len(file.Secrets)
+	}
+	return total
+}
+
+func (a *App) allSecrets(limit int) []parser.Secret {
+	all := make([]parser.Secret, 0)
+	for _, file := range a.Graph.GetAllFiles() {
+		if file == nil || len(file.Secrets) == 0 {
+			continue
+		}
+		all = append(all, file.Secrets...)
+	}
+	sort.Slice(all, func(i, j int) bool {
+		if all[i].Location.File != all[j].Location.File {
+			return all[i].Location.File < all[j].Location.File
+		}
+		if all[i].Location.Line != all[j].Location.Line {
+			return all[i].Location.Line < all[j].Location.Line
+		}
+		if all[i].Location.Column != all[j].Location.Column {
+			return all[i].Location.Column < all[j].Location.Column
+		}
+		return all[i].Kind < all[j].Kind
+	})
+	if limit > 0 && len(all) > limit {
+		return append([]parser.Secret(nil), all[:limit]...)
+	}
+	return all
+}
+
+func (a *App) GenerateMarkdownReport(req MarkdownReportRequest) (MarkdownReportResult, error) {
+	cycles := a.Graph.DetectCycles()
+	metrics := a.Graph.ComputeModuleMetrics()
+	hotspots := a.Graph.TopComplexity(a.Config.Architecture.TopComplexity)
+	violations := a.ArchitectureViolations()
+	unresolved := a.AnalyzeHallucinations()
+	unused := a.AnalyzeUnusedImports()
+
+	root, err := a.resolveOutputRoot()
+	if err != nil {
+		return MarkdownReportResult{}, err
+	}
+
+	var mermaidDiagram string
+	if a.Config.Output.Report.IncludeMermaidEnabled() && a.Config.Output.MermaidEnabled() {
+		mermaidGen := report.NewMermaidGenerator(a.Graph)
+		mermaidGen.SetModuleMetrics(metrics)
+		mermaidGen.SetComplexityHotspots(hotspots)
+		mermaidDiagram, err = mermaidGen.Generate(cycles, violations, architectureModelFromConfig(a.Config.Architecture))
+		if err != nil {
+			return MarkdownReportResult{}, fmt.Errorf("generate mermaid diagram for markdown report: %w", err)
+		}
+	}
+
+	verbosity := strings.TrimSpace(req.Verbosity)
+	if verbosity == "" {
+		verbosity = a.Config.Output.Report.Verbosity
+	}
+	md, err := report.NewMarkdownGenerator().Generate(report.MarkdownReportData{
+		TotalModules:  a.Graph.ModuleCount(),
+		TotalFiles:    a.Graph.FileCount(),
+		Cycles:        cycles,
+		Unresolved:    unresolved,
+		UnusedImports: unused,
+		Violations:    violations,
+		Hotspots:      hotspots,
+	}, report.MarkdownReportOptions{
+		ProjectName:         filepath.Base(root),
+		ProjectRoot:         root,
+		Version:             version.Version,
+		GeneratedAt:         time.Now().UTC(),
+		Verbosity:           verbosity,
+		TableOfContents:     a.Config.Output.Report.TableOfContentsEnabled(),
+		CollapsibleSections: a.Config.Output.Report.CollapsibleSectionsEnabled(),
+		IncludeMermaid:      a.Config.Output.Report.IncludeMermaidEnabled(),
+		MermaidDiagram:      mermaidDiagram,
+	})
+	if err != nil {
+		return MarkdownReportResult{}, fmt.Errorf("generate markdown report: %w", err)
+	}
+
+	outPath := strings.TrimSpace(req.OutputPath)
+	if outPath == "" {
+		outPath = strings.TrimSpace(a.Config.Output.Markdown)
+	}
+	if outPath == "" && req.WriteFile {
+		outPath = "analysis-report.md"
+	}
+	if outPath != "" && !filepath.IsAbs(outPath) {
+		outPath = filepath.Join(root, outPath)
+	}
+
+	result := MarkdownReportResult{Markdown: md, Path: outPath}
+	if req.WriteFile || outPath != "" {
+		if outPath == "" {
+			return MarkdownReportResult{}, fmt.Errorf("output path is required when write_file=true")
+		}
+		if err := writeArtifact(outPath, md); err != nil {
+			return MarkdownReportResult{}, fmt.Errorf("write markdown report %q: %w", outPath, err)
+		}
+		result.Written = true
+	}
+	return result, nil
+}
+
 func (a *App) PrintSummary(
 	fileCount, moduleCount int,
 	duration time.Duration,
@@ -747,6 +1086,22 @@ func (a *App) PrintSummary(
 		}
 	} else {
 		fmt.Println("✅ No unused imports found.")
+	}
+
+	secretCount := a.SecretCount()
+	if secretCount > 0 {
+		fmt.Printf("🔐 FOUND %d POTENTIAL SECRETS\n", secretCount)
+		for _, finding := range a.allSecrets(5) {
+			fmt.Printf("   %s [%s] %s:%d (%s)\n",
+				finding.Kind,
+				finding.Severity,
+				finding.Location.File,
+				finding.Location.Line,
+				secrets.MaskValue(finding.Value),
+			)
+		}
+	} else {
+		fmt.Println("✅ No hardcoded secrets found.")
 	}
 
 	if len(metrics) > 0 {

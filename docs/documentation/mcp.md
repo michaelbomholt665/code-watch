@@ -53,6 +53,36 @@ Result:
 - `duration_ms` (`int`)
 - `warnings` (`[]string`, optional)
 
+### `secrets.scan`
+
+Runs a scan (full or path-scoped) and returns detected secret findings with masked values.
+
+Params:
+- `paths` (`[]string`, optional)
+
+Result:
+- `files_scanned` (`int`)
+- `secret_count` (`int`)
+- `findings` (`[]SecretFinding`, optional)
+- `warnings` (`[]string`, optional)
+
+`SecretFinding` fields:
+- `kind`, `severity`
+- `value_masked` (masked value, never raw secret)
+- `entropy`, `confidence`
+- `file`, `line`, `column`
+
+### `secrets.list`
+
+Lists currently detected secrets from in-memory graph state.
+
+Params:
+- `limit` (`int`, optional)
+
+Result:
+- `secret_count` (`int`)
+- `findings` (`[]SecretFinding`, optional)
+
 ### `graph.cycles`
 
 Params:
@@ -108,10 +138,10 @@ Notes:
 
 ### `graph.sync_diagrams`
 
-Writes configured DOT/TSV/Mermaid/PlantUML outputs and optional markdown injections.
+Writes configured DOT/TSV/Mermaid/PlantUML/Markdown outputs and optional markdown injections.
 
 Params:
-- `formats` (`[]string`, optional, values: `dot|tsv|mermaid|plantuml`)
+- `formats` (`[]string`, optional, values: `dot|tsv|mermaid|plantuml|markdown`)
 
 Result:
 - `written` (`[]string`)
@@ -181,6 +211,20 @@ Result:
 Notes:
 - Requires `mcp.allow_mutations=true`.
 - The runtime prevents multiple watcher instances in the same server session.
+
+### `report.generate_markdown`
+
+Generates a markdown analysis report and optionally writes it to disk.
+
+Params:
+- `write_file` (`bool`, optional)
+- `path` (`string`, optional)
+- `verbosity` (`string`, optional: `summary|standard|detailed`)
+
+Result:
+- `markdown` (`string`)
+- `path` (`string`, optional)
+- `written` (`bool`)
 
 ## Allowlist Notes
 

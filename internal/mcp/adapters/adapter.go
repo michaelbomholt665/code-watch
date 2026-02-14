@@ -5,11 +5,14 @@ import (
 	"circular/internal/core/config"
 	"circular/internal/data/history"
 	"circular/internal/data/query"
+	"circular/internal/engine/parser"
+	"circular/internal/engine/secrets"
 	"circular/internal/mcp/contracts"
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -78,6 +81,60 @@ func (a *Adapter) RunScan(ctx context.Context, in contracts.ScanRunInput) (contr
 		Modules:      a.app.Graph.ModuleCount(),
 		DurationMs:   int(time.Since(start).Milliseconds()),
 		Warnings:     warnings,
+	}, nil
+}
+
+func (a *Adapter) ScanSecrets(ctx context.Context, in contracts.SecretsScanInput) (contracts.SecretsScanOutput, error) {
+	if err := ctx.Err(); err != nil {
+		return contracts.SecretsScanOutput{}, err
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	warnings := make([]string, 0)
+	filesScanned := 0
+
+	if len(in.Paths) > 0 {
+		paths := normalizeScanPaths(in.Paths)
+		files, err := a.app.ScanDirectories(paths, a.app.Config.Exclude.Dirs, a.app.Config.Exclude.Files)
+		if err != nil {
+			return contracts.SecretsScanOutput{}, err
+		}
+		filesScanned = len(files)
+		for _, filePath := range files {
+			if err := a.app.ProcessFile(filePath); err != nil {
+				warnings = append(warnings, fmt.Sprintf("process file %s: %v", filePath, err))
+			}
+		}
+	} else {
+		if err := a.app.InitialScan(); err != nil {
+			return contracts.SecretsScanOutput{}, err
+		}
+		filesScanned = a.app.Graph.FileCount()
+	}
+
+	findings, total := secretFindings(a.app.Graph.GetAllFiles(), 0)
+	return contracts.SecretsScanOutput{
+		FilesScanned: filesScanned,
+		SecretCount:  total,
+		Findings:     findings,
+		Warnings:     warnings,
+	}, nil
+}
+
+func (a *Adapter) ListSecrets(ctx context.Context, limit int) (contracts.SecretsListOutput, error) {
+	if err := ctx.Err(); err != nil {
+		return contracts.SecretsListOutput{}, err
+	}
+
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+
+	findings, total := secretFindings(a.app.Graph.GetAllFiles(), limit)
+	return contracts.SecretsListOutput{
+		SecretCount: total,
+		Findings:    findings,
 	}, nil
 }
 
@@ -225,6 +282,9 @@ func (a *Adapter) SyncOutputs(ctx context.Context, formats []string) ([]string, 
 		if !formatSet["plantuml"] {
 			filteredOutput.PlantUML = ""
 		}
+		if !formatSet["markdown"] {
+			filteredOutput.Markdown = ""
+		}
 
 		filteredUpdate := make([]config.MarkdownInjection, 0, len(filteredOutput.UpdateMarkdown))
 		for _, injection := range filteredOutput.UpdateMarkdown {
@@ -249,7 +309,7 @@ func (a *Adapter) SyncOutputs(ctx context.Context, formats []string) ([]string, 
 	unused := a.app.AnalyzeUnusedImports()
 
 	a.app.Config.Output = filteredOutput
-	err = a.app.GenerateOutputs(cycles, unused, metrics, violations, hotspots)
+	err = a.app.GenerateOutputs(cycles, nil, unused, metrics, violations, hotspots)
 	a.app.Config.Output = originalOutput
 	if err != nil {
 		return nil, err
@@ -268,6 +328,9 @@ func (a *Adapter) SyncOutputs(ctx context.Context, formats []string) ([]string, 
 	if writeTargets.PlantUML != "" {
 		written = append(written, writeTargets.PlantUML)
 	}
+	if writeTargets.Markdown != "" {
+		written = append(written, writeTargets.Markdown)
+	}
 	for _, injection := range filteredOutput.UpdateMarkdown {
 		if strings.TrimSpace(injection.File) != "" {
 			written = append(written, injection.File)
@@ -275,6 +338,29 @@ func (a *Adapter) SyncOutputs(ctx context.Context, formats []string) ([]string, 
 	}
 
 	return uniqueStrings(written), nil
+}
+
+func (a *Adapter) GenerateMarkdownReport(ctx context.Context, in contracts.ReportGenerateMarkdownInput) (contracts.ReportGenerateMarkdownOutput, error) {
+	if err := ctx.Err(); err != nil {
+		return contracts.ReportGenerateMarkdownOutput{}, err
+	}
+
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	result, err := a.app.GenerateMarkdownReport(app.MarkdownReportRequest{
+		OutputPath: in.Path,
+		WriteFile:  in.WriteFile || strings.TrimSpace(in.Path) != "",
+		Verbosity:  in.Verbosity,
+	})
+	if err != nil {
+		return contracts.ReportGenerateMarkdownOutput{}, err
+	}
+	return contracts.ReportGenerateMarkdownOutput{
+		Markdown: result.Markdown,
+		Path:     result.Path,
+		Written:  result.Written,
+	}, nil
 }
 
 func (a *Adapter) queryService() *query.Service {
@@ -323,6 +409,7 @@ type outputTargets struct {
 	TSV      string
 	Mermaid  string
 	PlantUML string
+	Markdown string
 }
 
 func resolveOutputTargets(cfg *config.Config) (outputTargets, error) {
@@ -350,6 +437,7 @@ func resolveOutputTargets(cfg *config.Config) (outputTargets, error) {
 		TSV:      resolveOutputPath(strings.TrimSpace(cfg.Output.TSV), root),
 		Mermaid:  resolveDiagramPath(strings.TrimSpace(cfg.Output.Mermaid), root, diagramsDir),
 		PlantUML: resolveDiagramPath(strings.TrimSpace(cfg.Output.PlantUML), root, diagramsDir),
+		Markdown: resolveOutputPath(strings.TrimSpace(cfg.Output.Markdown), root),
 	}, nil
 }
 
@@ -391,4 +479,44 @@ func uniqueStrings(values []string) []string {
 		out = append(out, trimmed)
 	}
 	return out
+}
+
+func secretFindings(files []*parser.File, limit int) ([]contracts.SecretFinding, int) {
+	findings := make([]contracts.SecretFinding, 0)
+	for _, file := range files {
+		if file == nil || len(file.Secrets) == 0 {
+			continue
+		}
+		for _, finding := range file.Secrets {
+			findings = append(findings, contracts.SecretFinding{
+				Kind:        finding.Kind,
+				Severity:    finding.Severity,
+				ValueMasked: secrets.MaskValue(finding.Value),
+				Entropy:     finding.Entropy,
+				Confidence:  finding.Confidence,
+				File:        finding.Location.File,
+				Line:        finding.Location.Line,
+				Column:      finding.Location.Column,
+			})
+		}
+	}
+
+	sort.Slice(findings, func(i, j int) bool {
+		if findings[i].File != findings[j].File {
+			return findings[i].File < findings[j].File
+		}
+		if findings[i].Line != findings[j].Line {
+			return findings[i].Line < findings[j].Line
+		}
+		if findings[i].Column != findings[j].Column {
+			return findings[i].Column < findings[j].Column
+		}
+		return findings[i].Kind < findings[j].Kind
+	})
+
+	total := len(findings)
+	if limit > 0 && len(findings) > limit {
+		findings = findings[:limit]
+	}
+	return findings, total
 }

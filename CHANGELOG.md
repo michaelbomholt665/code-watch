@@ -5,19 +5,50 @@ All notable changes to this project will be documented in this file.
 ## 2026-02-14
 
 ### Added
+- `secrets:` Added `internal/engine/secrets` detector with built-in credential regex signatures, entropy-based token checks, context-sensitive assignment checks, and finding confidence/severity metadata.
+- `config:` Added `[secrets]` TOML schema (`enabled`, `entropy_threshold`, `min_token_length`, `[[secrets.patterns]]`, `[secrets.exclude]`) with startup validation for thresholds and custom regex patterns.
+- `parser:` Added `parser.File.Secrets` and `parser.Secret` model fields so secret findings are retained in normalized file state.
 - `mcp:` Added `system.watch` operation to start a non-blocking background watcher with single-instance protection per MCP server session.
 - `mcp:` Added `system.generate_config` operation to generate project-local `circular.toml` from `data/config/circular.example.toml` when missing.
 - `mcp:` Added `system.generate_script` operation to generate a project-local executable `circular-mcp` helper script when missing.
 - `scripts:` Added `scripts/circular-mcp` command wrapper for operation-based MCP interaction without hand-written JSON payloads.
+- `config:` Added `[output.diagrams]` schema support with `architecture|component|flow` toggles, `flow_config` (`entry_points`, `max_depth`), and `component_config.show_internal`.
+- `output:` Added dedicated architecture-diagram renderers for Mermaid and PlantUML (layer-level dependency view with violation counts).
+- `output:` Added dedicated component-diagram renderers for Mermaid and PlantUML (module dependency + symbol-reference overlays, optional internal symbol nodes).
+- `output:` Added dedicated flow-diagram renderers for Mermaid and PlantUML (entry-point driven traversal with bounded depth and hop-step annotations).
+- `output:` Added multi-mode diagram emission support so architecture/component/flow can be enabled together and written as mode-suffixed files.
+- `config:` Added `output.formats.{mermaid,plantuml}` toggles to control diagram format emission independently.
+- `mcp:` Added secret-detection operations `secrets.scan` (path-scoped scan + findings) and `secrets.list` (current in-memory findings), including request validation, allowlist mapping, and runtime dispatch.
+- `output:` Added standalone Markdown analysis report generation with frontmatter, executive summary metrics, and detailed issue tables (cycles, violations, hotspots, unresolved refs, unused imports).
+- `config:` Added `output.markdown` and `[output.report]` settings (`verbosity`, `table_of_contents`, `collapsible_sections`, `include_mermaid`) with startup validation.
+- `cli:` Added `--report-md` to force markdown report generation using configured `output.markdown` or default `analysis-report.md`.
+- `mcp:` Added `report.generate_markdown` operation with optional file write support and configurable verbosity.
 
 ### Changed
+- `app:` `ProcessFile` now runs optional secret scanning and stores per-file findings in graph state when `[secrets].enabled=true`.
+- `app:` Update payloads now include `SecretCount`, and terminal summaries now report aggregate secret findings.
 - `mcp:` Made `graph.sync_diagrams` the canonical diagram sync operation and kept `system.sync_outputs` as a backward-compatible alias.
 - `runtime:` MCP startup bootstrap now auto-generates missing project bootstrap artifacts (`circular.toml` and `circular-mcp`) when `mcp.auto_sync_config=true`.
+- `app:` Diagram generation mode selection now reads `output.diagrams`; default remains module dependency diagrams, while `architecture=true` switches Mermaid/PlantUML to layer-level architecture diagrams.
+- `app:` `output.diagrams.component=true` and `output.diagrams.flow=true` are now fully wired to dedicated Mermaid/PlantUML generators.
+- `app:` Multiple enabled diagram modes now generate all selected views in one run; when more than one mode is enabled, outputs are written as `-dependency/-architecture/-component/-flow` suffixed files.
+- `config:` Default output behavior now enables Mermaid by default and keeps PlantUML disabled unless explicitly enabled.
+- `output:` TSV generation now appends a `secret` findings block with masked values (`Value` never includes raw secret text).
+- `summary:` Terminal summaries now print a bounded list of masked secret findings (kind/severity/location/value-mask) when detections exist.
+- `mcp:` `graph.sync_diagrams` format filtering now accepts `markdown` and includes generated markdown report paths in written targets.
 
 ### Docs
+- Updated `README.md` and `docs/documentation/{README,architecture,configuration,output,limitations,packages,mcp}.md` to document implemented secret-detection behavior, configuration, and current MCP/output scope limits.
 - Updated `docs/documentation/mcp.md` with `graph.sync_diagrams`, `system.generate_config`, `system.generate_script`, and wrapper usage examples.
 - Updated `docs/documentation/configuration.md` MCP allowlist and `mcp.auto_sync_config` semantics to reflect config+script generation behavior.
 - Updated `docs/plans/mcp-server-expansion-plan.md` implementation status and notes for watcher, config/script generation, and wrapper work.
+- Moved older plan documents under `docs/plans/archived/` and refreshed `docs/plans/diagram-expansion-plan.md` with current P0-P4 status.
+- Updated `README.md`, `docs/documentation/configuration.md`, and `docs/documentation/output.md` to document architecture/component/flow mode behavior and settings.
+- Updated `docs/plans/diagram-expansion-plan.md` to mark P3/P4 and T6/T7 complete.
+- Updated `data/config/circular.example.toml` and `circular.example.toml` with diagram-mode usage comments.
+- Updated `README.md`, `docs/documentation/mcp.md`, `docs/documentation/output.md`, `docs/documentation/configuration.md`, and `docs/documentation/limitations.md` to document `secrets.scan`/`secrets.list` and TSV secret-output behavior.
+- Updated `README.md`, `docs/documentation/{README,architecture,cli,configuration,mcp,output,packages}.md`, and both example config files to document markdown report generation and MCP exposure.
+- Updated `docs/plans/markdown-analysis-report-plan.md` with implementation completion status.
 
 ## 2026-02-13
 

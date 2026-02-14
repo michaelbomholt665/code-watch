@@ -48,6 +48,10 @@ func normalizeOperationAlias(raw string) contracts.OperationID {
 	switch value {
 	case "scan.run", "scan_once":
 		return contracts.OperationScanRun
+	case "secrets.scan":
+		return contracts.OperationSecretsScan
+	case "secrets.list":
+		return contracts.OperationSecretsList
 	case "graph.cycles", "detect_cycles":
 		return contracts.OperationGraphCycles
 	case "query.modules":
@@ -70,6 +74,8 @@ func normalizeOperationAlias(raw string) contracts.OperationID {
 		return contracts.OperationSystemWatch
 	case "query.trends":
 		return contracts.OperationQueryTrends
+	case "report.generate_markdown":
+		return contracts.OperationReportGenMD
 	default:
 		return ""
 	}

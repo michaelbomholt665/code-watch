@@ -1,24 +1,28 @@
 # Output Reference
 
-`circular` can emit DOT, TSV, Mermaid, and PlantUML outputs via `internal/ui/report`.
+`circular` can emit DOT, TSV, Mermaid, PlantUML, and Markdown outputs via `internal/ui/report`.
 
 ## Diagram Scope
 
-Mermaid and PlantUML support two output views:
+Mermaid and PlantUML support four output views:
 - default dependency view (module-level graph)
 - architecture view (layer-level graph) when `output.diagrams.architecture=true`
+- component view (module internals and symbol-reference overlays) when `output.diagrams.component=true`
+- flow view (bounded traversal from configured entry points) when `output.diagrams.flow=true`
 
 Implemented overlays:
 - cycle highlighting
 - architecture-violation highlighting
 - optional architecture-layer grouping when `[architecture].enabled=true`
 
-Planned (not yet implemented):
-- dedicated component diagram mode
-- dedicated flow/call diagram mode
-
 Roadmap source:
 - `docs/plans/diagram-expansion-plan.md`
+
+Mode constraints:
+- when all of `output.diagrams.architecture`, `output.diagrams.component`, `output.diagrams.flow` are `false`, default dependency view is generated
+- when one mode is enabled, the configured output path is used as-is (for example `graph.mmd`)
+- when multiple modes are enabled, mode-suffixed files are generated from the configured base path (`graph-dependency.mmd`, `graph-architecture.mmd`, `graph-component.mmd`, `graph-flow.mmd`)
+- Mermaid is enabled by default; PlantUML requires explicit enablement via `output.formats.plantuml=true`
 
 ## `dependencies.tsv`
 
@@ -69,6 +73,24 @@ Row prefix is always:
 ```text
 architecture_violation
 ```
+
+## Appended Secret-Finding Block
+
+Appended only when findings exist, separated by a blank line.
+
+Header:
+
+```text
+Type\tKind\tSeverity\tValue\tEntropy\tConfidence\tFile\tLine\tColumn
+```
+
+Row prefix is always:
+
+```text
+secret
+```
+
+`Value` is masked (for example `AKIA...CDEF`) and raw values are not written to TSV output.
 
 ## `graph.dot`
 
@@ -128,6 +150,22 @@ PlantUML graph properties:
 - recommended config:
 - set `output.plantuml = "graph.puml"` and keep `output.paths.diagrams_dir = "docs/diagrams"` to write to `<root>/docs/diagrams/graph.puml`
 
+## Component View Notes
+
+When `output.diagrams.component=true`:
+- module-to-module edges include `deps:N` and `refs:M` labels
+- `refs:M` counts matched symbol references from source module references to target module definitions
+- with `output.diagrams.component_config.show_internal=true`, definition-level symbol nodes are included and previewed as `sym:a,b,c` on edges
+- architecture layer grouping still applies when `[architecture].enabled=true`
+
+## Flow View Notes
+
+When `output.diagrams.flow=true`:
+- traversal starts from configured `output.diagrams.flow_config.entry_points`
+- entry points can match either module names or file paths (absolute or project-relative suffix)
+- `max_depth` bounds traversal breadth (`step:N` node annotation shows shortest hop distance from nearest entry module)
+- if no configured entry point resolves, roots (modules with zero fan-in) are used as fallback
+
 ## Markdown Injection
 
 Optional markdown injection is configured via `[[output.update_markdown]]`.
@@ -148,6 +186,25 @@ Markers must exist exactly once in the target file:
 Injected content is a fenced code block:
 - Mermaid format: ```` ```mermaid ```` ... ```` ``` ````
 - PlantUML format: ```` ```plantuml ```` ... ```` ``` ````
+
+## `analysis-report.md` (Markdown Report)
+
+Markdown report generation is enabled when `output.markdown` is set (or via CLI `--report-md`).
+
+Report characteristics:
+- YAML frontmatter with `project`, `generated_at`, and `version`
+- executive summary table (modules/files/cycles/violations/hotspots/unresolved/unused)
+- detailed sections:
+- circular imports (with impact/severity)
+- architecture violations
+- complexity hotspots
+- unresolved references
+- unused imports
+- optional Mermaid dependency diagram embedding when `output.report.include_mermaid=true`
+- configurable presentation:
+- `output.report.verbosity` = `summary|standard|detailed`
+- `output.report.table_of_contents` controls TOC output
+- `output.report.collapsible_sections` controls `<details>` wrappers for long sections
 
 ## Ordering and Stability
 

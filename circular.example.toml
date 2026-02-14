@@ -43,7 +43,7 @@ config_path = "circular.toml"
 server_name = "circular"
 server_version = "1.0.0"
 exposed_tool_name = ""
-operation_allowlist = ["scan.run", "graph.cycles", "query.modules", "query.module_details", "query.trace", "system.sync_outputs", "system.sync_config", "system.select_project", "query.trends"]
+operation_allowlist = ["scan.run", "secrets.scan", "secrets.list", "graph.cycles", "query.modules", "query.module_details", "query.trace", "system.sync_outputs", "system.sync_config", "system.select_project", "query.trends", "report.generate_markdown"]
 max_response_items = 500
 request_timeout = "30s"
 allow_mutations = false
@@ -72,11 +72,53 @@ symbols = ["self", "ctx", "p", "log", "toml", "sitter", "tea", "fsnotify"]
 [watch]
 debounce = "1s"
 
+[secrets]
+enabled = false
+entropy_threshold = 4.0
+min_token_length = 20
+
+[[secrets.patterns]]
+name = "custom-token"
+regex = "CTK_[A-Za-z0-9]{20}"
+severity = "medium"
+
+[secrets.exclude]
+dirs = []
+files = []
+
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
 mermaid = "graph.mmd"
-plantuml = "graph.puml"
+# Set to generate PlantUML outputs when desired.
+# plantuml = "graph.puml"
+markdown = "analysis-report.md"
+
+[output.formats]
+mermaid = true
+plantuml = false
+
+[output.report]
+verbosity = "standard"
+table_of_contents = true
+collapsible_sections = true
+include_mermaid = false
+
+[output.diagrams]
+# Enable one or more dedicated modes. When multiple are enabled, circular writes
+# mode-suffixed files (for example, graph-dependency.mmd, graph-flow.mmd).
+architecture = false
+component = false
+flow = false
+
+[output.diagrams.flow_config]
+# Flow mode starts from matched module names or file paths and traverses imports up to max_depth.
+entry_points = ["cmd/circular/main.go"]
+max_depth = 8
+
+[output.diagrams.component_config]
+# When true, component diagrams include definition-level symbol nodes and reference previews.
+show_internal = false
 
 [output.paths]
 root = ""

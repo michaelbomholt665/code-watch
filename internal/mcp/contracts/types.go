@@ -11,6 +11,8 @@ type OperationID string
 
 const (
 	OperationScanRun         OperationID = "scan.run"
+	OperationSecretsScan     OperationID = "secrets.scan"
+	OperationSecretsList     OperationID = "secrets.list"
 	OperationGraphCycles     OperationID = "graph.cycles"
 	OperationGraphSyncDiag   OperationID = "graph.sync_diagrams"
 	OperationQueryModules    OperationID = "query.modules"
@@ -23,6 +25,7 @@ const (
 	OperationSystemSelect    OperationID = "system.select_project"
 	OperationSystemWatch     OperationID = "system.watch"
 	OperationQueryTrends     OperationID = "query.trends"
+	OperationReportGenMD     OperationID = "report.generate_markdown"
 )
 
 type CircularToolInput struct {
@@ -48,6 +51,37 @@ type ScanRunOutput struct {
 	Modules      int      `json:"modules"`
 	DurationMs   int      `json:"duration_ms"`
 	Warnings     []string `json:"warnings,omitempty"`
+}
+
+type SecretFinding struct {
+	Kind        string  `json:"kind"`
+	Severity    string  `json:"severity"`
+	ValueMasked string  `json:"value_masked"`
+	Entropy     float64 `json:"entropy"`
+	Confidence  float64 `json:"confidence"`
+	File        string  `json:"file"`
+	Line        int     `json:"line"`
+	Column      int     `json:"column"`
+}
+
+type SecretsScanInput struct {
+	Paths []string `json:"paths,omitempty"`
+}
+
+type SecretsScanOutput struct {
+	FilesScanned int             `json:"files_scanned"`
+	SecretCount  int             `json:"secret_count"`
+	Findings     []SecretFinding `json:"findings,omitempty"`
+	Warnings     []string        `json:"warnings,omitempty"`
+}
+
+type SecretsListInput struct {
+	Limit int `json:"limit,omitempty"`
+}
+
+type SecretsListOutput struct {
+	SecretCount int             `json:"secret_count"`
+	Findings    []SecretFinding `json:"findings,omitempty"`
 }
 
 type GraphCyclesInput struct {
@@ -179,6 +213,18 @@ type QueryTrendsOutput struct {
 	Until     string          `json:"until,omitempty"`
 	ScanCount int             `json:"scan_count"`
 	Snapshots []TrendSnapshot `json:"snapshots"`
+}
+
+type ReportGenerateMarkdownInput struct {
+	WriteFile bool   `json:"write_file,omitempty"`
+	Path      string `json:"path,omitempty"`
+	Verbosity string `json:"verbosity,omitempty"`
+}
+
+type ReportGenerateMarkdownOutput struct {
+	Markdown string `json:"markdown"`
+	Path     string `json:"path,omitempty"`
+	Written  bool   `json:"written"`
 }
 
 type ToolError struct {
