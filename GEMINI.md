@@ -11,18 +11,19 @@ Circular is a dependency analysis tool for Go and Python projects. It detects ci
 
 ## Architecture
 
-The project follows a layered architecture with internal packages:
+The project follows a **Hexagonal Architecture** (Ports and Adapters) to ensure maintainability, testability, and scalability:
 
-- `cmd/circular/`: Entry point.
-- `internal/ui/cli/`: CLI/runtime mode handling and optional Bubble Tea UI.
-- `internal/core/app/`: End-to-end orchestration across scan/analyze/output/watch flows.
-- `internal/core/config/`: TOML config decoding, defaults, and validation.
-- `internal/core/watcher/`: File system watch and debounce pipeline.
-- `internal/engine/parser/`: Tree-sitter parsing and normalized file extraction.
-- `internal/engine/graph/`: Dependency graph state, cycle/trace/impact/metrics logic.
-- `internal/engine/resolver/`: Unresolved and unused-import analysis.
-- `internal/ui/report/` and `internal/ui/report/formats/`: DOT/TSV/Mermaid/PlantUML output generation and markdown injection.
-- `internal/mcp/`: MCP runtime, schemas, validators, adapters, and operation handlers.
+- **Core Domain (`internal/core/`)**
+    - `app/`: Pure business logic orchestrating scan and analysis workflows via `AnalysisService`.
+    - `ports/`: Defines all system boundaries (interfaces) for both driving (CLI, MCP) and driven (Parser, Storage) adapters.
+    - `config/`: Application configuration and validation.
+- **Adapters (`internal/engine/`, `internal/data/`, `internal/ui/`, `internal/mcp/`)**
+    - `engine/parser/`: Adapts Tree-sitter to the `CodeParser` port.
+    - `engine/graph/`: Core dependency graph implementation.
+    - `engine/resolver/`: Logic for reference resolution.
+    - `data/history/`: Adapts SQLite to the `HistoryStore` port.
+    - `mcp/`: Driving adapter providing an agentic interface to the `AnalysisService`.
+    - `ui/cli/` & `ui/report/`: Driving adapters for terminal and file-based presentation.
 
 ## Building and Running
 

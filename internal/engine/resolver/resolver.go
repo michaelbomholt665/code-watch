@@ -4,6 +4,7 @@ package resolver
 import (
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
+	"io"
 	"strings"
 )
 
@@ -24,20 +25,57 @@ type UnusedImport struct {
 
 type Resolver struct {
 	graph            *graph.Graph
-	symbolTable      *graph.UniversalSymbolTable
+	symbolTable      graph.SymbolLookupTable
 	stdlibByLanguage map[string]map[string]bool
 	excludedSymbols  []string
 	excludedImports  []string
+	explicitBridges  []ExplicitBridge
+	closer           io.Closer
 }
 
 func NewResolver(g *graph.Graph, excludedSymbols, excludedImports []string) *Resolver {
+	var symbolTable graph.SymbolLookupTable
+	if g != nil {
+		symbolTable = g.BuildUniversalSymbolTable()
+	}
+	return newResolver(g, excludedSymbols, excludedImports, symbolTable, nil)
+}
+
+func NewResolverWithSQLite(g *graph.Graph, excludedSymbols, excludedImports []string, dbPath, projectKey string) *Resolver {
+	store, err := graph.OpenSQLiteSymbolStore(dbPath, projectKey)
+	if err != nil {
+		return NewResolver(g, excludedSymbols, excludedImports)
+	}
+	if err := store.SyncFromGraph(g); err != nil {
+		_ = store.Close()
+		return NewResolver(g, excludedSymbols, excludedImports)
+	}
+	return newResolver(g, excludedSymbols, excludedImports, store, store)
+}
+
+func NewResolverWithSymbolLookup(g *graph.Graph, excludedSymbols, excludedImports []string, symbolTable graph.SymbolLookupTable) *Resolver {
+	return newResolver(g, excludedSymbols, excludedImports, symbolTable, nil)
+}
+
+func newResolver(g *graph.Graph, excludedSymbols, excludedImports []string, symbolTable graph.SymbolLookupTable, closer io.Closer) *Resolver {
+	if symbolTable == nil && g != nil {
+		symbolTable = g.BuildUniversalSymbolTable()
+	}
 	return &Resolver{
 		graph:            g,
-		symbolTable:      g.BuildUniversalSymbolTable(),
+		symbolTable:      symbolTable,
 		stdlibByLanguage: getStdlibByLanguage(),
 		excludedSymbols:  excludedSymbols,
 		excludedImports:  excludedImports,
+		closer:           closer,
 	}
+}
+
+func (r *Resolver) Close() error {
+	if r == nil || r.closer == nil {
+		return nil
+	}
+	return r.closer.Close()
 }
 
 func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) bool {
@@ -48,6 +86,11 @@ func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) boo
 
 	// 0.5 Cross-language bridge hints (FFI/process/service calls).
 	if IsCrossLanguageBridgeReference(file.Language, ref) {
+		return true
+	}
+
+	// 0.75 Explicit bridge mappings loaded from .circular-bridge.toml.
+	if r.resolveExplicitBridgeReference(file, ref) {
 		return true
 	}
 

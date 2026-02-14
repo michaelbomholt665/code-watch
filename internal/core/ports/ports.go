@@ -25,6 +25,18 @@ type SecretScanner interface {
 	Detect(filePath string, content []byte) []parser.Secret
 }
 
+// LineRange represents a 1-based inclusive line span used for incremental scans.
+type LineRange struct {
+	Start int
+	End   int
+}
+
+// IncrementalSecretScanner is an optional extension for hunk/line-range secret scanning.
+type IncrementalSecretScanner interface {
+	SecretScanner
+	DetectInRanges(filePath string, content []byte, ranges []LineRange) []parser.Secret
+}
+
 // HistoryStore abstracts snapshot persistence for trend/report workflows.
 type HistoryStore interface {
 	SaveSnapshot(projectKey string, snapshot history.Snapshot) error

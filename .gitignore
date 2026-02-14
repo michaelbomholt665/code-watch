@@ -29,6 +29,8 @@ circular.toml
 .vscode/
 .coderabbit.yaml
 
-# Local skills (non-project-specific)
-skills/small-function-utility-consolidator/
-skills/universal-skill-router/
+# AI folders
+.codex/
+.gemini/
+.skills/
+.agents/

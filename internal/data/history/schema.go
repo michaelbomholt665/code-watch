@@ -79,6 +79,33 @@ CREATE INDEX IF NOT EXISTS idx_snapshots_commit_hash ON snapshots(commit_hash);
 CREATE INDEX IF NOT EXISTS idx_snapshots_project_key ON snapshots(project_key);
 `,
 	},
+	{
+		version: 3,
+		sql: `
+CREATE TABLE IF NOT EXISTS symbols (
+  project_key TEXT NOT NULL,
+  symbol_name TEXT NOT NULL,
+  canonical_name TEXT NOT NULL,
+  full_name TEXT NOT NULL DEFAULT '',
+  module_name TEXT NOT NULL,
+  language TEXT NOT NULL DEFAULT '',
+  file_path TEXT NOT NULL,
+  kind INTEGER NOT NULL DEFAULT 0,
+  is_exported INTEGER NOT NULL DEFAULT 0,
+  visibility TEXT NOT NULL DEFAULT '',
+  scope TEXT NOT NULL DEFAULT '',
+  signature TEXT NOT NULL DEFAULT '',
+  type_hint TEXT NOT NULL DEFAULT '',
+  decorators TEXT NOT NULL DEFAULT '[]',
+  is_service INTEGER NOT NULL DEFAULT 0,
+  service_key TEXT NOT NULL DEFAULT '',
+  PRIMARY KEY (project_key, file_path, symbol_name, full_name)
+);
+CREATE INDEX IF NOT EXISTS idx_symbols_project_canonical ON symbols(project_key, canonical_name);
+CREATE INDEX IF NOT EXISTS idx_symbols_project_service_key ON symbols(project_key, service_key);
+CREATE INDEX IF NOT EXISTS idx_symbols_project_file ON symbols(project_key, file_path);
+`,
+	},
 }
 
 func EnsureSchema(db *sql.DB) error {

@@ -65,3 +65,48 @@ func TestMaskValue(t *testing.T) {
 		t.Fatalf("unexpected long mask result: %q", got)
 	}
 }
+
+func TestDetector_DetectInRanges(t *testing.T) {
+	d, err := NewDetector(Config{})
+	if err != nil {
+		t.Fatalf("new detector: %v", err)
+	}
+
+	content := []byte("const ok = \"hello\"\nconst key = \"AKIA1234567890ABCDEF\"\n")
+	findings := d.DetectInRanges("main.go", content, []LineRange{{Start: 1, End: 1}})
+	if len(findings) != 0 {
+		t.Fatalf("expected no findings outside selected line range, got %#v", findings)
+	}
+
+	findings = d.DetectInRanges("main.go", content, []LineRange{{Start: 2, End: 2}})
+	if len(findings) == 0 {
+		t.Fatal("expected finding in changed line range")
+	}
+}
+
+func TestDetector_EntropyGatedByHighRiskExtensions(t *testing.T) {
+	d, err := NewDetector(Config{EntropyThreshold: 4.0, MinTokenLength: 12})
+	if err != nil {
+		t.Fatalf("new detector: %v", err)
+	}
+
+	content := []byte("value = \"A1b2C3d4E5f6G7h8I9j0\"\n")
+	if findings := d.Detect("main.go", content); len(findings) != 0 {
+		t.Fatalf("expected entropy finding to be skipped for non high-risk extension, got %#v", findings)
+	}
+	if findings := d.Detect(".env", content); len(findings) == 0 {
+		t.Fatal("expected entropy finding for high-risk extension")
+	}
+}
+
+func TestChangedLineRanges(t *testing.T) {
+	prev := []byte("a\nb\nc\n")
+	curr := []byte("a\nbx\nc\n")
+	ranges := ChangedLineRanges(prev, curr)
+	if len(ranges) != 1 {
+		t.Fatalf("expected one changed range, got %d", len(ranges))
+	}
+	if ranges[0].Start != 2 || ranges[0].End != 2 {
+		t.Fatalf("expected changed range 2..2, got %d..%d", ranges[0].Start, ranges[0].End)
+	}
+}

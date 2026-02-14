@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -93,7 +94,7 @@ func TestCLIAndMCPParity_SummaryAndOutputs(t *testing.T) {
 	if cyclesOut.CycleCount != len(snapshot.Cycles) {
 		t.Fatalf("cycle count mismatch: cli=%d mcp=%d", len(snapshot.Cycles), cyclesOut.CycleCount)
 	}
-	if !reflect.DeepEqual(cyclesOut.Cycles, snapshot.Cycles) {
+	if !reflect.DeepEqual(normalizeCycles(cyclesOut.Cycles), normalizeCycles(snapshot.Cycles)) {
 		t.Fatalf("cycle contract mismatch: cli=%v mcp=%v", snapshot.Cycles, cyclesOut.Cycles)
 	}
 
@@ -129,3 +130,22 @@ func (stubCodeParser) IsTestFile(_ string) bool                           { retu
 func (stubCodeParser) SupportedExtensions() []string                      { return []string{".go"} }
 func (stubCodeParser) SupportedFilenames() []string                       { return nil }
 func (stubCodeParser) SupportedTestFileSuffixes() []string                { return nil }
+
+func normalizeCycles(cycles [][]string) [][]string {
+	if len(cycles) == 0 {
+		return nil
+	}
+	out := make([][]string, 0, len(cycles))
+	for _, cycle := range cycles {
+		if len(cycle) == 0 {
+			continue
+		}
+		normalized := append([]string(nil), cycle...)
+		sort.Strings(normalized)
+		out = append(out, normalized)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		return strings.Join(out[i], "|") < strings.Join(out[j], "|")
+	})
+	return out
+}

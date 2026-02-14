@@ -11,6 +11,7 @@
 
 - unresolved-reference detection is heuristic and not compiler/type-checker accurate
 - bridge-call contexts (`ffi_bridge`, `process_bridge`, `service_bridge`) reduce false positives but are pattern-driven and can miss custom interop wrappers
+- explicit `.circular-bridge.toml` mappings are deterministic but require manual maintenance and can mask real unresolved references if over-broad
 - universal symbol-table + probabilistic fallback matching improves cross-language resolution but can still miss highly dynamic dispatch or generated-code contracts
 - service contract linking uses naming/decorator/signature heuristics (for example client/server/servicer suffix families), not schema-aware IDL compilation
 - imported symbol resolution is best-effort for aliases/module prefixes and language-specific module naming:
@@ -22,7 +23,9 @@
 ## Secret Detection Heuristics
 
 - secret detection is heuristic and does not guarantee full credential coverage
-- entropy and context checks can produce false positives/false negatives
+- watch-mode incremental scanning is line-range based; fallback to full scan occurs when edits change line counts
+- entropy checks are limited to high-risk extensions, so entropy-only findings in other file types are intentionally skipped
+- entropy and context checks can still produce false positives/false negatives
 - secret findings are exposed via MCP (`secrets.scan`, `secrets.list`) and TSV output blocks, but are still heuristic
 
 ## Graph Granularity
@@ -32,6 +35,12 @@
 - unused import detection is reference-name based, not full semantic usage analysis
 - `exclude.imports` suppresses by exact module path or import reference base name; broad entries can hide real issues
 - unused import detection is intentionally disabled for metadata/markup languages (for example `html`, `css`, `gomod`, `gosum`)
+
+## CQL Scope
+
+- CQL is currently read-only and module-focused (`SELECT modules WHERE ...`)
+- supported predicates are limited to module name and summary/metric fields (`fan_in`, `fan_out`, `depth`, counts)
+- CQL is currently available through internal query-service APIs and is not yet exposed as a first-class CLI/MCP operation
 
 ## Watch Semantics
 

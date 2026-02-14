@@ -1,4 +1,0 @@
-interface:
-  display_name: "Go Code Watch Maintainer"
-  short_description: "Maintain the Go dependency monitor safely"
-  default_prompt: "Use $go-code-watch-maintainer to implement this change with Go 1.25.7 development and Go 1.24.13 compatibility checks."

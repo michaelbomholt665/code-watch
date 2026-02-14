@@ -5,6 +5,7 @@ This document covers the implemented advanced feature set from `docs/plans/high-
 ## Capability Summary
 
 - SQLite-backed history persistence at `data/database/history.db`
+- SQLite-backed persistent resolver symbol index (`symbols` table) stored in the same DB
 - versioned schema bootstrap/migrations (`internal/data/history/schema.go`)
 - lock-aware write/read retry policy for transient SQLite contention
 - trend reports with configurable moving window (`--history-window`)
@@ -18,6 +19,17 @@ This document covers the implemented advanced feature set from `docs/plans/high-
   - trend overlay (`t`)
   - jump-to-source action via `$EDITOR` (`o`)
 - history benchmarks and integration tests for advanced paths
+
+## Advanced Architecture Refinements (Current Slice)
+
+- All phases are complete from `docs/plans/advanced-architecture-refinements.md`.
+- Implemented:
+- persistent symbol table with incremental file-level upsert/delete/prune (`internal/engine/graph/symbol_store.go`) and app-driven updates during initial/watch scans (`internal/core/app/app.go`)
+- resolver integration with SQLite-backed symbol lookups and in-memory fallback (`internal/engine/resolver/resolver.go`)
+- incremental line-range secret detection for changed hunks (`internal/engine/secrets/detector.go`, `internal/engine/secrets/adapter.go`)
+- entropy checks gated to high-risk file extensions to reduce scan noise/cost on general source files
+- explicit bridge mapping support via `.circular-bridge.toml` (`internal/engine/resolver/bridge.go` + app resolver wiring)
+- read-only CQL support for advanced module queries (`internal/data/query/cql.go`, `internal/data/query/service.go`)
 
 ## CLI Enablement
 

@@ -28,6 +28,11 @@ type UniversalSymbolTable struct {
 	byServiceKey map[string][]SymbolRecord
 }
 
+type SymbolLookupTable interface {
+	Lookup(symbol string) []SymbolRecord
+	LookupService(symbol string) []SymbolRecord
+}
+
 func (g *Graph) BuildUniversalSymbolTable() *UniversalSymbolTable {
 	g.mu.RLock()
 	defer g.mu.RUnlock()

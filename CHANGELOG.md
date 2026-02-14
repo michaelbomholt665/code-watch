@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## 2026-02-14
 
 ### Added
+- `graph:` Added `internal/engine/graph/symbol_store.go` SQLite symbol-store adapter with project-scoped sync, canonical/service-key indexes, and file-path-based pruning for persistent resolver lookups.
+- `graph:` Added `internal/engine/graph/symbol_store_test.go` coverage for symbol sync/lookup/prune behavior and project-key isolation.
 - `architecture:` Added `internal/core/ports/ports.go` with initial hexagonal driven ports (`CodeParser`, `SecretScanner`, `HistoryStore`) as the refactor phase-1 baseline.
 - `parser:` Added `internal/engine/parser/adapter.go` to bridge `parser.Parser` to interface-driven consumers.
 - `history:` Added `internal/data/history/adapter.go` to bridge SQLite `history.Store` into the `HistoryStore` port for port-first wiring.
@@ -38,8 +40,15 @@ All notable changes to this project will be documented in this file.
 - `architecture:` Added output/report driving-port contracts in `internal/core/ports/ports.go` (`SyncOutputsRequest`, `SyncOutputsResult`, `MarkdownReportRequest`, `MarkdownReportResult`) and `AnalysisService` methods for those use cases.
 - `architecture:` Added `SummarySnapshot` driving contract in `internal/core/ports/ports.go` and `AnalysisService.SummarySnapshot(...)` for summary/state reads without direct adapter/runtime graph access.
 - `architecture:` Added `SummaryPrintRequest` driving contract in `internal/core/ports/ports.go` and `AnalysisService.PrintSummary(...)` for summary rendering through driving ports.
+- `resolver:` Added explicit bridge configuration support in `internal/engine/resolver/bridge.go` with `.circular-bridge.toml` loading/discovery and pattern-based mapping rules.
+- `query:` Added read-only CQL parsing and execution support (`internal/data/query/cql.go`, `Service.ExecuteCQL(...)`) for advanced module filtering with `SELECT modules WHERE ...`.
+- `secrets:` Added optional incremental scan contracts (`LineRange`, `IncrementalSecretScanner`) in `internal/core/ports/ports.go` and adapter support for line-range secret detection.
 
 ### Changed
+- `resolver:` Added `NewResolverWithSQLite(...)` and `Resolver.Close()` so unresolved/unused analysis can query persisted SQLite symbol rows with automatic in-memory fallback.
+- `app:` `AnalyzeHallucinations*` and `AnalyzeUnusedImports*` now build resolvers through DB-aware wiring and prefer SQLite symbol lookup when `[db].enabled=true`.
+- `history:` Bumped schema version to `3` and added a `symbols` table migration in `internal/data/history/schema.go` so history and symbol indexes share one SQLite DB.
+- `parity:` Normalized cycle-order comparison in `internal/mcp/adapters/adapter_test.go` to remove nondeterministic order flakes in parity assertions.
 - `app:` Added `NewWithDependencies(...)` constructor to allow dependency injection of parser/secret collaborators while preserving backward-compatible `New(...)` wiring.
 - `app:` Scan/process/watch language filtering now depends on injected `CodeParser` port semantics rather than a hard-wired parser concrete type.
 - `app:` `New(...)` now wires the default secret scanner through the `SecretScanner` adapter path instead of constructing a concrete detector directly in app internals.
@@ -80,11 +89,18 @@ All notable changes to this project will be documented in this file.
 - `cli:` Runtime startup (standard + MCP modes) now resolves `ports.AnalysisService` through an interface-first factory (`internal/ui/cli/runtime_factory.go`) instead of constructing concrete `*app.App` directly in orchestration flow.
 - `app:` Summary rendering and markdown report generation orchestration now run through a focused `presentation_service` collaborator shared by `AnalysisService` and the compatibility `App` facade methods.
 - `parity:` Added CLI/MCP contract parity coverage for summary/output flows to ensure `AnalysisService` and MCP adapter results stay equivalent for the same graph state.
+- `resolver:` Unresolved-reference analysis now runs an explicit bridge pass before stdlib/import/probabilistic matching when bridge mappings are configured.
+- `app:` Resolver construction now auto-loads `.circular-bridge.toml` from configured watch roots and applies mappings to both in-memory and SQLite-backed resolver flows.
+- `app:` `ProcessFile` now preserves per-file content snapshots and uses changed-line incremental secret scans in watch mode, with full-scan fallback when edits shift line counts.
+- `graph:` SQLite symbol persistence now updates incrementally per file (`UpsertFile`, `DeleteFile`, `PruneToPaths`) instead of graph-wide replacement writes during normal app flows.
+- `resolver:` App resolver wiring now reuses the persisted SQLite symbol store directly when available, avoiding per-resolver full symbol sync.
+- `secrets:` Entropy checks are now limited to a high-risk extension set (`.env`, `.json`, `.key`, `.pem`, `.p12`, `.pfx`, `.crt`, `.cer`, `.yaml`, `.yml`, `.toml`, `.ini`, `.conf`, `.properties`).
 
 ### Fixed
 - `pathing:` Normalized shared prefix/path comparisons to avoid mixed-separator false negatives (for example Windows-style `\` vs slash-normalized patterns).
 
 ### Docs
+- Updated `README.md`, `docs/documentation/{README,advanced,architecture,configuration,packages}.md`, and `docs/plans/advanced-architecture-refinements.md` to document the new SQLite-backed symbol-table implementation slice and current phase status.
 - Updated `README.md`, `docs/documentation/{README,architecture,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with phase status tracking for the hexagonal architecture migration and explicit per-session "plan fully implemented" state.
 - Updated `docs/plans/hexagonal-architecture-refactor.md` session-2 checkpoint notes to mark history/secrets adapters complete and keep overall plan status as not fully implemented.
 - Updated `README.md` and `docs/documentation/{README,architecture,configuration,output,limitations,packages,mcp}.md` to document implemented secret-detection behavior, configuration, and current MCP/output scope limits.
@@ -112,6 +128,9 @@ All notable changes to this project will be documented in this file.
 - Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 9 hexagonal-refactor progress, revised phase completion estimates, and current non-complete plan status.
 - Updated `README.md`, `docs/documentation/{README,architecture,cli,mcp,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 10 hexagonal-refactor progress (interface-first CLI/MCP startup factory wiring), revised phase completion estimates, and current non-complete plan status.
 - Updated `README.md`, `docs/documentation/{README,architecture,packages}.md`, and `docs/plans/hexagonal-architecture-refactor.md` with Session 11 progress, including presentation-collaborator extraction, parity-test coverage, and final "plan fully implemented" status.
+- Updated `README.md` and `docs/documentation/{README,advanced,architecture,configuration,packages,limitations}.md` to document explicit bridge mappings and read-only CQL support.
+- Updated `docs/plans/advanced-architecture-refinements.md` status table to mark Phase 3 (bridge mappings) and Phase 4 (CQL parser/executor) complete.
+- Updated `README.md`, `docs/documentation/{README,advanced,architecture,configuration,packages,limitations}.md`, and `docs/plans/advanced-architecture-refinements.md` to mark all refinement phases complete and document incremental symbol + secret scanning behavior.
 
 ## 2026-02-13
 

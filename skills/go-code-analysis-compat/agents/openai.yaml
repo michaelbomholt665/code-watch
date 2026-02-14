@@ -1,4 +1,0 @@
-interface:
-  display_name: "Go Analysis Compat"
-  short_description: "Build Go analyzers with Go 1.25.7 and 1.24.x compatibility"
-  default_prompt: "Use $go-code-analysis-compat to implement this analyzer change with Go 1.25.7 and Go 1.24.x compatibility constraints."

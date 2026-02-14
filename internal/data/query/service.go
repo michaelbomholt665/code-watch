@@ -187,3 +187,122 @@ func (s *Service) TrendSlice(ctx context.Context, since time.Time, limit int) (T
 	}
 	return out, nil
 }
+
+// ExecuteCQL evaluates a read-only CQL query over in-memory module/graph state.
+func (s *Service) ExecuteCQL(ctx context.Context, raw string, limit int) ([]ModuleSummary, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	query, err := ParseCQL(raw)
+	if err != nil {
+		return nil, err
+	}
+	if query.Target != "modules" {
+		return nil, fmt.Errorf("unsupported CQL target %q", query.Target)
+	}
+
+	imports := s.graph.GetImports()
+	metrics := s.graph.ComputeModuleMetrics()
+	modules := s.graph.Modules()
+
+	reverseCounts := make(map[string]int)
+	for _, edges := range imports {
+		for to := range edges {
+			reverseCounts[to]++
+		}
+	}
+
+	rows := make([]ModuleSummary, 0, len(modules))
+	for name, module := range modules {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		row := ModuleSummary{
+			Name:                   name,
+			FileCount:              len(module.Files),
+			ExportCount:            len(module.Exports),
+			DependencyCount:        len(imports[name]),
+			ReverseDependencyCount: reverseCounts[name],
+		}
+		if !matchesCQLConditions(row, metrics[name], query.Conditions) {
+			continue
+		}
+		rows = append(rows, row)
+	}
+
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].Name < rows[j].Name
+	})
+	if limit > 0 && len(rows) > limit {
+		return rows[:limit], nil
+	}
+	return rows, nil
+}
+
+func matchesCQLConditions(summary ModuleSummary, metric graph.ModuleMetrics, conditions []CQLCondition) bool {
+	for _, condition := range conditions {
+		if !matchesSingleCQLCondition(summary, metric, condition) {
+			return false
+		}
+	}
+	return true
+}
+
+func matchesSingleCQLCondition(summary ModuleSummary, metric graph.ModuleMetrics, condition CQLCondition) bool {
+	field := strings.ToLower(strings.TrimSpace(condition.Field))
+	switch field {
+	case "name":
+		if !condition.IsStr {
+			return false
+		}
+		switch condition.Op {
+		case "contains":
+			return strings.Contains(strings.ToLower(summary.Name), strings.ToLower(condition.StrVal))
+		case "=":
+			return strings.EqualFold(summary.Name, condition.StrVal)
+		case "!=":
+			return !strings.EqualFold(summary.Name, condition.StrVal)
+		default:
+			return false
+		}
+	case "fan_in":
+		return compareCQLInt(metric.FanIn, condition)
+	case "fan_out":
+		return compareCQLInt(metric.FanOut, condition)
+	case "depth":
+		return compareCQLInt(metric.Depth, condition)
+	case "file_count":
+		return compareCQLInt(summary.FileCount, condition)
+	case "export_count":
+		return compareCQLInt(summary.ExportCount, condition)
+	case "dependency_count":
+		return compareCQLInt(summary.DependencyCount, condition)
+	case "reverse_dependency_count":
+		return compareCQLInt(summary.ReverseDependencyCount, condition)
+	default:
+		return false
+	}
+}
+
+func compareCQLInt(value int, condition CQLCondition) bool {
+	if !condition.IsInt {
+		return false
+	}
+	switch condition.Op {
+	case ">":
+		return value > condition.IntVal
+	case ">=":
+		return value >= condition.IntVal
+	case "<":
+		return value < condition.IntVal
+	case "<=":
+		return value <= condition.IntVal
+	case "=":
+		return value == condition.IntVal
+	case "!=":
+		return value != condition.IntVal
+	default:
+		return false
+	}
+}

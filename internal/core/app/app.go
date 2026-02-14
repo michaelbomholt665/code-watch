@@ -50,6 +50,7 @@ type App struct {
 	codeParser    ports.CodeParser
 	Graph         *graph.Graph
 	secretScanner ports.SecretScanner
+	symbolStore   *graph.SQLiteSymbolStore
 	archEngine    *graph.LayerRuleEngine
 	goModCache    map[string]goModuleCacheEntry
 	IncludeTests  bool
@@ -67,6 +68,9 @@ type App struct {
 	// Cached unused imports keyed by file path for incremental updates.
 	unusedByFile map[string][]resolver.UnusedImport
 	unusedMu     sync.RWMutex
+
+	fileContentMu sync.RWMutex
+	fileContents  map[string][]byte
 }
 
 type goModuleCacheEntry struct {
@@ -136,7 +140,7 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 		}
 	}
 
-	return &App{
+	app := &App{
 		Config:             cfg,
 		codeParser:         deps.CodeParser,
 		Graph:              graph.NewGraph(),
@@ -147,7 +151,12 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 		unusedByFile:       make(map[string][]resolver.UnusedImport),
 		secretExcludeDirs:  secretExcludeDirs,
 		secretExcludeFiles: secretExcludeFiles,
-	}, nil
+		fileContents:       make(map[string][]byte),
+	}
+	if err := app.initSymbolStore(); err != nil {
+		return nil, err
+	}
+	return app, nil
 }
 
 func buildParserRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, error) {
@@ -219,6 +228,9 @@ func (a *App) InitialScan() error {
 		if err := a.ProcessFile(filePath); err != nil {
 			slog.Warn("failed to process file", "path", filePath, "error", err)
 		}
+	}
+	if err := a.pruneSymbolStorePaths(); err != nil {
+		slog.Warn("failed to prune persisted symbol rows after initial scan", "error", err)
 	}
 	return nil
 }
@@ -305,6 +317,8 @@ func (a *App) ScanDirectories(paths []string, excludeDirs, excludeFiles []string
 }
 
 func (a *App) ProcessFile(path string) error {
+	previousContent := a.contentForPath(path)
+	previousFile, _ := a.Graph.GetFile(path)
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -335,10 +349,17 @@ func (a *App) ProcessFile(path string) error {
 		}
 	}
 	if a.secretScanner != nil && !a.shouldSkipSecretScan(path) {
-		file.Secrets = a.secretScanner.Detect(path, content)
+		previousSecrets := []parser.Secret(nil)
+		if previousFile != nil {
+			previousSecrets = append(previousSecrets, previousFile.Secrets...)
+		}
+		file.Secrets = a.detectSecrets(path, previousContent, content, previousSecrets)
 	}
-
 	a.Graph.AddFile(file)
+	a.cacheContent(path, content)
+	if err := a.upsertSymbolStoreFile(file); err != nil {
+		slog.Warn("failed to upsert persisted symbol rows", "path", path, "error", err)
+	}
 	return nil
 }
 
@@ -415,6 +436,10 @@ func (a *App) HandleChanges(paths []string) {
 
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			a.Graph.RemoveFile(path)
+			a.dropContent(path)
+			if err := a.deleteSymbolStoreFile(path); err != nil {
+				slog.Warn("failed to delete persisted symbol rows", "path", path, "error", err)
+			}
 			a.unresolvedMu.Lock()
 			delete(a.unresolvedByFile, path)
 			a.unresolvedMu.Unlock()
@@ -464,8 +489,60 @@ func (a *App) emitUpdate(update Update) {
 	}
 }
 
+func (a *App) newResolver() *resolver.Resolver {
+	if a == nil {
+		return resolver.NewResolver(nil, nil, nil)
+	}
+
+	excludedSymbols := []string(nil)
+	excludedImports := []string(nil)
+	if a.Config != nil {
+		excludedSymbols = a.Config.Exclude.Symbols
+		excludedImports = a.Config.Exclude.Imports
+	}
+
+	if a.Config == nil || !a.Config.DB.Enabled {
+		res := resolver.NewResolver(a.Graph, excludedSymbols, excludedImports)
+		res.WithExplicitBridges(a.loadResolverBridges())
+		return res
+	}
+
+	if a.symbolStore == nil {
+		res := resolver.NewResolver(a.Graph, excludedSymbols, excludedImports)
+		res.WithExplicitBridges(a.loadResolverBridges())
+		return res
+	}
+	res := resolver.NewResolverWithSymbolLookup(a.Graph, excludedSymbols, excludedImports, a.symbolStore)
+	res.WithExplicitBridges(a.loadResolverBridges())
+	return res
+}
+
+func (a *App) loadResolverBridges() []resolver.ExplicitBridge {
+	if a == nil || a.Config == nil {
+		return nil
+	}
+
+	paths := resolver.DiscoverBridgeConfigPaths(uniqueScanRoots(a.Config.WatchPaths))
+	bridges := make([]resolver.ExplicitBridge, 0)
+
+	for _, path := range paths {
+		if _, err := os.Stat(path); err != nil {
+			continue
+		}
+		loaded, err := resolver.LoadBridgeConfig(path)
+		if err != nil {
+			slog.Warn("failed to load bridge config", "path", path, "error", err)
+			continue
+		}
+		bridges = append(bridges, loaded...)
+	}
+
+	return bridges
+}
+
 func (a *App) AnalyzeHallucinations() []resolver.UnresolvedReference {
-	res := resolver.NewResolver(a.Graph, a.Config.Exclude.Symbols, a.Config.Exclude.Imports)
+	res := a.newResolver()
+	defer func() { _ = res.Close() }()
 	unresolved := res.FindUnresolved()
 	a.rebuildUnresolvedCache(unresolved)
 	return unresolved
@@ -481,7 +558,8 @@ func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []re
 		paths = append(paths, path)
 	}
 
-	res := resolver.NewResolver(a.Graph, a.Config.Exclude.Symbols, a.Config.Exclude.Imports)
+	res := a.newResolver()
+	defer func() { _ = res.Close() }()
 	updated := res.FindUnresolvedForPaths(paths)
 
 	a.unresolvedMu.Lock()
@@ -503,7 +581,8 @@ func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []re
 
 func (a *App) AnalyzeUnusedImports() []resolver.UnusedImport {
 	paths := a.currentGraphPaths()
-	res := resolver.NewResolver(a.Graph, a.Config.Exclude.Symbols, a.Config.Exclude.Imports)
+	res := a.newResolver()
+	defer func() { _ = res.Close() }()
 	unused := res.FindUnusedImports(paths)
 	a.rebuildUnusedCache(unused)
 	return unused
@@ -519,7 +598,8 @@ func (a *App) AnalyzeUnusedImportsIncremental(affectedSet map[string]bool) []res
 		paths = append(paths, path)
 	}
 
-	res := resolver.NewResolver(a.Graph, a.Config.Exclude.Symbols, a.Config.Exclude.Imports)
+	res := a.newResolver()
+	defer func() { _ = res.Close() }()
 	updated := res.FindUnusedImports(paths)
 
 	a.unusedMu.Lock()
@@ -1145,6 +1225,123 @@ func (a *App) currentGraphPaths() []string {
 		paths = append(paths, f.Path)
 	}
 	return paths
+}
+
+func (a *App) initSymbolStore() error {
+	if a == nil || a.Config == nil || !a.Config.DB.Enabled {
+		return nil
+	}
+	dbPath := strings.TrimSpace(a.Config.DB.Path)
+	if dbPath == "" {
+		return nil
+	}
+	cwd, err := os.Getwd()
+	if err == nil {
+		if resolved, pathErr := config.ResolvePaths(a.Config, cwd); pathErr == nil {
+			dbPath = resolved.DBPath
+		}
+	}
+	projectKey := strings.TrimSpace(a.Config.Projects.Active)
+	if projectKey == "" {
+		projectKey = "default"
+	}
+	store, err := graph.OpenSQLiteSymbolStore(dbPath, projectKey)
+	if err != nil {
+		return fmt.Errorf("open sqlite symbol store: %w", err)
+	}
+	a.symbolStore = store
+	return nil
+}
+
+func (a *App) upsertSymbolStoreFile(file *parser.File) error {
+	if a == nil || a.symbolStore == nil || file == nil {
+		return nil
+	}
+	return a.symbolStore.UpsertFile(file)
+}
+
+func (a *App) deleteSymbolStoreFile(path string) error {
+	if a == nil || a.symbolStore == nil {
+		return nil
+	}
+	return a.symbolStore.DeleteFile(path)
+}
+
+func (a *App) pruneSymbolStorePaths() error {
+	if a == nil || a.symbolStore == nil {
+		return nil
+	}
+	return a.symbolStore.PruneToPaths(a.currentGraphPaths())
+}
+
+func (a *App) contentForPath(path string) []byte {
+	a.fileContentMu.RLock()
+	defer a.fileContentMu.RUnlock()
+	content, ok := a.fileContents[path]
+	if !ok {
+		return nil
+	}
+	out := make([]byte, len(content))
+	copy(out, content)
+	return out
+}
+
+func (a *App) cacheContent(path string, content []byte) {
+	a.fileContentMu.Lock()
+	defer a.fileContentMu.Unlock()
+	next := make([]byte, len(content))
+	copy(next, content)
+	a.fileContents[path] = next
+}
+
+func (a *App) dropContent(path string) {
+	a.fileContentMu.Lock()
+	defer a.fileContentMu.Unlock()
+	delete(a.fileContents, path)
+}
+
+func (a *App) detectSecrets(path string, previousContent, content []byte, previousSecrets []parser.Secret) []parser.Secret {
+	if a.secretScanner == nil {
+		return nil
+	}
+	incremental, ok := a.secretScanner.(ports.IncrementalSecretScanner)
+	if !ok || len(previousContent) == 0 {
+		return a.secretScanner.Detect(path, content)
+	}
+	prevLines := strings.Count(string(previousContent), "\n")
+	currLines := strings.Count(string(content), "\n")
+	if prevLines != currLines {
+		return a.secretScanner.Detect(path, content)
+	}
+	changed := secretengine.ChangedLineRanges(previousContent, content)
+	if len(changed) == 0 {
+		return previousSecrets
+	}
+	ranges := make([]ports.LineRange, 0, len(changed))
+	for _, r := range changed {
+		ranges = append(ranges, ports.LineRange{Start: r.Start, End: r.End})
+	}
+	updated := incremental.DetectInRanges(path, content, ranges)
+	if len(previousSecrets) == 0 {
+		return updated
+	}
+	merged := make([]parser.Secret, 0, len(previousSecrets)+len(updated))
+	for _, finding := range previousSecrets {
+		if !lineWithinRanges(finding.Location.Line, changed) {
+			merged = append(merged, finding)
+		}
+	}
+	merged = append(merged, updated...)
+	return merged
+}
+
+func lineWithinRanges(line int, ranges []secretengine.LineRange) bool {
+	for _, r := range ranges {
+		if line >= r.Start && line <= r.End {
+			return true
+		}
+	}
+	return false
 }
 
 func metricLeaders(

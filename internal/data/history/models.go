@@ -2,7 +2,7 @@ package history
 
 import "time"
 
-const SchemaVersion = 2
+const SchemaVersion = 3
 
 type Snapshot struct {
 	SchemaVersion     int       `json:"schema_version"`

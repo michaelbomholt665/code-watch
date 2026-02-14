@@ -8,7 +8,7 @@ This folder contains implementation-level documentation for `circular`.
 - `make.md`: Makefile targets for build/test/watch/UI/history/query workflows
 - `configuration.md`: TOML schema, defaults, fallbacks, architecture validation rules, and secret-detection settings
 - `output.md`: DOT/TSV/Mermaid/PlantUML/Markdown report schemas and ordering guarantees
-- `advanced.md`: phase-1 historical snapshots and trend-report workflows
+- `advanced.md`: historical snapshots/trend workflows plus advanced-architecture refinement status (persistent symbols, explicit bridges, CQL)
 - `architecture.md`: scan/update pipeline, data model, and subsystem boundaries
 - `packages.md`: package-level ownership and key entrypoints
 - `mcp.md`: MCP POC tool protocol, operations, and examples
@@ -16,6 +16,7 @@ This folder contains implementation-level documentation for `circular`.
 - `ai-audit.md`: hardening scope and verification baseline
 - `../plans/diagram-expansion-plan.md`: planned architecture/component/flow diagram expansion status
 - `../plans/cross-language-analysis-optimization-plan.md`: cross-language resolver/parser optimization roadmap and session status (currently marked fully implemented as a heuristic baseline)
+- `../plans/advanced-architecture-refinements.md`: phased persistent symbol table, incremental secret scanning, explicit bridge config, and CQL implementation roadmap (all phases complete as of 2026-02-14)
 - `../plans/cross-platform-compatibility-plan.md`: cross-platform roadmap and per-session "fully implemented" status tracking
 - `../plans/hexagonal-architecture-refactor.md`: phased ports-and-adapters migration plan and per-session implementation status
   - session 3 status (2026-02-14): Phase 2/4 started via `AnalysisService` scan/query driving surface; plan not fully implemented

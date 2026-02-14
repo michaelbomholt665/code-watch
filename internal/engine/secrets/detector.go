@@ -1,9 +1,11 @@
 package secrets
 
 import (
+	"bytes"
 	"circular/internal/engine/parser"
 	"fmt"
 	"math"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
@@ -32,9 +34,15 @@ type Detector struct {
 	entropyThreshold float64
 	minTokenLength   int
 	patterns         []compiledPattern
+	entropyExtAllow  map[string]bool
 	contextVarRE     *regexp.Regexp
 	quotedValueRE    *regexp.Regexp
 	quotedTokenRE    *regexp.Regexp
+}
+
+type LineRange struct {
+	Start int
+	End   int
 }
 
 func NewDetector(cfg Config) (*Detector, error) {
@@ -63,24 +71,49 @@ func NewDetector(cfg Config) (*Detector, error) {
 		entropyThreshold: cfg.EntropyThreshold,
 		minTokenLength:   cfg.MinTokenLength,
 		patterns:         patterns,
-		contextVarRE:     regexp.MustCompile(`(?i)\b(password|passwd|pwd|secret|api[_-]?key|token|auth[_-]?token|access[_-]?key|private[_-]?key|client[_-]?secret)\b`),
-		quotedValueRE:    regexp.MustCompile(`"([^"\r\n]{4,})"|'([^'\r\n]{4,})'`),
-		quotedTokenRE:    regexp.MustCompile(`"([A-Za-z0-9_\-+=:/.]{12,})"|'([A-Za-z0-9_\-+=:/.]{12,})'`),
+		entropyExtAllow: map[string]bool{
+			".env":        true,
+			".ini":        true,
+			".json":       true,
+			".key":        true,
+			".pem":        true,
+			".p12":        true,
+			".pfx":        true,
+			".crt":        true,
+			".cer":        true,
+			".yaml":       true,
+			".yml":        true,
+			".toml":       true,
+			".conf":       true,
+			".properties": true,
+		},
+		contextVarRE:  regexp.MustCompile(`(?i)\b(password|passwd|pwd|secret|api[_-]?key|token|auth[_-]?token|access[_-]?key|private[_-]?key|client[_-]?secret)\b`),
+		quotedValueRE: regexp.MustCompile(`"([^"\r\n]{4,})"|'([^'\r\n]{4,})'`),
+		quotedTokenRE: regexp.MustCompile(`"([A-Za-z0-9_\-+=:/.]{12,})"|'([A-Za-z0-9_\-+=:/.]{12,})'`),
 	}, nil
 }
 
 func (d *Detector) Detect(filePath string, content []byte) []parser.Secret {
+	return d.detectWithRanges(filePath, content, nil)
+}
+
+func (d *Detector) DetectInRanges(filePath string, content []byte, ranges []LineRange) []parser.Secret {
+	return d.detectWithRanges(filePath, content, ranges)
+}
+
+func (d *Detector) detectWithRanges(filePath string, content []byte, ranges []LineRange) []parser.Secret {
 	if len(content) == 0 {
 		return nil
 	}
 
-	text := string(content)
-	index := buildLineIndex(content)
 	findings := make(map[string]parser.Secret)
 
-	d.detectPatternMatches(filePath, text, index, findings)
-	d.detectContextMatches(filePath, text, index, findings)
-	d.detectEntropyMatches(filePath, text, index, findings)
+	for _, segment := range buildScanSegments(content, ranges) {
+		index := buildLineIndex([]byte(segment.text))
+		d.detectPatternMatches(filePath, segment.text, index, segment.lineOffset, findings)
+		d.detectContextMatches(filePath, segment.text, index, segment.lineOffset, findings)
+		d.detectEntropyMatches(filePath, segment.text, index, segment.lineOffset, findings)
+	}
 
 	if len(findings) == 0 {
 		return nil
@@ -105,7 +138,7 @@ func (d *Detector) Detect(filePath string, content []byte) []parser.Secret {
 	return out
 }
 
-func (d *Detector) detectPatternMatches(filePath, text string, index lineIndex, findings map[string]parser.Secret) {
+func (d *Detector) detectPatternMatches(filePath, text string, index lineIndex, lineOffset int, findings map[string]parser.Secret) {
 	for _, pattern := range d.patterns {
 		locs := pattern.re.FindAllStringIndex(text, -1)
 		for _, loc := range locs {
@@ -114,6 +147,7 @@ func (d *Detector) detectPatternMatches(filePath, text string, index lineIndex, 
 				continue
 			}
 			line, col := index.lineCol(loc[0])
+			line += lineOffset
 			secret := parser.Secret{
 				Kind:       pattern.name,
 				Severity:   pattern.severity,
@@ -131,7 +165,7 @@ func (d *Detector) detectPatternMatches(filePath, text string, index lineIndex, 
 	}
 }
 
-func (d *Detector) detectContextMatches(filePath, text string, index lineIndex, findings map[string]parser.Secret) {
+func (d *Detector) detectContextMatches(filePath, text string, index lineIndex, lineOffset int, findings map[string]parser.Secret) {
 	offset := 0
 	for _, line := range strings.Split(text, "\n") {
 		if !d.contextVarRE.MatchString(line) {
@@ -153,6 +187,7 @@ func (d *Detector) detectContextMatches(filePath, text string, index lineIndex, 
 			}
 			globalStart := offset + valueStart
 			ln, col := index.lineCol(globalStart)
+			ln += lineOffset
 			confidence := 0.70
 			if entropy >= d.entropyThreshold {
 				confidence = 0.85
@@ -175,7 +210,10 @@ func (d *Detector) detectContextMatches(filePath, text string, index lineIndex, 
 	}
 }
 
-func (d *Detector) detectEntropyMatches(filePath, text string, index lineIndex, findings map[string]parser.Secret) {
+func (d *Detector) detectEntropyMatches(filePath, text string, index lineIndex, lineOffset int, findings map[string]parser.Secret) {
+	if !d.shouldRunEntropy(filePath) {
+		return
+	}
 	for _, match := range d.quotedTokenRE.FindAllStringSubmatchIndex(text, -1) {
 		valueStart, valueEnd, ok := firstMatchedGroup(match)
 		if !ok {
@@ -193,6 +231,7 @@ func (d *Detector) detectEntropyMatches(filePath, text string, index lineIndex, 
 			continue
 		}
 		line, col := index.lineCol(valueStart)
+		line += lineOffset
 		secret := parser.Secret{
 			Kind:       "high-entropy-string",
 			Severity:   "low",
@@ -207,6 +246,136 @@ func (d *Detector) detectEntropyMatches(filePath, text string, index lineIndex, 
 		}
 		upsertFinding(findings, secret)
 	}
+}
+
+func (d *Detector) shouldRunEntropy(filePath string) bool {
+	ext := strings.ToLower(filepath.Ext(filepath.Base(filePath)))
+	return d.entropyExtAllow[ext]
+}
+
+type scanSegment struct {
+	text       string
+	lineOffset int
+}
+
+func buildScanSegments(content []byte, ranges []LineRange) []scanSegment {
+	text := string(content)
+	if len(ranges) == 0 {
+		return []scanSegment{{text: text, lineOffset: 0}}
+	}
+
+	lines := strings.Split(text, "\n")
+	totalLines := len(lines)
+	normalized := normalizeRanges(ranges, totalLines)
+	if len(normalized) == 0 {
+		return nil
+	}
+
+	segments := make([]scanSegment, 0, len(normalized))
+	for _, r := range normalized {
+		startIdx := r.Start - 1
+		endIdx := r.End
+		if startIdx < 0 || startIdx >= totalLines {
+			continue
+		}
+		if endIdx > totalLines {
+			endIdx = totalLines
+		}
+		if endIdx <= startIdx {
+			continue
+		}
+		segments = append(segments, scanSegment{
+			text:       strings.Join(lines[startIdx:endIdx], "\n"),
+			lineOffset: startIdx,
+		})
+	}
+	return segments
+}
+
+func normalizeRanges(in []LineRange, totalLines int) []LineRange {
+	if totalLines <= 0 || len(in) == 0 {
+		return nil
+	}
+	out := make([]LineRange, 0, len(in))
+	for _, r := range in {
+		start := r.Start
+		end := r.End
+		if start <= 0 {
+			start = 1
+		}
+		if end <= 0 {
+			end = start
+		}
+		if end < start {
+			start, end = end, start
+		}
+		if start > totalLines {
+			continue
+		}
+		if end > totalLines {
+			end = totalLines
+		}
+		out = append(out, LineRange{Start: start, End: end})
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Start == out[j].Start {
+			return out[i].End < out[j].End
+		}
+		return out[i].Start < out[j].Start
+	})
+
+	merged := make([]LineRange, 0, len(out))
+	for _, curr := range out {
+		if len(merged) == 0 {
+			merged = append(merged, curr)
+			continue
+		}
+		last := &merged[len(merged)-1]
+		if curr.Start <= last.End+1 {
+			if curr.End > last.End {
+				last.End = curr.End
+			}
+			continue
+		}
+		merged = append(merged, curr)
+	}
+	return merged
+}
+
+func ChangedLineRanges(prev, curr []byte) []LineRange {
+	if bytes.Equal(prev, curr) {
+		return nil
+	}
+	newLines := strings.Split(string(curr), "\n")
+	oldLines := strings.Split(string(prev), "\n")
+
+	prefix := 0
+	for prefix < len(newLines) && prefix < len(oldLines) && newLines[prefix] == oldLines[prefix] {
+		prefix++
+	}
+
+	suffix := 0
+	for suffix < len(newLines)-prefix && suffix < len(oldLines)-prefix {
+		newIdx := len(newLines) - 1 - suffix
+		oldIdx := len(oldLines) - 1 - suffix
+		if newLines[newIdx] != oldLines[oldIdx] {
+			break
+		}
+		suffix++
+	}
+
+	start := prefix + 1
+	end := len(newLines) - suffix
+	if len(newLines) == 0 {
+		return nil
+	}
+	if start > len(newLines) {
+		start = len(newLines)
+	}
+	if end < start {
+		end = start
+	}
+	return []LineRange{{Start: start, End: end}}
 }
 
 func compilePatterns(cfg []PatternConfig) ([]compiledPattern, error) {

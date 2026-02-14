@@ -81,6 +81,7 @@
 - performs initial scan and incremental change handling
 - maintains incremental caches for unresolved refs and unused imports
 - runs optional secret detection and publishes aggregate secret counts in UI update payloads
+- updates persisted resolver symbols incrementally per file (`UpsertFile`, `DeleteFile`, `PruneToPaths`) when DB is enabled
 - computes metrics/hotspots/architecture violations
 - supports trace and impact commands
 - writes DOT/TSV/Mermaid/PlantUML/Markdown outputs
@@ -93,6 +94,7 @@
 
 - defines focused infrastructure ports used by the core orchestration layer
 - includes driven ports (`CodeParser`, `SecretScanner`, `HistoryStore`) and driving ports (`AnalysisService`, `QueryService`, `WatchService`)
+- includes optional incremental secret-scanning extension contracts (`LineRange`, `IncrementalSecretScanner`)
 - includes history-trend request/result contracts to drive snapshot capture and trend generation from adapters
 - includes `WatchUpdate` contracts to drive live watch-mode update payloads through ports
 - includes output/report request/result contracts for driving-adapter orchestration (`SyncOutputs*`, `MarkdownReport*`)
@@ -103,6 +105,7 @@
 ## `internal/data/history`
 
 - local SQLite snapshot persistence with schema migration/version checks
+- schema now also includes resolver symbol-index storage (`symbols` table) used by analysis flows
 - optional git metadata enrichment for snapshots
 - deterministic trend report generation (deltas + moving averages + module growth and fan-in/fan-out drift)
 - `Adapter` bridges `Store` into `internal/core/ports.HistoryStore`
@@ -111,6 +114,7 @@
 
 - shared read/query service over graph/history state
 - deterministic module listing, module details, dependency trace, and trend slices
+- includes read-only CQL parsing/execution (`cql.go`, `Service.ExecuteCQL(...)`) for advanced module filtering
 - context-aware APIs for cancellation-safe calls
 
 ## `internal/core/config`
@@ -173,6 +177,7 @@
 - complexity hotspot ranking
 - architecture rule validation
 - impact analysis (direct + transitive importers)
+- SQLite symbol-store adapter (`symbol_store.go`) for persisted cross-language resolver lookups and incremental symbol row pruning by file path
 
 ## `internal/engine/resolver`
 
@@ -183,7 +188,9 @@
 - language-scoped stdlib names (`go`, `python`, `javascript`/`typescript`/`tsx`, `java`, `rust`)
 - language builtins
 - bridge-call contexts from parser (`ffi_bridge`, `process_bridge`, `service_bridge`) to suppress common polyglot interop false positives
+- explicit bridge mappings from `.circular-bridge.toml` (`bridge.go`) for deterministic cross-language reference resolution
 - universal symbol-table second pass over graph definitions for cross-language candidate matching
+- prefers SQLite-backed symbol lookup via `graph.SQLiteSymbolStore` when DB is enabled by app config; falls back to in-memory universal symbol table when unavailable
 - probabilistic scoring for ambiguous symbols (exact-first, scored fallback, ambiguity guardrails)
 - framework-aware service linking heuristics for common client/server naming families (for example gRPC/Thrift-style symbols)
 - user exclusion prefixes
@@ -194,9 +201,10 @@
 ## `internal/engine/secrets`
 
 - secret detector for hardcoded credential heuristics
-- combines built-in regex signatures, custom regex patterns, context-sensitive assignment checks, and entropy scoring
+- combines built-in regex signatures, custom regex patterns, context-sensitive assignment checks, entropy scoring, and line-range incremental scan support
+- gates entropy scoring to high-risk extension set to reduce false positives/cost on general source files
 - returns location-scoped findings attached to `parser.File.Secrets`
-- `Adapter` bridges `Detector` into `internal/core/ports.SecretScanner`
+- `Adapter` bridges `Detector` into `internal/core/ports.SecretScanner` and `IncrementalSecretScanner`
 
 ## `internal/engine/resolver/drivers`
 

@@ -56,11 +56,15 @@ Main responsibilities:
 2. `ProcessFile` parses AST and normalizes a `parser.File`.
 3. Parser extraction enriches definitions with visibility/scope/signature/type/decorator metadata and tags known bridge-call reference contexts (`ffi_bridge`, `process_bridge`, `service_bridge`) across core language profiles.
 4. When `[secrets].enabled=true`, `ProcessFile` runs secret detection and attaches findings to `parser.File.Secrets`.
-5. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
-6. Resolver builds a universal symbol table from graph definitions and performs exact + probabilistic multi-pass matching (including service-contract link heuristics).
-7. Analyses run against graph snapshots.
-8. Output generators serialize graph + findings.
-9. In watch mode, changed paths trigger `HandleChanges`, which reprocesses affected files and importer chains.
+5. In watch mode, secret scanning computes changed line ranges and uses line-range detection when supported; full scan fallback is used when line counts shift.
+6. Entropy checks are gated to high-risk file extensions (`.env`, `.json`, `.key`, `.pem`, `.p12`, `.pfx`, `.crt`, `.cer`, `.yaml`, `.yml`, `.toml`, `.ini`, `.conf`, `.properties`).
+7. `Graph.AddFile` replaces prior file contributions to prevent stale edges/definitions.
+8. When DB is enabled, app-level processing updates SQLite symbol rows incrementally per file (upsert/delete/prune), and resolver queries persisted symbols for exact + explicit bridge + probabilistic multi-pass matching (with in-memory fallback).
+9. Optional explicit bridge mappings from `.circular-bridge.toml` are loaded from watch roots and applied as a high-priority deterministic resolver pass.
+10. Query services can execute read-only CQL (`SELECT modules WHERE ...`) over module summaries and graph metrics.
+11. Analyses run against graph snapshots.
+12. Output generators serialize graph + findings.
+13. In watch mode, changed paths trigger `HandleChanges`, which reprocesses affected files and importer chains.
 
 ## Module Naming
 
@@ -98,7 +102,7 @@ Update behavior (`internal/core/app.HandleChanges`):
 - `internal/engine/parser`: AST extraction to normalized file model
 - `internal/engine/graph`: dependency state + graph algorithms
 - `internal/engine/resolver`: unresolved/unused heuristics
-- resolver includes bridge-call heuristics, a universal symbol-table pass, and probabilistic cross-language matching so common interop references and service contracts are treated as expected links
+- resolver includes bridge-call heuristics, explicit `.circular-bridge.toml` mappings (`internal/engine/resolver/bridge.go`), SQLite-backed symbol lookup (`internal/engine/graph/symbol_store.go`), and probabilistic cross-language matching so common interop references and service contracts are treated as expected links
 - `internal/core/watcher`: fsnotify + debounce
 - `internal/ui/report`: output rendering (DOT/TSV/Mermaid/PlantUML/Markdown)
 - `internal/mcp/runtime`: MCP startup, allowlist enforcement, stdio dispatch loop

@@ -235,6 +235,35 @@ func TestResolver_FindUnresolvedForPaths(t *testing.T) {
 	}
 }
 
+func TestResolver_NewResolverWithSQLite_ResolvesUsingPersistedSymbols(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:     "a.go",
+		Language: "go",
+		Module:   "modA",
+		Definitions: []parser.Definition{
+			{Name: "FuncA", Exported: true},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:     "b.go",
+		Language: "go",
+		Module:   "modB",
+		References: []parser.Reference{
+			{Name: "FuncA"},
+		},
+	})
+
+	dbPath := filepath.Join(t.TempDir(), "symbols.db")
+	r := NewResolverWithSQLite(g, nil, nil, dbPath, "project-a")
+	defer r.Close()
+
+	unresolved := r.FindUnresolved()
+	if len(unresolved) != 0 {
+		t.Fatalf("expected no unresolved references, got %d", len(unresolved))
+	}
+}
+
 func TestResolver_FindUnusedImports(t *testing.T) {
 	g := graph.NewGraph()
 
@@ -491,5 +520,58 @@ func TestResolver_ProbabilisticMatchAmbiguousStaysUnresolved(t *testing.T) {
 	}
 	if unresolved[0].Reference.Name != "api.Handle" {
 		t.Fatalf("expected unresolved Handle, got %s", unresolved[0].Reference.Name)
+	}
+}
+
+func TestLoadBridgeConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), ".circular-bridge.toml")
+	if err := os.WriteFile(path, []byte(`
+[[bridges]]
+from = "go:internal/mcp/runtime"
+to = "python:circular_mcp.server"
+reason = "JSON-RPC over stdio"
+references = ["circular_mcp.*", "rpc.bridge_call"]
+`), 0o644); err != nil {
+		t.Fatalf("write bridge config: %v", err)
+	}
+
+	bridges, err := LoadBridgeConfig(path)
+	if err != nil {
+		t.Fatalf("load bridge config: %v", err)
+	}
+	if len(bridges) != 1 {
+		t.Fatalf("expected 1 bridge, got %d", len(bridges))
+	}
+	if bridges[0].FromLanguage != "go" || bridges[0].FromModule != "internal/mcp/runtime" {
+		t.Fatalf("unexpected from endpoint: %+v", bridges[0])
+	}
+	if bridges[0].ToLanguage != "python" || bridges[0].ToModule != "circular_mcp.server" {
+		t.Fatalf("unexpected to endpoint: %+v", bridges[0])
+	}
+}
+
+func TestResolver_ExplicitBridgeMappingResolvesReference(t *testing.T) {
+	g := graph.NewGraph()
+	g.AddFile(&parser.File{
+		Path:     "runtime.go",
+		Language: "go",
+		Module:   "internal/mcp/runtime",
+		References: []parser.Reference{
+			{Name: "circular_mcp.server.Start"},
+		},
+	})
+
+	r := NewResolver(g, nil, nil).WithExplicitBridges([]ExplicitBridge{
+		{
+			FromLanguage: "go",
+			FromModule:   "internal/mcp/runtime",
+			ToLanguage:   "python",
+			ToModule:     "circular_mcp.server",
+			References:   []string{"circular_mcp.server.*"},
+		},
+	})
+	unresolved := r.FindUnresolvedForPaths([]string{"runtime.go"})
+	if len(unresolved) != 0 {
+		t.Fatalf("expected explicit bridge to resolve reference, got %+v", unresolved)
 	}
 }

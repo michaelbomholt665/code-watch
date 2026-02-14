@@ -25,10 +25,13 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Detects import cycles across internal modules
 - Detects unresolved references using local symbols, imports, stdlib, and builtins
 - Treats known cross-language bridge calls (FFI/process/service patterns) as first-class resolver contexts to reduce polyglot false positives
+- Supports explicit bridge mappings from `.circular-bridge.toml` to resolve known cross-language links deterministically
 - Builds a universal cross-language symbol table and runs a second-pass probabilistic resolver for ambiguous references
+- Persists resolver symbol indexes to SQLite (`symbols` table in the configured DB) with incremental per-file upsert/delete/prune updates
 - Adds framework-aware service contract linking heuristics (for example gRPC/Thrift-style client/server symbol families)
 - Detects unused imports and appends findings to TSV output
-- Detects potential hardcoded secrets via built-in patterns + entropy/context heuristics
+- Detects potential hardcoded secrets via built-in patterns + entropy/context heuristics, including line-range incremental scanning for changed hunks in watch mode
+- Gates entropy checks to high-risk file extensions (`.env`, `.json`, `.key`, `.pem`, `.p12`, `.pfx`, `.crt`, `.cer`, `.yaml`, `.yml`, `.toml`, `.ini`, `.conf`, `.properties`)
 - Supports unused-import suppression via `exclude.imports` for known false-positive paths
 - Applies language-scoped resolver policies for `go`, `python`, `javascript`/`typescript`/`tsx`, `java`, and `rust`
 - Disables unused-import checks for unsupported/metadata-only languages to reduce false positives
@@ -38,6 +41,7 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Validates optional architecture layer rules
 - Reports top complexity hotspots from parser heuristics
 - Captures enriched definition metadata (visibility, scope, signature, decorators/type hints) across Go/Python/JavaScript/TypeScript/Java/Rust definitions
+- Provides an advanced read-only CQL parser/executor in `internal/data/query` (`SELECT modules WHERE ...`) for power-user graph queries
 - Emits outputs:
   - Graphviz DOT (`graph.dot` by default)
   - TSV edge list (`dependencies.tsv` by default)
@@ -109,6 +113,19 @@ Estimated completion (session 11):
 - Phase 2: `100%`
 - Phase 3: `100%`
 - Phase 4: `100%`
+
+Plan fully implemented: `yes`.
+
+## Advanced Architecture Refinements Status
+
+The advanced refinements plan is tracked in:
+- `docs/plans/advanced-architecture-refinements.md`
+
+Current status (as of 2026-02-14):
+- Phase 1 (persistent symbol table): complete
+- Phase 2 (incremental + risk-filtered secret scanning): complete
+- Phase 3 (explicit cross-language bridges): complete
+- Phase 4 (read-only CQL): complete
 
 Plan fully implemented: `yes`.
 
@@ -245,6 +262,7 @@ includes = []
 enabled = true
 driver = "sqlite"
 path = "history.db"
+# shared SQLite store for history snapshots and persistent symbol index
 busy_timeout = "5s"
 project_mode = "multi"
 
@@ -381,6 +399,16 @@ allow = ["core"]
 name = "core-self-only"
 from = "core"
 allow = ["core"]
+```
+
+Optional explicit bridge mapping file (`.circular-bridge.toml` in any configured watch root):
+
+```toml
+[[bridges]]
+from = "go:internal/mcp/runtime"
+to = "python:circular_mcp.server"
+reason = "JSON-RPC over stdio"
+references = ["circular_mcp.server.*"]
 ```
 
 ## Outputs

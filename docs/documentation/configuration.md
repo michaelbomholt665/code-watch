@@ -159,6 +159,7 @@ top_complexity = 5
 - currently only `sqlite` is supported
 - `db.path` (`string`)
 - DB file path; relative values resolve under `paths.database_dir`
+- this SQLite file is shared by history snapshots and the resolver `symbols` index
 - `db.busy_timeout` (`duration`)
 - default `5s`
 - `db.project_mode` (`string`)
@@ -221,7 +222,9 @@ top_complexity = 5
 - resolver heuristics currently include language-specific stdlib/module policy for:
 - `go`, `python`, `javascript`/`typescript`/`tsx`, `java`, `rust`
 - resolver also applies a graph-derived universal symbol table and probabilistic second-pass matching for cross-language unresolved-reference reduction
+- when `db.enabled=true`, resolver symbol lookups are backed by a persisted SQLite `symbols` table with in-memory fallback on DB errors
 - service bridge references (`service_bridge`) are matched against normalized service keys to link likely contract definitions across files/languages
+- resolver can also load optional explicit bridge mappings from `.circular-bridge.toml` in watch roots and apply them as a deterministic pre-probabilistic pass
 - `languages.<id>.extensions` (`[]string`)
 - override extension ownership for a language
 - `languages.<id>.filenames` (`[]string`)
@@ -237,8 +240,10 @@ top_complexity = 5
 - defaults to `500ms`
 - `secrets.enabled` (`bool`)
 - enables/disables hardcoded secret scanning during `ProcessFile`
+- watch-mode scans use changed-line incremental detection when possible; full-scan fallback is used when file line counts shift
 - `secrets.entropy_threshold` (`float`)
 - Shannon entropy threshold used by high-entropy token checks
+- entropy checks are applied only to high-risk extension set: `.env`, `.json`, `.key`, `.pem`, `.p12`, `.pfx`, `.crt`, `.cer`, `.yaml`, `.yml`, `.toml`, `.ini`, `.conf`, `.properties`
 - bounds: `1.0` to `8.0` (default `4.0`)
 - `secrets.min_token_length` (`int`)
 - minimum token length for entropy/context candidate strings
@@ -272,6 +277,24 @@ top_complexity = 5
 - values containing `/` or `\` resolve under output root (`output.paths.root` or detected project root)
 - `output.*`, `alerts.*`, `architecture.*`
 - unchanged semantics from prior versions
+
+## Optional Bridge Mapping File
+
+Resolver overrides can be declared in `.circular-bridge.toml` at any configured watch root.
+
+```toml
+[[bridges]]
+from = "go:internal/mcp/runtime"
+to = "python:circular_mcp.server"
+reason = "JSON-RPC over stdio"
+references = ["circular_mcp.server.*"]
+```
+
+Fields:
+- `bridges[].from`: required `<language>:<module>` source endpoint
+- `bridges[].to`: required `<language>:<module>` destination endpoint
+- `bridges[].reason`: optional rationale
+- `bridges[].references`: optional reference patterns (`*` wildcard supported)
 
 ## Defaults and Discovery
 

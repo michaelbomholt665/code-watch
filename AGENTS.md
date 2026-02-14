@@ -1,17 +1,17 @@
 # Repository Guidelines
 
-## Project Structure & Module Organization
-- `cmd/circular/`: CLI entrypoint, app orchestration, and optional Bubble Tea UI.
-- `internal/config/`: TOML config loading and validation.
-- `internal/parser/`: Tree-sitter parsing for Go/Python and normalized file models.
-- `internal/graph/`: dependency graph state and cycle detection.
-- `internal/resolver/`: unresolved reference analysis and stdlib lookups.
-- `internal/watcher/`: filesystem watch/debounce pipeline.
-- `internal/output/`: DOT/TSV report generation.
-- `grammars/`: bundled parser artifacts (`*.so`, node type metadata).
-- `docs/documentation/`: architecture, CLI, config, and package-level docs.
+## Project Structure & Hexagonal Architecture
+This project follows **Hexagonal Architecture**. All core logic must remain decoupled from infrastructure.
+- **`internal/core/ports/`**: **The Source of Truth.** Define all interfaces (Ports) here.
+- **`internal/core/app/`**: Orchestrates use cases using Ports. **DO NOT** import concrete adapters here.
+- **`internal/engine/`, `internal/data/`, `internal/ui/`**: Implement adapters that fulfill the Ports.
+- **`cmd/circular/`**: Wire up concrete adapters to the core service.
 
-## Build, Test, and Development Commands
+## Coding Style & Naming Conventions
+- Follow standard Go formatting: run `gofmt` (or `go fmt ./...`) before committing.
+- **Strict Boundaries**: Never pass infrastructure-specific types (e.g., `sitter.Node`, `sql.Rows`) into the core domain. Use normalized DTOs defined in `parser` or `graph`.
+- **Dependency Injection**: Always use constructor injection to pass Port implementations into the Service layer.
+- Use idiomatic Go naming: exported `PascalCase`, internal `camelCase`, short receiver names.
 - `go build -o circular ./cmd/circular`: build the CLI binary.
 - `go run ./cmd/circular --once`: run one scan and exit.
 - `go run ./cmd/circular --ui`: run in watch mode with terminal UI.
