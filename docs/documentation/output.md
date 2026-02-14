@@ -23,6 +23,7 @@ Mode constraints:
 - when one mode is enabled, the configured output path is used as-is (for example `graph.mmd`)
 - when multiple modes are enabled, mode-suffixed files are generated from the configured base path (`graph-dependency.mmd`, `graph-architecture.mmd`, `graph-component.mmd`, `graph-flow.mmd`)
 - Mermaid is enabled by default; PlantUML requires explicit enablement via `output.formats.plantuml=true`
+- path resolution is separator-aware: values containing `/` or `\` are treated as relative paths under output root; filename-only values resolve under `output.paths.diagrams_dir`
 
 ## `dependencies.tsv`
 

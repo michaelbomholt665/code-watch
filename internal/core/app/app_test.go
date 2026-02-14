@@ -457,6 +457,23 @@ func TestApp_GenerateOutputs_DiagramPathsUseDetectedRootAndDiagramsDir(t *testin
 	}
 }
 
+func TestResolveDiagramPath_SeparatorAware(t *testing.T) {
+	t.Parallel()
+
+	root := filepath.Join("workspace", "repo")
+	diagramsDir := filepath.Join(root, "docs", "diagrams")
+
+	if got := resolveDiagramPath("graph.mmd", root, diagramsDir); got != filepath.Join(diagramsDir, "graph.mmd") {
+		t.Fatalf("expected filename output under diagrams dir, got %q", got)
+	}
+	if got := resolveDiagramPath("docs/graph.mmd", root, diagramsDir); got != filepath.Join(root, "docs", "graph.mmd") {
+		t.Fatalf("expected slash path output under root, got %q", got)
+	}
+	if got := resolveDiagramPath(`docs\graph.mmd`, root, diagramsDir); got != filepath.Join(root, `docs\graph.mmd`) {
+		t.Fatalf("expected backslash path output under root, got %q", got)
+	}
+}
+
 func TestApp_GenerateOutputs_ArchitectureDiagramMode(t *testing.T) {
 	tmpDir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(tmpDir, "api.go"), []byte("package api\nimport \"example.com/arch/internal/core\"\nfunc A(){}\n"), 0644); err != nil {

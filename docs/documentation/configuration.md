@@ -267,6 +267,9 @@ top_complexity = 5
 - Mermaid is enabled by default; PlantUML is disabled by default unless `output.formats.plantuml=true`
 - `output.diagrams.component_config.show_internal=true` includes definition-level symbol nodes
 - `output.diagrams.flow_config.max_depth` limits traversal depth from entry points
+- for `output.mermaid` and `output.plantuml`:
+- filename-only values (for example `graph.mmd`) resolve under `output.paths.diagrams_dir`
+- values containing `/` or `\` resolve under output root (`output.paths.root` or detected project root)
 - `output.*`, `alerts.*`, `architecture.*`
 - unchanged semantics from prior versions
 

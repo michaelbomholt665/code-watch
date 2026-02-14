@@ -44,6 +44,8 @@ func TestHasPathPrefix(t *testing.T) {
 		{name: "Nested", path: "foo/bar/baz", prefix: "foo/bar", expected: true},
 		{name: "Neighbor", path: "foo/barista", prefix: "foo/bar", expected: false},
 		{name: "Shorter", path: "foo", prefix: "foo/bar", expected: false},
+		{name: "MixedSeparators", path: `foo\bar\baz`, prefix: "foo/bar", expected: true},
+		{name: "RelativePrefix", path: "./foo/bar/baz", prefix: "foo/bar", expected: true},
 	}
 
 	for _, tc := range cases {
@@ -51,6 +53,30 @@ func TestHasPathPrefix(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			if got := HasPathPrefix(tc.path, tc.prefix); got != tc.expected {
+				t.Fatalf("expected %v, got %v", tc.expected, got)
+			}
+		})
+	}
+}
+
+func TestContainsPathSeparator(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name     string
+		value    string
+		expected bool
+	}{
+		{name: "Unix", value: "foo/bar", expected: true},
+		{name: "Windows", value: `foo\bar`, expected: true},
+		{name: "Flat", value: "graph.mmd", expected: false},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if got := ContainsPathSeparator(tc.value); got != tc.expected {
 				t.Fatalf("expected %v, got %v", tc.expected, got)
 			}
 		})

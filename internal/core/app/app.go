@@ -881,7 +881,7 @@ func resolveDiagramPath(path, root, diagramsDir string) string {
 	if filepath.IsAbs(path) {
 		return filepath.Clean(path)
 	}
-	if strings.Contains(path, string(os.PathSeparator)) || strings.Contains(path, "/") {
+	if util.ContainsPathSeparator(path) {
 		return filepath.Join(root, path)
 	}
 	return filepath.Join(diagramsDir, path)

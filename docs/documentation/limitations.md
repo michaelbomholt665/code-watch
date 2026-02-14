@@ -39,6 +39,11 @@
 - update batches are debounced and serialized, so high-frequency churn can delay analysis visibility
 - watcher filtering uses enabled language extension/filename routes plus language-specific test suffixes
 
+## Cross-Platform Status
+
+- path-prefix comparisons and diagram output path detection are separator-agnostic (`/` and `\`)
+- broader cross-platform work remains in progress (`docs/plans/cross-platform-compatibility-plan.md`), including grammar artifact parity and multi-OS watcher/CI verification
+
 ## Output Ordering
 
 - DOT node/edge order and TSV row order are not guaranteed stable across runs because map iteration order is not deterministic

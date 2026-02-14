@@ -48,6 +48,7 @@ Main responsibilities:
 - impact analysis
 - emit DOT/TSV/Mermaid/PlantUML/Markdown outputs
 - publish update payloads for UI mode
+- normalize path comparisons and prefix checks through shared utilities to keep module/path matching separator-agnostic across Linux/macOS/Windows
 
 ## Data Flow
 

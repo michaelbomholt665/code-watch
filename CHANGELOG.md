@@ -44,6 +44,10 @@ All notable changes to this project will be documented in this file.
 - `graph:` File clone logic now deep-copies definition decorator metadata to avoid slice aliasing across graph snapshots.
 - `parser:` Extended JS/TS/Java/Rust profile extractors to populate definition metadata parity fields (`Visibility`, `Scope`, `Signature`, `TypeHint`) and bridge-call contexts.
 - `resolver:` Added framework-aware service contract linking heuristics (for example client/server/servicer symbol-family matching) backed by universal symbol indexing.
+- `output:` Diagram output path routing now treats both `/` and `\` as relative-path separators so cross-platform config values resolve consistently between app and MCP adapters.
+
+### Fixed
+- `pathing:` Normalized shared prefix/path comparisons to avoid mixed-separator false negatives (for example Windows-style `\` vs slash-normalized patterns).
 
 ### Docs
 - Updated `README.md` and `docs/documentation/{README,architecture,configuration,output,limitations,packages,mcp}.md` to document implemented secret-detection behavior, configuration, and current MCP/output scope limits.
@@ -60,6 +64,7 @@ All notable changes to this project will be documented in this file.
 - Updated `README.md` and `docs/documentation/{README,architecture,packages,limitations}.md` to document cross-language bridge heuristics and enriched definition metadata.
 - Updated `docs/plans/cross-language-analysis-optimization-plan.md` with per-phase implementation status and completed-work tracking.
 - Updated `README.md` and `docs/documentation/{README,architecture,configuration,packages,limitations}.md` to document universal symbol-table matching, probabilistic resolution, and service-contract linking behavior.
+- Updated `README.md`, `docs/documentation/{README,architecture,configuration,output,limitations}.md`, and `docs/plans/cross-platform-compatibility-plan.md` with cross-platform phase status tracking and separator-agnostic output path behavior.
 
 ## 2026-02-13
 

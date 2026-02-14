@@ -3,6 +3,7 @@ package util
 import (
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -10,7 +11,8 @@ import (
 
 // NormalizePatternPath cleans and normalizes paths for matcher/pattern usage.
 func NormalizePatternPath(s string) string {
-	clean := filepath.ToSlash(filepath.Clean(strings.TrimSpace(s)))
+	trimmed := strings.TrimSpace(strings.ReplaceAll(s, "\\", "/"))
+	clean := path.Clean(trimmed)
 	if clean == "." {
 		return ""
 	}
@@ -19,10 +21,20 @@ func NormalizePatternPath(s string) string {
 
 // HasPathPrefix returns true when path equals prefix or is contained within prefix.
 func HasPathPrefix(path, prefix string) bool {
+	path = NormalizePatternPath(path)
+	prefix = NormalizePatternPath(prefix)
+	if path == "" || prefix == "" {
+		return path == prefix
+	}
 	if path == prefix {
 		return true
 	}
 	return strings.HasPrefix(path, prefix+"/")
+}
+
+// ContainsPathSeparator returns true when value includes either slash separator.
+func ContainsPathSeparator(value string) bool {
+	return strings.Contains(value, "/") || strings.Contains(value, "\\")
 }
 
 // SortedStringKeys returns the map's keys in sorted order.

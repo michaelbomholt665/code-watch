@@ -161,10 +161,12 @@ Mermaid and PlantUML outputs support dedicated diagram modes:
 
 Dedicated architecture/component/flow diagram modes are tracked in:
 - `docs/plans/diagram-expansion-plan.md`
+- `docs/plans/cross-platform-compatibility-plan.md` (session status includes whether the plan is fully implemented)
 
 Note:
 - Multiple modes can be enabled together under `[output.diagrams]`.
 - When multiple modes are enabled, mode-suffixed diagram files are written (for example, `graph-dependency.mmd`, `graph-flow.puml`).
+- For `output.mermaid`/`output.plantuml`, filename-only values resolve under `output.paths.diagrams_dir`; values containing `/` or `\` resolve relative to `output.paths.root` (or detected project root).
 - `output.diagrams.component_config.show_internal=true` adds definition-level symbol nodes/links in component diagrams.
 - `output.diagrams.flow_config.entry_points` and `max_depth` bound traversal for flow diagrams.
 - Mermaid output is enabled by default; PlantUML is disabled by default unless explicitly enabled.
