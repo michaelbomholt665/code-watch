@@ -1,9 +1,7 @@
 package app
 
 func (a *App) contentForPath(path string) []byte {
-	a.fileContentMu.RLock()
-	defer a.fileContentMu.RUnlock()
-	content, ok := a.fileContents[path]
+	content, ok := a.fileContents.Get(path)
 	if !ok {
 		return nil
 	}
@@ -13,15 +11,11 @@ func (a *App) contentForPath(path string) []byte {
 }
 
 func (a *App) cacheContent(path string, content []byte) {
-	a.fileContentMu.Lock()
-	defer a.fileContentMu.Unlock()
 	next := make([]byte, len(content))
 	copy(next, content)
-	a.fileContents[path] = next
+	a.fileContents.Put(path, next)
 }
 
 func (a *App) dropContent(path string) {
-	a.fileContentMu.Lock()
-	defer a.fileContentMu.Unlock()
-	delete(a.fileContents, path)
+	a.fileContents.Evict(path)
 }

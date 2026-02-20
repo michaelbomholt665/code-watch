@@ -58,8 +58,7 @@ type App struct {
 	unusedByFile map[string][]resolver.UnusedImport
 	unusedMu     sync.RWMutex
 
-	fileContentMu sync.RWMutex
-	fileContents  map[string][]byte
+	fileContents  *graph.LRUCache[string, []byte]
 }
 
 type Dependencies struct {
@@ -134,7 +133,7 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 		unusedByFile:       make(map[string][]resolver.UnusedImport),
 		secretExcludeDirs:  secretExcludeDirs,
 		secretExcludeFiles: secretExcludeFiles,
-		fileContents:       make(map[string][]byte),
+		fileContents:       graph.NewLRUCache[string, []byte](1000),
 	}
 	if err := app.initSymbolStore(); err != nil {
 		return nil, errors.Wrap(err, errors.CodeInternal, "failed to initialize symbol store")
