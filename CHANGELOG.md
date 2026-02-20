@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 ## 2026-02-20
 
 ### Changed
+### Added
+- `graph:` Implemented `BatchWriter` (`internal/engine/graph/writer.go`), a channel-driven single-writer goroutine for SQLite that prevents `SQLITE_BUSY` errors during concurrent ingestion.
+- `parser:` Added `UniversalExtractor` (`internal/engine/parser/universal.go`), a generic AST walker which uses regex-based tiering to classify nodes into strict semantic categories (`SYM_DEF`, `REF_CALL`, `REF_TYPE`, `REF_SIDE`, `REF_DYN`) with confidence scores and ancestry path tracking.
+- `graph:` Updated `symbols` schema to v4 (`usage_tag`, `confidence`, `ancestry`) using versioned migration (`PRAGMA user_version` check).
+- `overlays:` Added `internal/mcp/tools/overlays` handler and `semantic_overlays` table for persisting AI-verified symbol annotations (`EXCLUSION`, `VETTED_USAGE`, `RE-ALIAS`).
+- `surgical:` Added `internal/ui/report/surgical.go` API for extracting ±5 lines of source context around symbol occurrences, enriched with semantic confidence tags.
+
+### Changed
 - `app:` Split `internal/core/app/app.go` into focused helper and orchestration files, and moved reusable helper logic into `internal/core/app/helpers`.
 
 ### Added

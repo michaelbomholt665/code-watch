@@ -1,7 +1,7 @@
 ---
 title: Code Analysis Report
 project: code-watch
-generated_at: 2026-02-20T01:25:18Z
+generated_at: 2026-02-20T02:05:34Z
 version: 1.0.0
 ---
 
@@ -18,12 +18,12 @@ version: 1.0.0
 ## Executive Summary
 | Metric | Value |
 | --- | --- |
-| Total Modules | 36 |
-| Total Files | 118 |
+| Total Modules | 37 |
+| Total Files | 126 |
 | Circular Imports | 0 |
 | Architecture Violations | 0 |
 | Complexity Hotspots | 5 |
-| Unresolved References | 0 |
+| Unresolved References | 2 |
 | Unused Imports | 27 |
 
 ## Circular Imports
@@ -42,7 +42,10 @@ No architecture violations detected.
 | `circular/internal/ui/report/formats` | `Generate` | `internal/ui/report/formats/plantuml.go` | 97 | 36 | 3 | 5 | 123 |
 
 ## Unresolved References
-No unresolved references detected.
+| Reference | Location |
+| --- | --- |
+| `s.pattern` | `internal/engine/parser/universal.go:81:28` |
+| `s.tag` | `internal/engine/parser/universal.go:82:9` |
 
 ## Unused Imports
 <details>
@@ -50,21 +53,17 @@ No unresolved references detected.
 
 | Language | Module | Alias | Item | Confidence | Location |
 | --- | --- | --- | --- | --- | --- |
+| `go` | `circular/internal/core/app` | `coreapp` | `` | `medium` | `internal/ui/cli/runtime_factory.go:4:2` |
+| `go` | `circular/internal/mcp/schema` | `` | `` | `medium` | `internal/mcp/transport/stdio.go:6:2` |
 | `go` | `circular/internal/core/app/helpers` | `` | `` | `medium` | `internal/core/app/analyzer.go:4:2` |
+| `go` | `circular/internal/engine/secrets` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:7:2` |
+| `go` | `circular/internal/core/app/helpers` | `` | `` | `medium` | `internal/core/app/output.go:4:2` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/app/output.go:7:2` |
 | `go` | `circular/internal/core/app/helpers` | `` | `` | `medium` | `internal/core/app/app.go:4:2` |
 | `go` | `circular/internal/engine/secrets` | `secretengine` | `` | `medium` | `internal/core/app/app.go:10:2` |
 | `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/app/service.go:4:2` |
 | `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/core/app/service.go:6:2` |
-| `go` | `circular/internal/mcp/schema` | `` | `` | `medium` | `internal/mcp/transport/stdio.go:6:2` |
 | `go` | `circular/internal/engine/secrets` | `` | `` | `medium` | `internal/ui/report/formats/tsv.go:8:2` |
-| `go` | `circular/internal/core/app` | `coreapp` | `` | `medium` | `internal/ui/cli/runtime_factory.go:4:2` |
-| `go` | `circular/internal/core/app/helpers` | `` | `` | `medium` | `internal/core/app/output.go:4:2` |
-| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/app/output.go:7:2` |
-| `go` | `circular/internal/core/app` | `coreapp` | `` | `medium` | `internal/ui/cli/runtime.go:4:2` |
-| `go` | `circular/internal/mcp/runtime` | `mcpruntime` | `` | `medium` | `internal/ui/cli/runtime.go:9:2` |
-| `go` | `os/signal` | `` | `` | `medium` | `internal/ui/cli/runtime.go:17:2` |
-| `go` | `syscall` | `` | `` | `medium` | `internal/ui/cli/runtime.go:20:2` |
-| `go` | `circular/internal/engine/secrets` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:7:2` |
 | `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/mcp/runtime/bootstrap.go:5:2` |
 | `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/runtime/bootstrap.go:6:2` |
 | `go` | `circular/internal/mcp/openapi` | `` | `` | `medium` | `internal/mcp/runtime/bootstrap.go:7:2` |
@@ -77,6 +76,10 @@ No unresolved references detected.
 | `go` | `circular/internal/mcp/tools/system` | `` | `` | `medium` | `internal/mcp/runtime/server.go:14:2` |
 | `go` | `circular/internal/mcp/validate` | `` | `` | `medium` | `internal/mcp/runtime/server.go:16:2` |
 | `go` | `net/http` | `` | `` | `medium` | `internal/mcp/openapi/loader.go:7:2` |
+| `go` | `circular/internal/core/app` | `coreapp` | `` | `medium` | `internal/ui/cli/runtime.go:4:2` |
+| `go` | `circular/internal/mcp/runtime` | `mcpruntime` | `` | `medium` | `internal/ui/cli/runtime.go:9:2` |
+| `go` | `os/signal` | `` | `` | `medium` | `internal/ui/cli/runtime.go:17:2` |
+| `go` | `syscall` | `` | `` | `medium` | `internal/ui/cli/runtime.go:20:2` |
 
 </details>
 

@@ -60,6 +60,60 @@ Result:
 
 Notes:
 - when DB/history is enabled, `scan.run` also captures a project-key-scoped snapshot through the shared `AnalysisService` history use case.
+- uses `AnalysisService.RunScan` internally.
+
+### `surgical.context`
+
+Extracts source context around a symbol with high precision.
+
+Params:
+- `symbol` (`string`)
+- `file` (`string`)
+
+Result:
+- `symbol` (`string`)
+- `file` (`string`)
+- `snippets` (`[]Snippet`)
+  - `line` (`int`)
+  - `tag` (`string`, optional — e.g. `SYM_DEF`, `REF_CALL`)
+  - `confidence` (`float64`, optional)
+  - `ancestry` (`string`, optional)
+  - `context` (`[]string` — ±5 lines)
+
+Notes:
+- Uses `internal/ui/report/surgical` to scan file content; enriched by symbol store tags.
+
+### `overlays.add`
+
+Adds an AI-verified semantic overlay to the persistent store.
+
+Params:
+- `symbol` (`string`)
+- `file` (`string`, optional)
+- `type` (`string` — `EXCLUSION`, `VETTED_USAGE`, `RE-ALIAS`)
+- `reason` (`string`)
+- `source_hash` (`string`, optional)
+
+Result:
+- `id` (`int64`)
+- `status` (`string`)
+- `message` (`string`)
+
+Notes:
+- Requires `mcp.allow_mutations=true`.
+- Persists to `semantic_overlays` table in SQLite.
+
+### `overlays.list`
+
+Lists active overlays.
+
+Params:
+- `symbol` (`string`, optional)
+- `file` (`string`, optional)
+
+Result:
+- `overlays` (`[]Overlay`)
+- `total` (`int`)
 
 ### `secrets.scan`
 

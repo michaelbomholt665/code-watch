@@ -61,6 +61,13 @@
 - query handlers for modules, module details, trace, and trends
 
 ## `internal/mcp/tools/graph`
+ 
+- graph handlers for cycle detection 
+ 
+## `internal/mcp/tools/overlays`
+
+- handlers for `overlays.add` and `overlays.list`
+- backs the `OverlayStore` for AI-verified annotations (`semantic_overlays` table)
 
 - graph handlers for cycle detection
 
@@ -154,6 +161,11 @@
 - complexity metrics per callable
 - JS/TS/Java/Rust profile extractors also populate definition metadata parity fields (`Visibility`, `Scope`, `Signature`, `TypeHint`) for cross-language resolver matching
 - `gomod` and `gosum` use raw-text extractors (no runtime tree-sitter binding required)
+- `universal.go` (`UniversalExtractor`) acts as a generic fallback for any supported language:
+  - regex-based node classification into `SYM_DEF`, `REF_CALL`, `REF_TYPE`, `REF_SIDE`, `REF_DYN` usage tags
+  - confidence scoring per tag (`0.4` - `1.0`)
+  - ancestry path tracking (e.g. `main->run->err_handle`)
+  - walks every AST node without skipping
 
 ## `internal/engine/parser/registry`
 
@@ -182,7 +194,9 @@
 - complexity hotspot ranking
 - architecture rule validation
 - impact analysis (direct + transitive importers)
-- SQLite symbol-store adapter (`symbol_store.go`) for persisted cross-language resolver lookups and incremental symbol row pruning by file path
+- SQLite symbol-store adapter (`symbol_store.go`) for persisted cross-language resolver lookups and incremental symbol row pruning
+- `writer.go` (`BatchWriter`) handles high-throughput concurrent writes to SQLite using a channel-driven goroutine to prevent `SQLITE_BUSY` contention
+- `ensureOverlaySchema` and `migrateSymbolSchema` handle Schema v4 migrations (tables: `symbols`, `semantic_overlays`)
 
 ## `internal/engine/resolver`
 
@@ -233,7 +247,10 @@
 - optional architecture-violation section
 - trend renderers emit additive advanced outputs:
 - `RenderTrendTSV(...)`
+- `RenderTrendTSV(...)`
 - `RenderTrendJSON(...)`
+- `surgical.go` provides high-precision source context extraction (`GetSymbolContext`) with ±5 lines and optional semantic tagging
+
 
 ## `internal/ui/report/formats`
 

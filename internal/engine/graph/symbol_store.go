@@ -49,7 +49,7 @@ func OpenSQLiteSymbolStore(path, projectKey string) (*SQLiteSymbolStore, error) 
 		return nil, fmt.Errorf("ping sqlite symbol store %q: %w", cleanPath, err)
 	}
 
-	if err := ensureSymbolSchema(db); err != nil {
+	if err := migrateSymbolSchema(db); err != nil {
 		_ = db.Close()
 		return nil, err
 	}
@@ -67,6 +67,15 @@ func (s *SQLiteSymbolStore) Close() error {
 		return nil
 	}
 	return s.db.Close()
+}
+
+// DB returns the underlying *sql.DB so callers (e.g. OverlayStore) can share
+// the same connection without opening a second WAL writer.
+func (s *SQLiteSymbolStore) DB() *sql.DB {
+	if s == nil {
+		return nil
+	}
+	return s.db
 }
 
 func (s *SQLiteSymbolStore) SyncFromGraph(g *Graph) error {
@@ -195,7 +204,10 @@ func (s *SQLiteSymbolStore) Lookup(symbol string) []SymbolRecord {
   signature,
   type_hint,
   decorators,
-  is_service
+  is_service,
+  COALESCE(usage_tag,''),
+  COALESCE(confidence,0.0),
+  COALESCE(ancestry,'')
 FROM symbols
 WHERE project_key = ? AND canonical_name = ?
 ORDER BY module_name, file_path, symbol_name`, s.projectKey, key)
@@ -222,7 +234,10 @@ func (s *SQLiteSymbolStore) LookupService(symbol string) []SymbolRecord {
   signature,
   type_hint,
   decorators,
-  is_service
+  is_service,
+  COALESCE(usage_tag,''),
+  COALESCE(confidence,0.0),
+  COALESCE(ancestry,'')
 FROM symbols
 WHERE project_key = ? AND service_key = ? AND is_service = 1
 ORDER BY module_name, file_path, symbol_name`, s.projectKey, key)
@@ -244,6 +259,10 @@ type symbolRow struct {
 	Decorators    string
 	IsService     bool
 	ServiceKey    string
+	// v4 fields
+	UsageTag   string
+	Confidence float64
+	Ancestry   string
 }
 
 func (s *SQLiteSymbolStore) lookupRows(query string, args ...any) []SymbolRecord {
@@ -274,6 +293,9 @@ func (s *SQLiteSymbolStore) lookupRows(query string, args ...any) []SymbolRecord
 			&rec.TypeHint,
 			&decoratorsJSON,
 			&rec.IsService,
+			&rec.UsageTag,
+			&rec.Confidence,
+			&rec.Ancestry,
 		); err != nil {
 			continue
 		}
@@ -289,7 +311,13 @@ func (s *SQLiteSymbolStore) lookupRows(query string, args ...any) []SymbolRecord
 	return out
 }
 
-func ensureSymbolSchema(db *sql.DB) error {
+// migrateSymbolSchema creates or migrates the symbols table to schema v4.
+// Schema versions:
+//
+//	v1..v3 = legacy (no confidence/ancestry/usage_tag)
+//	v4     = adds usage_tag TEXT, confidence REAL, ancestry TEXT
+func migrateSymbolSchema(db *sql.DB) error {
+	// Create the base table and indexes if they don't exist.
 	_, err := db.Exec(`
 CREATE TABLE IF NOT EXISTS symbols (
   project_key TEXT NOT NULL,
@@ -315,7 +343,35 @@ CREATE INDEX IF NOT EXISTS idx_symbols_project_service_key ON symbols(project_ke
 CREATE INDEX IF NOT EXISTS idx_symbols_project_file ON symbols(project_key, file_path);
 `)
 	if err != nil {
-		return fmt.Errorf("ensure symbol schema: %w", err)
+		return fmt.Errorf("ensure symbol base schema: %w", err)
+	}
+
+	// Check current schema version.
+	var version int
+	_ = db.QueryRow(`PRAGMA user_version`).Scan(&version)
+
+	if version < 4 {
+		// Add v4 columns — ignore errors for already-existing columns.
+		for _, col := range []string{
+			`ALTER TABLE symbols ADD COLUMN usage_tag TEXT NOT NULL DEFAULT ''`,
+			`ALTER TABLE symbols ADD COLUMN confidence REAL NOT NULL DEFAULT 0.0`,
+			`ALTER TABLE symbols ADD COLUMN ancestry TEXT NOT NULL DEFAULT ''`,
+		} {
+			if _, err := db.Exec(col); err != nil {
+				// SQLite returns an error if the column already exists; that is safe to ignore.
+				if !strings.Contains(err.Error(), "duplicate column") {
+					return fmt.Errorf("schema v4 migration (%s): %w", col, err)
+				}
+			}
+		}
+		if _, err := db.Exec(`PRAGMA user_version = 4`); err != nil {
+			return fmt.Errorf("set schema user_version=4: %w", err)
+		}
+	}
+
+	// Ensure the semantic_overlays table exists (Phase IV).
+	if err := ensureOverlaySchema(db); err != nil {
+		return err
 	}
 	return nil
 }
@@ -422,8 +478,11 @@ INSERT INTO symbols (
   type_hint,
   decorators,
   is_service,
-  service_key
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  service_key,
+  usage_tag,
+  confidence,
+  ancestry
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `)
 	if err != nil {
 		return fmt.Errorf("prepare symbol insert: %w", err)
@@ -448,6 +507,9 @@ INSERT INTO symbols (
 			row.Decorators,
 			boolToInt(row.IsService),
 			row.ServiceKey,
+			row.UsageTag,
+			row.Confidence,
+			row.Ancestry,
 		); err != nil {
 			return fmt.Errorf("insert symbol row (%s:%s): %w", row.Module, row.Name, err)
 		}

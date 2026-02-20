@@ -12,9 +12,10 @@
 5. apply mode constraints (`--trace`/`--impact` conflict and arg checks)
 6. normalize `grammars_path`
 7. initialize `ports.AnalysisService` through `internal/ui/cli` runtime factory wiring (`runtime_factory.go`)
-8. run initial scan through `AnalysisService.RunScan(...)`
-9. optionally run single-command mode (`--trace` or `--impact`) and exit
-10. collect summary state + generate outputs through `AnalysisService` (`SummarySnapshot`, `SyncOutputs`) and print summary
+8. initialize `graph.SQLiteSymbolStore` (Schema v4) for persistent index/overlay storage
+9. run initial scan through `AnalysisService.RunScan(...)`
+10. optionally run single-command mode (`--trace` or `--impact`) and exit
+11. collect summary state + generate outputs through `AnalysisService` (`SummarySnapshot`, `SyncOutputs`) and print summary
 11. if watch mode: start watcher through `AnalysisService.WatchService()` and process updates (with optional UI)
 
 ## MCP Runtime Pipeline
@@ -108,7 +109,30 @@ Update behavior (`internal/core/app.HandleChanges`):
 - `internal/ui/report`: output rendering (DOT/TSV/Mermaid/PlantUML/Markdown)
 - `internal/mcp/runtime`: MCP startup, allowlist enforcement, stdio dispatch loop
 - `internal/mcp/adapters`: AnalysisService/query bridge for MCP tool handlers
+- `internal/mcp/tools/overlays`: handler for `add_overlay`/`list_overlays` operations
 - `internal/mcp/tools/*`: operation handlers for scan/query/graph/system/report operations
+
+## Persistent Symbol Store (Schema v4)
+
+The symbol store (`internal/engine/graph/symbol_store.go`) is a SQLite-based index that persists:
+1. **Symbols**: `symbols` table (canonical/service-key indexed).
+   - Schema v4 adds `usage_tag` (e.g. `SYM_DEF`, `REF_CALL`), `confidence` (0.4-1.0), and `ancestry` (structural path).
+2. **Overlays**: `semantic_overlays` table for AI-verified annotations (`VETTED_USAGE`, `EXCLUSION`, `RE-ALIAS`).
+   - Stored with `source_hash` for staleness detection.
+   - Operated via `internal/mcp/tools/overlays`.
+
+## Universal Parser
+
+`internal/engine/parser/universal.go` provides a fallback extractor for any Tree-sitter supported language.
+- Walks every AST node.
+- Uses regex-based routing to classify nodes into `UsageTag` categories.
+- Captures structural ancestry paths (e.g., `process->handler->catch_block`).
+
+## Surgical API
+
+`internal/ui/report/surgical.go` supports high-precision source retrieval for AI analysis:
+- `GetSymbolContext`: extracts ±5 lines of context around symbol occurrences.
+- Enriches snippets with `Tag`, `Confidence`, and `Ancestry` metadata from the symbol store/parser.
 
 ## Hexagonal Refactor (Implemented)
 

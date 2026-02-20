@@ -20,6 +20,10 @@ type SymbolRecord struct {
 	TypeHint   string
 	Decorators []string
 	IsService  bool
+	// v4 semantic tagging fields
+	UsageTag   string
+	Confidence float64
+	Ancestry   string
 }
 
 type UniversalSymbolTable struct {
