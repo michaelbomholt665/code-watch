@@ -115,6 +115,7 @@ type Output struct {
 	Mermaid        string              `toml:"mermaid"`
 	PlantUML       string              `toml:"plantuml"`
 	Markdown       string              `toml:"markdown"`
+	SARIF          string              `toml:"sarif"`
 	Formats        DiagramFormats      `toml:"formats"`
 	Diagrams       DiagramOutput       `toml:"diagrams"`
 	Report         ReportOutput        `toml:"report"`
@@ -191,6 +192,9 @@ type Secrets struct {
 	MinTokenLength   int                  `toml:"min_token_length"`
 	Patterns         []SecretPattern      `toml:"patterns"`
 	Exclude          SecretExcludePattern `toml:"exclude"`
+	// ScanHistory controls how many recent git commits are scanned for deleted
+	// secrets. 0 (default) disables history scanning.
+	ScanHistory int `toml:"scan_history"`
 }
 
 type SecretPattern struct {

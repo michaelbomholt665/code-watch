@@ -93,6 +93,76 @@ secret
 
 `Value` is masked (for example `AKIA...CDEF`) and raw values are not written to TSV output.
 
+## SARIF v2.1.0 Output
+
+SARIF (Static Analysis Results Interchange Format) output is generated via `internal/ui/report/formats/sarif.go` and enabled by setting `output.sarif` in config or passing `--sarif <path>` on the CLI.
+
+### Enabling SARIF
+
+Via config:
+```toml
+[output]
+sarif = "results/circular.sarif.json"
+```
+
+Via CLI flag (overrides config):
+```bash
+./circular --once --sarif results/circular.sarif.json
+```
+
+### SARIF Structure
+
+The report follows the SARIF v2.1.0 schema and contains a single `run` with three rule classes:
+
+| Rule ID | Name | Severity | Triggers on |
+| :--- | :--- | :--- | :--- |
+| `CIRC001` | `CircularDependency` | `error` | Circular import cycle detected |
+| `CIRC002` | `PotentialSecret` | `warning` / `error` | Secret or high-entropy token found |
+| `CIRC003` | `ArchitectureViolation` | `warning` | Layer-rule violation |
+
+Severity mapping for `CIRC002`:
+- `critical`, `high` → SARIF `error`
+- `medium` → SARIF `warning`
+- `low` or unknown → SARIF `note`
+
+### Path Handling
+
+All `artifactLocation.uri` values are **relative to the project root** and use forward slashes. The `uriBaseId` is set to `%SRCROOT%` so GitHub Code Scanning resolves file anchors correctly.
+
+```json
+{
+  "$schema": "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json",
+  "version": "2.1.0",
+  "runs": [{
+    "tool": { "driver": { "name": "circular", "version": "1.0.0", "rules": [...] } },
+    "results": [{
+      "ruleId": "CIRC001",
+      "level": "error",
+      "message": { "text": "Circular dependency: a → b → a" },
+      "locations": [{
+        "physicalLocation": {
+          "artifactLocation": { "uri": "internal/core/app.go", "uriBaseId": "%SRCROOT%" }
+        }
+      }]
+    }]
+  }]
+}
+```
+
+### GitHub Actions Integration
+
+Upload SARIF results to GitHub Code Scanning using the official action:
+
+```yaml
+- name: Run circular
+  run: ./circular --once --sarif results/circular.sarif.json
+
+- name: Upload SARIF
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: results/circular.sarif.json
+```
+
 ## `graph.dot`
 
 DOT graph properties:

@@ -6,9 +6,11 @@ import (
 	"circular/internal/core/ports"
 	"circular/internal/data/history"
 	"circular/internal/engine/parser"
+	"circular/internal/engine/secrets"
 	mcpruntime "circular/internal/mcp/runtime"
 	"circular/internal/shared/util"
 	"circular/internal/ui/report"
+	"circular/internal/ui/report/formats"
 	"context"
 	"errors"
 	"fmt"
@@ -143,6 +145,28 @@ func Run(args []string) int {
 
 	if _, err := analysis.SyncOutputs(context.Background(), ports.SyncOutputsRequest{}); err != nil {
 		slog.Error("failed to generate outputs", "error", err)
+	}
+
+	// --- SARIF output ---
+	sarifPath := strings.TrimSpace(opts.sarif)
+	if sarifPath == "" {
+		sarifPath = strings.TrimSpace(cfg.Output.SARIF)
+	}
+	if sarifPath != "" {
+		if err := writeSARIFReport(context.Background(), analysis, summary, paths.ProjectRoot, sarifPath); err != nil {
+			slog.Error("failed to write SARIF report", "error", err, "path", sarifPath)
+		} else {
+			slog.Info("SARIF report written", "path", sarifPath)
+		}
+	}
+
+	// --- Git history secret scan ---
+	histDepth := opts.scanHistory
+	if histDepth <= 0 {
+		histDepth = cfg.Secrets.ScanHistory
+	}
+	if histDepth > 0 {
+		runGitHistoryScan(paths.ProjectRoot, histDepth, cfg)
 	}
 
 	report, err := runHistoryMode(
@@ -677,10 +701,10 @@ func buildGrammarRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, e
 	dynamic := make([]parser.LanguageSpec, 0, len(cfg.DynamicGrammars))
 	for _, dg := range cfg.DynamicGrammars {
 		dynamic = append(dynamic, parser.LanguageSpec{
-			Name:       dg.Name,
-			Extensions: dg.Extensions,
-			Filenames:  dg.Filenames,
-			IsDynamic:  true,
+			Name:        dg.Name,
+			Extensions:  dg.Extensions,
+			Filenames:   dg.Filenames,
+			IsDynamic:   true,
 			LibraryPath: dg.Library,
 			SymbolName:  "tree_sitter_" + dg.Name,
 			DynamicConfig: &parser.DynamicExtractorConfig{
@@ -745,4 +769,82 @@ func resolveLogPath() string {
 	}
 
 	return "circular.log"
+}
+
+// writeSARIFReport generates a SARIF v2.1.0 report from the current analysis
+// state and writes it to path.
+func writeSARIFReport(
+	ctx context.Context,
+	analysis ports.AnalysisService,
+	snapshot ports.SummarySnapshot,
+	projectRoot string,
+	path string,
+) error {
+	// Collect all secrets from the file list.
+	var allSecrets []parser.Secret
+	files, err := analysis.ListFiles(ctx)
+	if err == nil {
+		for _, f := range files {
+			allSecrets = append(allSecrets, f.Secrets...)
+		}
+	}
+
+	data, err := formats.GenerateSARIF(
+		projectRoot,
+		snapshot.Cycles,
+		snapshot.Violations,
+		allSecrets,
+	)
+	if err != nil {
+		return fmt.Errorf("generate SARIF: %w", err)
+	}
+	if err := writeBytes(path, data); err != nil {
+		return fmt.Errorf("write SARIF to %q: %w", path, err)
+	}
+	return nil
+}
+
+// runGitHistoryScan scans the last depth commits of the git repo at repoPath
+// for deleted secrets and prints findings to stdout.
+func runGitHistoryScan(repoPath string, depth int, cfg *config.Config) {
+	if !secrets.IsGitAvailable() {
+		slog.Warn("--scan-history requested but `git` binary not found in PATH; skipping")
+		return
+	}
+
+	// Build detector from config, mirroring how the main scanner is configured.
+	detectorCfg := secrets.Config{
+		EntropyThreshold: cfg.Secrets.EntropyThreshold,
+		MinTokenLength:   cfg.Secrets.MinTokenLength,
+	}
+	for _, p := range cfg.Secrets.Patterns {
+		detectorCfg.Patterns = append(detectorCfg.Patterns, secrets.PatternConfig{
+			Name:     p.Name,
+			Regex:    p.Regex,
+			Severity: p.Severity,
+		})
+	}
+	detector, err := secrets.NewDetector(detectorCfg)
+	if err != nil {
+		slog.Error("failed to build secrets detector for history scan", "error", err)
+		return
+	}
+
+	slog.Info("scanning git history for secrets", "depth", depth, "repo", repoPath)
+	findings, err := secrets.ScanGitHistory(repoPath, depth, detector)
+	if err != nil {
+		slog.Error("git history scan failed", "error", err)
+		return
+	}
+
+	if len(findings) == 0 {
+		fmt.Printf("Git history scan (%d commits): no secrets found.\n", depth)
+		return
+	}
+
+	fmt.Printf("Git history scan (%d commits): %d secret(s) found in history:\n", depth, len(findings))
+	for _, s := range findings {
+		fmt.Printf("  [%s] %s — %s (line %d)\n",
+			s.Severity, s.Kind, s.Location.File, s.Location.Line)
+	}
 }

@@ -1,7 +1,7 @@
 ---
 title: Code Analysis Report
 project: code-watch
-generated_at: 2026-02-20T14:20:20Z
+generated_at: 2026-02-20T19:01:05Z
 version: 1.0.0
 ---
 
@@ -12,21 +12,19 @@ version: 1.0.0
 - [Circular Imports](#circular-imports)
 - [Architecture Violations](#architecture-violations)
 - [Complexity Hotspots](#complexity-hotspots)
-- [Probable Bridge References](#probable-bridge-references)
 - [Unresolved References](#unresolved-references)
 - [Unused Imports](#unused-imports)
 
 ## Executive Summary
 | Metric | Value |
 | --- | --- |
-| Total Modules | 1 |
-| Total Files | 130 |
+| Total Modules | 37 |
+| Total Files | 132 |
 | Circular Imports | 0 |
 | Architecture Violations | 0 |
 | Complexity Hotspots | 5 |
-| Probable Bridge References | 0 |
-| Unresolved References | 0 |
-| Unused Imports | 0 |
+| Unresolved References | 2 |
+| Unused Imports | 31 |
 
 ## Circular Imports
 No circular imports detected.
@@ -37,18 +35,55 @@ No architecture violations detected.
 ## Complexity Hotspots
 | Module | Definition | File | Score | Branches | Params | Nesting | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `` | `AIBVersion` | `internal/engine/parser/grammar/manifest.go` | 1 | 0 | 0 | 0 | 0 |
-| `` | `Active` | `internal/core/config/config.go` | 1 | 0 | 0 | 0 | 0 |
-| `` | `ActiveFile` | `internal/core/config/config.go` | 1 | 0 | 0 | 0 | 0 |
-| `` | `ActiveProject` | `internal/core/config/projects.go` | 1 | 0 | 0 | 0 | 0 |
-| `` | `ActualHash` | `internal/engine/parser/grammar/verify.go` | 1 | 0 | 0 | 0 | 0 |
-
-## Probable Bridge References
-No probable bridge references detected.
+| `circular/internal/ui/report/formats` | `Generate` | `internal/ui/report/formats/mermaid.go` | 123 | 47 | 3 | 5 | 168 |
+| `circular/internal/core/app` | `GenerateOutputs` | `internal/core/app/output.go` | 115 | 41 | 6 | 4 | 192 |
+| `circular/internal/ui/report/formats` | `buildComponentDiagramData` | `internal/ui/report/formats/diagram_modes.go` | 109 | 43 | 2 | 4 | 134 |
+| `circular/internal/ui/cli` | `Run` | `internal/ui/cli/runtime.go` | 108 | 41 | 1 | 3 | 195 |
+| `circular/internal/core/config` | `applyDefaults` | `internal/core/config/loader.go` | 103 | 43 | 1 | 1 | 147 |
 
 ## Unresolved References
-No unresolved references detected.
+| Reference | Location |
+| --- | --- |
+| `s.pattern` | `internal/engine/parser/universal.go:82:28` |
+| `s.tag` | `internal/engine/parser/universal.go:83:9` |
 
 ## Unused Imports
-No unused imports detected.
+<details>
+<summary>Unused import details</summary>
+
+| Language | Module | Alias | Item | Confidence | Location |
+| --- | --- | --- | --- | --- | --- |
+| `go` | `circular/internal/core/app/helpers` | `` | `` | `medium` | `internal/core/app/app.go:4:2` |
+| `go` | `circular/internal/engine/secrets` | `secretengine` | `` | `medium` | `internal/core/app/app.go:10:2` |
+| `go` | `net/http` | `` | `` | `medium` | `internal/mcp/openapi/loader.go:7:2` |
+| `go` | `circular/internal/core/app/helpers` | `` | `` | `medium` | `internal/core/app/analyzer.go:4:2` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/mcp/runtime/bootstrap.go:5:2` |
+| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/runtime/bootstrap.go:6:2` |
+| `go` | `circular/internal/mcp/openapi` | `` | `` | `medium` | `internal/mcp/runtime/bootstrap.go:7:2` |
+| `go` | `circular/internal/mcp/registry` | `` | `` | `medium` | `internal/mcp/runtime/bootstrap.go:8:2` |
+| `go` | `circular/internal/mcp/tools/graph` | `` | `` | `medium` | `internal/mcp/runtime/server.go:9:2` |
+| `go` | `circular/internal/mcp/tools/query` | `` | `` | `medium` | `internal/mcp/runtime/server.go:10:2` |
+| `go` | `circular/internal/mcp/tools/report` | `` | `` | `medium` | `internal/mcp/runtime/server.go:11:2` |
+| `go` | `circular/internal/mcp/tools/scan` | `` | `` | `medium` | `internal/mcp/runtime/server.go:12:2` |
+| `go` | `circular/internal/mcp/tools/secrets` | `` | `` | `medium` | `internal/mcp/runtime/server.go:13:2` |
+| `go` | `circular/internal/mcp/tools/system` | `` | `` | `medium` | `internal/mcp/runtime/server.go:14:2` |
+| `go` | `circular/internal/mcp/validate` | `` | `` | `medium` | `internal/mcp/runtime/server.go:16:2` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/app/service.go:4:2` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/core/app/service.go:6:2` |
+| `go` | `bufio` | `` | `` | `medium` | `internal/engine/secrets/git_scanner.go:5:2` |
+| `go` | `bytes` | `` | `` | `medium` | `internal/engine/secrets/git_scanner.go:6:2` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:7:2` |
+| `go` | `circular/internal/mcp/schema` | `` | `` | `medium` | `internal/mcp/transport/stdio.go:6:2` |
+| `go` | `circular/internal/core/app` | `coreapp` | `` | `medium` | `internal/ui/cli/runtime_factory.go:4:2` |
+| `go` | `circular/internal/core/app` | `coreapp` | `` | `medium` | `internal/ui/cli/runtime.go:4:2` |
+| `go` | `circular/internal/engine/secrets` | `` | `` | `medium` | `internal/ui/cli/runtime.go:9:2` |
+| `go` | `circular/internal/mcp/runtime` | `mcpruntime` | `` | `medium` | `internal/ui/cli/runtime.go:10:2` |
+| `go` | `os/signal` | `` | `` | `medium` | `internal/ui/cli/runtime.go:19:2` |
+| `go` | `syscall` | `` | `` | `medium` | `internal/ui/cli/runtime.go:22:2` |
+| `go` | `circular/internal/engine/secrets` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:7:2` |
+| `go` | `circular/internal/core/app/helpers` | `` | `` | `medium` | `internal/core/app/output.go:4:2` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/app/output.go:7:2` |
+| `go` | `circular/internal/engine/secrets` | `` | `` | `medium` | `internal/ui/report/formats/tsv.go:8:2` |
+
+</details>
 

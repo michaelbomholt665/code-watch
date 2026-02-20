@@ -91,6 +91,7 @@ debounce = "500ms"
 enabled = false
 entropy_threshold = 4.0
 min_token_length = 20
+# scan_history = 0   # Set to N to scan the last N git commits for deleted secrets
 
 [[secrets.patterns]]
 name = "custom-token"
@@ -107,6 +108,7 @@ tsv = "dependencies.tsv"
 mermaid = "graph.mmd"
 # plantuml = "graph.puml"
 markdown = "analysis-report.md"
+# sarif = "results/circular.sarif.json"
 
 [output.formats]
 mermaid = true
@@ -282,8 +284,14 @@ top_complexity = 5
 - directory basename globs skipped by secret scanning
 - `secrets.exclude.files` (`[]string`)
 - file basename globs skipped by secret scanning
-- diagram output controls currently supported in schema:
-- `output.dot`, `output.tsv`, `output.mermaid`, `output.plantuml`, `output.markdown`
+- `secrets.scan_history` (`int`, default `0`)
+  - when `> 0`, scans the last N git commits for secrets that were added and then deleted
+  - requires `git` binary in PATH; silently skipped if git is unavailable
+  - can also be set at runtime with `--scan-history N` CLI flag
+  - findings are reported to stdout with synthetic paths `git:history:<short-commit>:<file>`
+  - capped at `1000` commits to protect large repositories
+- diagram / report output controls currently supported in schema:
+- `output.dot`, `output.tsv`, `output.mermaid`, `output.plantuml`, `output.markdown`, `output.sarif`
 - `output.formats.mermaid`, `output.formats.plantuml`
 - `output.report.verbosity`, `output.report.table_of_contents`, `output.report.collapsible_sections`, `output.report.include_mermaid`
 - `output.diagrams.architecture`, `output.diagrams.component`, `output.diagrams.flow`

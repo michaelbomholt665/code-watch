@@ -122,6 +122,12 @@ func (a *App) ProcessFile(path string) error {
 		return err
 	}
 
+	// Skip generated files: check after reading so we have the real content.
+	if parser.IsGeneratedFile(content) {
+		slog.Debug("skipping generated file", "path", path)
+		return nil
+	}
+
 	file, err := a.codeParser.ParseFile(path, content)
 	if err != nil {
 		return err
