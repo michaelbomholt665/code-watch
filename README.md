@@ -29,7 +29,8 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Supports explicit bridge mappings from `.circular-bridge.toml` to resolve known cross-language links deterministically
 - Scores bridge-like references and classifies medium-confidence matches as "probable bridge references" instead of silently marking them resolved
 - Builds a universal cross-language symbol table and runs a second-pass probabilistic resolver for ambiguous references
-- Persists resolver symbol indexes to SQLite (`symbols` table in the configured DB) with incremental per-file upsert/delete/prune updates
+- Persists resolver symbol indexes and graph edges to SQLite (`symbols` table) with incremental per-file upsert/delete updates and a memory-bounded LRU cache
+- Uses a `sync.Pool`-backed Tree-sitter parser instance pool to dramatically reduce per-file allocation overhead
 - Adds framework-aware service contract linking heuristics (for example gRPC/Thrift-style client/server symbol families)
 - Detects unused imports and appends findings to TSV output
 - Detects potential hardcoded secrets via built-in patterns + entropy/context heuristics, including line-range incremental scanning for changed hunks in watch mode
@@ -136,6 +137,18 @@ Current status (as of 2026-02-14):
 - Phase 4 (read-only CQL): complete
 - Phase 5 (Batch Writer + Universal Parser): complete (`writer.go`, `universal.go`)
 - Phase 6 (AI Overlays + Surgical API): complete (`overlays`, `surgical.go`)
+
+Plan fully implemented: `yes`.
+
+## Scalability & Memory Optimization Status
+
+The scalability and memory optimization plan is tracked in:
+- `docs/plans/archived/scalability-memory-optimization.md`
+
+Current status (as of 2026-02-20):
+- Phase 1 (LRU Graph Node Cache + Storage Port): complete
+- Phase 2 (Paginated MCP Tool Responses): complete
+- Phase 3 (Parser Pool & SQLite Tuning): complete
 
 Plan fully implemented: `yes`.
 
@@ -487,7 +500,7 @@ Mermaid:
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
 flowchart LR
-  m["\n(0 funcs, 127 files)\n(d=0 in=0 out=0)\n(cx=1)"]
+  m["\n(0 funcs, 130 files)\n(d=0 in=0 out=0)\n(cx=1)"]
 
   classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
   class m internalNode;

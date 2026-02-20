@@ -40,14 +40,25 @@ func Open(path string) (*Store, error) {
 		}
 	}
 
-	// busy_timeout + WAL reduce lock conflicts during watch-mode churn.
-	dsn := fmt.Sprintf("file:%s?_pragma=busy_timeout(2000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)", cleanPath)
+	// WAL mode reduces lock conflicts during watch-mode churn.
+	// wal_autocheckpoint(1000) triggers a checkpoint every 1000 WAL pages,
+	// bounding WAL file growth without relying on the default (every 1000 pages,
+	// but only on close). synchronous(NORMAL) reduces fsync calls while still
+	// being crash-safe in WAL mode.
+	dsn := fmt.Sprintf(
+		"file:%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=wal_autocheckpoint(1000)&_pragma=synchronous(NORMAL)&_pragma=foreign_keys(ON)",
+		cleanPath,
+	)
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite history %q: %w", cleanPath, err)
 	}
+	// Serialise writes to avoid SQLITE_BUSY under concurrent watch-mode updates.
 	db.SetMaxOpenConns(1)
-	db.SetConnMaxLifetime(0)
+	// Allow idle connections so the pool doesn't destroy/rebuild them between
+	// frequent read queries in watch mode.
+	db.SetMaxIdleConns(2)
+	db.SetConnMaxLifetime(5 * time.Minute)
 	db.SetConnMaxIdleTime(0)
 
 	if err := db.Ping(); err != nil {

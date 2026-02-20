@@ -101,8 +101,8 @@ Update behavior (`internal/core/app.HandleChanges`):
 - `cmd/circular`: process entrypoint only
 - `internal/ui/cli`: flags, mode decisions, logging, UI runtime wiring
 - `internal/core/app`: orchestration and workflow state
-- `internal/engine/parser`: AST extraction to normalized file model
-- `internal/engine/graph`: dependency state + graph algorithms
+- `internal/engine/parser`: AST extraction to normalized file model, using a `sync.Pool`-backed parser to recycle tree-sitter instances.
+- `internal/engine/graph`: dependency state + graph algorithms, including a thread-safe generic LRU cache for in-memory nodes.
 - `internal/engine/resolver`: unresolved/unused heuristics
 - resolver includes bridge-call heuristics, explicit `.circular-bridge.toml` mappings (`internal/engine/resolver/bridge.go`), SQLite-backed symbol lookup (`internal/engine/graph/symbol_store.go`), and probabilistic cross-language matching so common interop references and service contracts are treated as expected links
 - `internal/core/watcher`: fsnotify + debounce

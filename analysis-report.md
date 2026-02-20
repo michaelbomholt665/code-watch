@@ -1,7 +1,7 @@
 ---
 title: Code Analysis Report
 project: code-watch
-generated_at: 2026-02-20T11:52:43Z
+generated_at: 2026-02-20T14:20:20Z
 version: 1.0.0
 ---
 
@@ -20,7 +20,7 @@ version: 1.0.0
 | Metric | Value |
 | --- | --- |
 | Total Modules | 1 |
-| Total Files | 127 |
+| Total Files | 130 |
 | Circular Imports | 0 |
 | Architecture Violations | 0 |
 | Complexity Hotspots | 5 |

@@ -116,14 +116,19 @@ func (w *BatchWriter) run() {
 		case f := <-w.ch:
 			batch = append(batch, f)
 			if len(batch) >= w.cfg.batchSize() {
+				drainPending(&batch, w.ch)
 				_ = flush()
 				ticker.Reset(w.cfg.flushInterval())
 			}
 
 		case result := <-w.flushCh:
+			// Drain any items that arrived in the channel before the flush
+			// signal so that Submit()→Flush() sequences are always coherent.
+			drainPending(&batch, w.ch)
 			result <- flush()
 
 		case <-ticker.C:
+			drainPending(&batch, w.ch)
 			_ = flush()
 
 		case <-w.done:
@@ -171,6 +176,21 @@ func (w *BatchWriter) drainChannel() error {
 			files = append(files, f)
 		default:
 			return w.writeBatch(files)
+		}
+	}
+}
+
+// drainPending non-blockingly moves all queued files from ch into batch.
+// This must be called before flushing to ensure Submit→Flush sequences are
+// coherent: a file submitted just before Flush() is called may still be
+// sitting in the channel when the flushCh signal is received.
+func drainPending(batch *[]*parser.File, ch <-chan *parser.File) {
+	for {
+		select {
+		case f := <-ch:
+			*batch = append(*batch, f)
+		default:
+			return
 		}
 	}
 }
