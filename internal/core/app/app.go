@@ -125,7 +125,7 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 	app := &App{
 		Config:             cfg,
 		codeParser:         deps.CodeParser,
-		Graph:              graph.NewGraph(),
+		Graph:              graph.NewGraphWithCapacity(cfg.Caches.Files),
 		secretScanner:      secretScanner,
 		archEngine:         graph.NewLayerRuleEngine(helpers.ArchitectureModelFromConfig(cfg.Architecture)),
 		goModCache:         make(map[string]goModuleCacheEntry),
@@ -133,7 +133,7 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 		unusedByFile:       make(map[string][]resolver.UnusedImport),
 		secretExcludeDirs:  secretExcludeDirs,
 		secretExcludeFiles: secretExcludeFiles,
-		fileContents:       graph.NewLRUCache[string, []byte](1000),
+		fileContents:       graph.NewLRUCache[string, []byte](cfg.Caches.FileContents),
 	}
 	if err := app.initSymbolStore(); err != nil {
 		return nil, errors.Wrap(err, errors.CodeInternal, "failed to initialize symbol store")

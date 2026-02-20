@@ -204,6 +204,13 @@ func applyDefaults(cfg *Config) {
 	if cfg.Resolver.BridgeScoring.WeightStdlibConflict == 0 {
 		cfg.Resolver.BridgeScoring.WeightStdlibConflict = -3
 	}
+
+	if cfg.Caches.Files <= 0 {
+		cfg.Caches.Files = 1000
+	}
+	if cfg.Caches.FileContents <= 0 {
+		cfg.Caches.FileContents = 1000
+	}
 }
 
 func normalizeProjects(cfg *Config) {

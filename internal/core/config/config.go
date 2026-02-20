@@ -23,6 +23,12 @@ type Config struct {
 	Architecture        Architecture        `toml:"architecture"`
 	Secrets             Secrets             `toml:"secrets"`
 	Resolver            ResolverSettings    `toml:"resolver"`
+	Caches              Caches              `toml:"caches"`
+}
+
+type Caches struct {
+	Files        int `toml:"files"`         // Capacity for parsed files LRU
+	FileContents int `toml:"file_contents"` // Capacity for file contents LRU
 }
 
 type DynamicGrammar struct {
