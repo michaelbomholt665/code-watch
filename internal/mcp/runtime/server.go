@@ -15,7 +15,6 @@ import (
 	"circular/internal/mcp/transport"
 	"circular/internal/mcp/validate"
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -369,22 +368,5 @@ func wrapToolResult(operation contracts.OperationID, payload any) any {
 }
 
 func toToolError(err error) error {
-	var toolErr contracts.ToolError
-	if errors.As(err, &toolErr) {
-		return toolErr
-	}
-	if errors.Is(err, context.DeadlineExceeded) {
-		return contracts.ToolError{Code: contracts.ErrorUnavailable, Message: "request timed out"}
-	}
-
-	msg := err.Error()
-	lower := strings.ToLower(msg)
-	code := contracts.ErrorInternal
-	switch {
-	case strings.Contains(lower, "not found"), strings.Contains(lower, "no path"), strings.Contains(lower, "no import chain"):
-		code = contracts.ErrorNotFound
-	case strings.Contains(lower, "must be"), strings.Contains(lower, "invalid"), strings.Contains(lower, "required"), strings.Contains(lower, "max_depth"), strings.Contains(lower, "limit"):
-		code = contracts.ErrorInvalidArgument
-	}
-	return contracts.ToolError{Code: code, Message: msg}
+	return adapters.MapToMCPError(err)
 }

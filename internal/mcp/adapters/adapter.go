@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	domainErrors "circular/internal/core/errors"
 	"circular/internal/core/ports"
 	"circular/internal/data/history"
 	"circular/internal/engine/parser"
@@ -8,6 +9,7 @@ import (
 	"circular/internal/mcp/contracts"
 	"circular/internal/shared/util"
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -315,6 +317,38 @@ func (a *Adapter) queryService() ports.QueryService {
 		return nil
 	}
 	return a.analysis.QueryService(a.history, a.ProjectKey())
+}
+
+// MapToMCPError maps domain-specific errors to MCP tool error codes.
+func MapToMCPError(err error) contracts.ToolError {
+	if err == nil {
+		return contracts.ToolError{}
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		return contracts.ToolError{Code: contracts.ErrorUnavailable, Message: "request timed out"}
+	}
+
+	var toolErr contracts.ToolError
+	if errors.As(err, &toolErr) {
+		return toolErr
+	}
+
+	code := contracts.ErrorInternal
+	msg := err.Error()
+
+	switch {
+	case domainErrors.IsCode(err, domainErrors.CodeNotFound):
+		code = contracts.ErrorNotFound
+	case domainErrors.IsCode(err, domainErrors.CodeValidationError):
+		code = contracts.ErrorInvalidArgument
+	case domainErrors.IsCode(err, domainErrors.CodeNotSupported):
+		code = contracts.ErrorInvalidArgument
+	case domainErrors.IsCode(err, domainErrors.CodePermissionDenied):
+		code = contracts.ErrorUnavailable
+	}
+
+	return contracts.ToolError{Code: code, Message: msg}
 }
 
 func resolveDiagramPath(path, root, diagramsDir string) string {
