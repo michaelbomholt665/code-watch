@@ -186,6 +186,12 @@ func TestLoadDefaultDebounce(t *testing.T) {
 	if cfg.Watch.Debounce != 500*time.Millisecond {
 		t.Errorf("Expected default debounce 500ms, got %v", cfg.Watch.Debounce)
 	}
+	if cfg.Resolver.BridgeScoring.ConfirmedThreshold != 8 {
+		t.Fatalf("expected resolver.bridge_scoring.confirmed_threshold=8, got %d", cfg.Resolver.BridgeScoring.ConfirmedThreshold)
+	}
+	if cfg.Resolver.BridgeScoring.ProbableThreshold != 5 {
+		t.Fatalf("expected resolver.bridge_scoring.probable_threshold=5, got %d", cfg.Resolver.BridgeScoring.ProbableThreshold)
+	}
 }
 
 func TestLoadError(t *testing.T) {
@@ -202,6 +208,71 @@ func TestLoadError(t *testing.T) {
 	_, err = Load(tmpfile.Name())
 	if err == nil {
 		t.Error("Expected error for malformed TOML")
+	}
+}
+
+func TestLoadResolverBridgeScoringOverride(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[resolver.bridge_scoring]
+confirmed_threshold = 9
+probable_threshold = 6
+weight_bridge_context = 2
+`
+	tmpfile, err := os.CreateTemp("", "config-resolver*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.Resolver.BridgeScoring.ConfirmedThreshold != 9 {
+		t.Fatalf("expected confirmed_threshold=9, got %d", cfg.Resolver.BridgeScoring.ConfirmedThreshold)
+	}
+	if cfg.Resolver.BridgeScoring.ProbableThreshold != 6 {
+		t.Fatalf("expected probable_threshold=6, got %d", cfg.Resolver.BridgeScoring.ProbableThreshold)
+	}
+	if cfg.Resolver.BridgeScoring.WeightBridgeContext != 2 {
+		t.Fatalf("expected weight_bridge_context=2, got %d", cfg.Resolver.BridgeScoring.WeightBridgeContext)
+	}
+}
+
+func TestLoadResolverBridgeScoringRejectsInvalidThresholds(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[resolver.bridge_scoring]
+confirmed_threshold = 4
+probable_threshold = 5
+`
+	tmpfile, err := os.CreateTemp("", "config-resolver-invalid*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Load(tmpfile.Name())
+	if err == nil {
+		t.Fatal("expected resolver bridge scoring threshold validation error")
+	}
+	if !strings.Contains(err.Error(), "resolver.bridge_scoring.probable_threshold") {
+		t.Fatalf("expected resolver bridge scoring threshold error, got %v", err)
 	}
 }
 

@@ -235,6 +235,14 @@ top_complexity = 5
 - when `db.enabled=true`, resolver symbol lookups are backed by a persisted SQLite `symbols` table with in-memory fallback on DB errors
 - service bridge references (`service_bridge`) are matched against normalized service keys to link likely contract definitions across files/languages
 - resolver can also load optional explicit bridge mappings from `.circular-bridge.toml` in watch roots and apply them as a deterministic pre-probabilistic pass
+- `resolver.bridge_scoring.confirmed_threshold` (`int`)
+- minimum bridge score required to auto-resolve a bridge-like reference (default `8`)
+- `resolver.bridge_scoring.probable_threshold` (`int`)
+- minimum bridge score required to classify as probable bridge reference (default `5`)
+- must be `<= confirmed_threshold`
+- `resolver.bridge_scoring.weight_*` (`int`)
+- bridge scoring weights for explicit rules, context, import evidence, candidate ambiguity, and conflict penalties
+- defaults are provided in `data/config/circular.example.toml`
 - `languages.<id>.extensions` (`[]string`)
 - override extension ownership for a language
 - `languages.<id>.filenames` (`[]string`)
@@ -338,6 +346,7 @@ Config load fails when:
 - MCP mode/transport combinations are invalid
 - MCP server metadata is missing when enabled
 - MCP tool exposure configuration is missing or duplicated
+- resolver bridge scoring thresholds are invalid (`probable_threshold > confirmed_threshold` or non-positive values)
 - MCP OpenAPI spec path and URL are both set
 - MCP response/timeout limits exceed bounds
 - output markdown targets are malformed

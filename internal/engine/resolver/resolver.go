@@ -8,6 +8,49 @@ import (
 	"strings"
 )
 
+type BridgeResolutionConfig struct {
+	ConfirmedThreshold int
+	ProbableThreshold  int
+	Weights            BridgeScoreWeights
+}
+
+type BridgeScoreWeights struct {
+	ExplicitRuleMatch       int
+	BridgeContext           int
+	BridgeImportEvidence    int
+	UniqueCrossLangMatch    int
+	AmbiguousCrossLangMatch int
+	LocalOrModuleConflict   int
+	StdlibConflict          int
+}
+
+type ProbableBridgeReference struct {
+	Reference  parser.Reference
+	File       string
+	Score      int
+	Confidence string
+	Reasons    []string
+}
+
+type referenceResolution uint8
+
+const (
+	referenceUnresolved referenceResolution = iota
+	referenceResolved
+	referenceProbableBridge
+)
+
+type resolutionResult struct {
+	status referenceResolution
+	bridge bridgeAssessment
+}
+
+type bridgeAssessment struct {
+	score      int
+	confidence string
+	reasons    []string
+}
+
 type UnresolvedReference struct {
 	Reference parser.Reference
 	File      string
@@ -30,6 +73,7 @@ type Resolver struct {
 	excludedSymbols  []string
 	excludedImports  []string
 	explicitBridges  []ExplicitBridge
+	bridgeConfig     BridgeResolutionConfig
 	closer           io.Closer
 }
 
@@ -67,6 +111,7 @@ func newResolver(g *graph.Graph, excludedSymbols, excludedImports []string, symb
 		stdlibByLanguage: getStdlibByLanguage(),
 		excludedSymbols:  excludedSymbols,
 		excludedImports:  excludedImports,
+		bridgeConfig:     defaultBridgeResolutionConfig(),
 		closer:           closer,
 	}
 }
@@ -79,45 +124,76 @@ func (r *Resolver) Close() error {
 }
 
 func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) bool {
+	result := r.resolveReferenceResult(file, ref)
+	return result.status == referenceResolved
+}
+
+func (r *Resolver) resolveReferenceResult(file *parser.File, ref parser.Reference) resolutionResult {
 	// 0. Check local symbols (vars, params, etc)
 	if r.isLocalSymbol(file, ref.Name) {
-		return true
+		return resolutionResult{status: referenceResolved}
 	}
 
-	// 0.5 Cross-language bridge hints (FFI/process/service calls).
-	if IsCrossLanguageBridgeReference(file.Language, ref) {
-		return true
-	}
-
-	// 0.75 Explicit bridge mappings loaded from .circular-bridge.toml.
+	// 0.5 Explicit bridge mappings loaded from .circular-bridge.toml.
 	if r.resolveExplicitBridgeReference(file, ref) {
-		return true
+		return resolutionResult{
+			status: referenceResolved,
+			bridge: bridgeAssessment{
+				score:      r.bridgeConfig.ConfirmedThreshold,
+				confidence: "high",
+				reasons:    []string{"explicit_bridge_rule"},
+			},
+		}
 	}
+
+	bridge := r.assessBridgeReference(file, ref)
 
 	// 1. Check stdlib
 	if r.isStdlibSymbol(file.Language, ref.Name) || r.isStdlibCall(file.Language, ref.Name) {
-		return true
+		return resolutionResult{status: referenceResolved}
 	}
 
 	// 2. Check local module and imports
 	if r.resolveQualifiedReference(file, ref) {
-		return true
+		return resolutionResult{status: referenceResolved}
 	}
 
 	// 4. Check builtins
 	if file.Language == "python" && pythonBuiltins[ref.Name] {
-		return true
+		return resolutionResult{status: referenceResolved}
 	}
 	if file.Language == "go" && goBuiltins[ref.Name] {
-		return true
+		return resolutionResult{status: referenceResolved}
 	}
 
 	// 5. Multi-pass cross-language probabilistic resolution.
 	if r.resolveProbabilisticReference(file, ref) {
-		return true
+		return resolutionResult{status: referenceResolved}
 	}
 
-	return false
+	if bridge.confidence == "high" {
+		return resolutionResult{status: referenceResolved, bridge: bridge}
+	}
+	if bridge.confidence == "medium" {
+		return resolutionResult{status: referenceProbableBridge, bridge: bridge}
+	}
+
+	return resolutionResult{status: referenceUnresolved, bridge: bridge}
+}
+
+func (r *Resolver) WithBridgeResolutionConfig(cfg BridgeResolutionConfig) *Resolver {
+	if r == nil {
+		return nil
+	}
+	if cfg.ConfirmedThreshold <= 0 || cfg.ProbableThreshold <= 0 || cfg.ProbableThreshold > cfg.ConfirmedThreshold {
+		r.bridgeConfig = defaultBridgeResolutionConfig()
+		return r
+	}
+	if cfg.Weights == (BridgeScoreWeights{}) {
+		cfg.Weights = defaultBridgeScoreWeights()
+	}
+	r.bridgeConfig = cfg
+	return r
 }
 
 func (r *Resolver) isLocalSymbol(file *parser.File, name string) bool {

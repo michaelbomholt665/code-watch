@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 ## 2026-02-20
 
 ### Changed
+- `resolver:` Replaced binary bridge short-circuiting with scored bridge assessment and confidence tiers so medium-confidence matches are classified as probable bridge references instead of being silently resolved.
+- `output:` Markdown and TSV generation now surface probable bridge findings (`confidence`, `score`, `reasons`) alongside unresolved/unused findings for auditability.
+
 ### Added
+- `config:` Added `[resolver.bridge_scoring]` settings to tune bridge classification thresholds and scoring weights without code changes.
+- `resolver:` Added `FindProbableBridgeReferences(...)` and `FindProbableBridgeReferencesForPaths(...)` APIs for separate probable-bridge reporting flows.
 - `graph:` Implemented `BatchWriter` (`internal/engine/graph/writer.go`), a channel-driven single-writer goroutine for SQLite that prevents `SQLITE_BUSY` errors during concurrent ingestion.
 - `parser:` Added `UniversalExtractor` (`internal/engine/parser/universal.go`), a generic AST walker which uses regex-based tiering to classify nodes into strict semantic categories (`SYM_DEF`, `REF_CALL`, `REF_TYPE`, `REF_SIDE`, `REF_DYN`) with confidence scores and ancestry path tracking.
 - `graph:` Updated `symbols` schema to v4 (`usage_tag`, `confidence`, `ancestry`) using versioned migration (`PRAGMA user_version` check).
@@ -26,6 +31,7 @@ All notable changes to this project will be documented in this file.
 ### Docs
 - Updated `docs/documentation/architecture.md` and `docs/documentation/packages.md` to document the new `internal/core/app/helpers` package and helper delegation.
 - Updated `docs/documentation/configuration.md` to note the loader/validator split for config decoding.
+- Updated `README.md`, `docs/documentation/configuration.md`, and `docs/documentation/output.md` to document bridge scoring config and probable bridge report/TSV outputs.
 
 ## 2026-02-14
 

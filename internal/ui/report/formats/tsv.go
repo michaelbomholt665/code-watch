@@ -74,6 +74,25 @@ func (t *TSVGenerator) GenerateArchitectureViolations(rows []graph.ArchitectureV
 	return buf.String(), nil
 }
 
+func (t *TSVGenerator) GenerateProbableBridges(rows []resolver.ProbableBridgeReference) (string, error) {
+	var buf strings.Builder
+
+	buf.WriteString("Type\tFile\tReference\tLine\tColumn\tConfidence\tScore\tReasons\n")
+	for _, row := range rows {
+		buf.WriteString(fmt.Sprintf("probable_bridge\t%s\t%s\t%d\t%d\t%s\t%d\t%s\n",
+			row.File,
+			row.Reference.Name,
+			row.Reference.Location.Line,
+			row.Reference.Location.Column,
+			row.Confidence,
+			row.Score,
+			strings.Join(row.Reasons, ","),
+		))
+	}
+
+	return buf.String(), nil
+}
+
 func (t *TSVGenerator) GenerateSecrets(rows []parser.Secret) (string, error) {
 	var buf strings.Builder
 

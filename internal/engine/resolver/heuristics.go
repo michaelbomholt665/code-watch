@@ -60,3 +60,35 @@ func IsCrossLanguageBridgeReference(language string, ref parser.Reference) bool 
 		return false
 	}
 }
+
+func IsCrossLanguageBridgeImportHint(language, module, base string) bool {
+	module = strings.ToLower(strings.TrimSpace(module))
+	base = strings.ToLower(strings.TrimSpace(base))
+	if module == "" && base == "" {
+		return false
+	}
+
+	hasAnyPrefix := func(prefixes ...string) bool {
+		for _, prefix := range prefixes {
+			if strings.HasPrefix(module, prefix) || strings.HasPrefix(base, prefix) {
+				return true
+			}
+		}
+		return false
+	}
+
+	switch strings.ToLower(strings.TrimSpace(language)) {
+	case "python":
+		return hasAnyPrefix("ctypes", "cffi", "subprocess", "grpc", "thrift")
+	case "go":
+		return hasAnyPrefix("c", "os/exec", "exec", "google.golang.org/grpc", "grpc")
+	case "javascript", "typescript", "tsx":
+		return hasAnyPrefix("ffi", "nodeffi", "child_process", "grpc", "thrift")
+	case "java":
+		return hasAnyPrefix("jni", "io.grpc", "thrift", "processbuilder")
+	case "rust":
+		return hasAnyPrefix("libloading", "tonic", "grpc", "thrift")
+	default:
+		return false
+	}
+}

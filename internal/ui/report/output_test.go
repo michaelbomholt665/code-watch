@@ -189,6 +189,35 @@ func TestTSVGenerator_GenerateArchitectureViolations(t *testing.T) {
 	}
 }
 
+func TestTSVGenerator_GenerateProbableBridges(t *testing.T) {
+	g := graph.NewGraph()
+	gen := NewTSVGenerator(g)
+
+	tsv, err := gen.GenerateProbableBridges([]resolver.ProbableBridgeReference{
+		{
+			File:       "client.py",
+			Reference:  parser.Reference{Name: "grpc.insecure_channel", Location: parser.Location{Line: 8, Column: 3}},
+			Confidence: "medium",
+			Score:      6,
+			Reasons:    []string{"bridge_context", "bridge_prefix_heuristic"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(tsv), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("Expected 2 lines in probable-bridge TSV, got %d", len(lines))
+	}
+	if !strings.Contains(lines[0], "Type\tFile\tReference\tLine\tColumn\tConfidence\tScore\tReasons") {
+		t.Fatalf("Unexpected probable-bridge TSV header: %s", lines[0])
+	}
+	if !strings.Contains(lines[1], "probable_bridge\tclient.py\tgrpc.insecure_channel\t8\t3\tmedium\t6\tbridge_context,bridge_prefix_heuristic") {
+		t.Fatalf("Unexpected probable-bridge TSV row: %s", lines[1])
+	}
+}
+
 func TestTSVGenerator_GenerateSecrets(t *testing.T) {
 	g := graph.NewGraph()
 	gen := NewTSVGenerator(g)
@@ -647,5 +676,11 @@ func TestMarkdownGenerator(t *testing.T) {
 	}
 	if !strings.Contains(out, "```mermaid") {
 		t.Fatalf("expected mermaid fenced code block, got: %s", out)
+	}
+	if !strings.Contains(out, "## Probable Bridge References") {
+		t.Fatalf("expected probable bridge section, got: %s", out)
+	}
+	if !strings.Contains(out, "No probable bridge references detected.") {
+		t.Fatalf("expected probable bridge empty-state text, got: %s", out)
 	}
 }

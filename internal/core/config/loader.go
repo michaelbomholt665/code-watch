@@ -51,6 +51,9 @@ func Load(path string) (*Config, error) {
 	if err := validateSecrets(&cfg); err != nil {
 		return nil, err
 	}
+	if err := validateResolver(&cfg); err != nil {
+		return nil, err
+	}
 
 	return &cfg, nil
 }
@@ -172,6 +175,34 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Secrets.MinTokenLength <= 0 {
 		cfg.Secrets.MinTokenLength = 20
+	}
+
+	if cfg.Resolver.BridgeScoring.ConfirmedThreshold <= 0 {
+		cfg.Resolver.BridgeScoring.ConfirmedThreshold = 8
+	}
+	if cfg.Resolver.BridgeScoring.ProbableThreshold <= 0 {
+		cfg.Resolver.BridgeScoring.ProbableThreshold = 5
+	}
+	if cfg.Resolver.BridgeScoring.WeightExplicitRuleMatch == 0 {
+		cfg.Resolver.BridgeScoring.WeightExplicitRuleMatch = 10
+	}
+	if cfg.Resolver.BridgeScoring.WeightBridgeContext == 0 {
+		cfg.Resolver.BridgeScoring.WeightBridgeContext = 4
+	}
+	if cfg.Resolver.BridgeScoring.WeightBridgeImportEvidence == 0 {
+		cfg.Resolver.BridgeScoring.WeightBridgeImportEvidence = 3
+	}
+	if cfg.Resolver.BridgeScoring.WeightUniqueCrossLangMatch == 0 {
+		cfg.Resolver.BridgeScoring.WeightUniqueCrossLangMatch = 2
+	}
+	if cfg.Resolver.BridgeScoring.WeightAmbiguousCrossLangMatch == 0 {
+		cfg.Resolver.BridgeScoring.WeightAmbiguousCrossLangMatch = -2
+	}
+	if cfg.Resolver.BridgeScoring.WeightLocalOrModuleConflict == 0 {
+		cfg.Resolver.BridgeScoring.WeightLocalOrModuleConflict = -4
+	}
+	if cfg.Resolver.BridgeScoring.WeightStdlibConflict == 0 {
+		cfg.Resolver.BridgeScoring.WeightStdlibConflict = -3
 	}
 }
 

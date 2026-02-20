@@ -126,6 +126,56 @@ func TestApp_GenerateOutputs_IncludesUnusedImportRows(t *testing.T) {
 	}
 }
 
+func TestApp_GenerateOutputs_IncludesProbableBridgeRows(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "appprobable")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cfg := &config.Config{
+		GrammarsPath: "./grammars",
+		WatchPaths:   []string{tmpDir},
+		Output: config.Output{
+			TSV: filepath.Join(tmpDir, "dependencies.tsv"),
+		},
+		Alerts: config.Alerts{Terminal: false},
+	}
+
+	app, err := New(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	app.Graph.AddFile(&parser.File{
+		Path:     "client.py",
+		Language: "python",
+		Module:   "client",
+		References: []parser.Reference{
+			{
+				Name:     "grpc.insecure_channel",
+				Context:  parser.RefContextService,
+				Location: parser.Location{Line: 4, Column: 2},
+			},
+		},
+	})
+
+	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	data, err := os.ReadFile(cfg.Output.TSV)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out := string(data)
+	if !strings.Contains(out, "probable_bridge") {
+		t.Fatalf("expected probable_bridge rows in TSV output, got: %s", out)
+	}
+	if !strings.Contains(out, "Type\tFile\tReference\tLine\tColumn\tConfidence\tScore\tReasons") {
+		t.Fatalf("expected probable bridge header in TSV output, got: %s", out)
+	}
+}
+
 func TestApp_ProcessFile_DetectsSecretsWhenEnabled(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "main.go")
@@ -353,6 +403,9 @@ func TestApp_GenerateOutputs_WritesMarkdownReport(t *testing.T) {
 	}
 	if !strings.Contains(out, "## Unused Imports") {
 		t.Fatalf("expected unused imports section, got: %s", out)
+	}
+	if !strings.Contains(out, "## Probable Bridge References") {
+		t.Fatalf("expected probable bridge section, got: %s", out)
 	}
 }
 

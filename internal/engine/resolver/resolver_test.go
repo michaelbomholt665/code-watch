@@ -357,6 +357,110 @@ func TestResolver_CrossLanguageBridgeContexts(t *testing.T) {
 	}
 }
 
+func TestResolver_ProbableBridgeBucket(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "main.py",
+		Language: "python",
+		Module:   "main",
+		References: []parser.Reference{
+			{Name: "grpc.insecure_channel", Context: parser.RefContextService},
+		},
+	})
+
+	res := NewResolver(g, nil, nil).WithBridgeResolutionConfig(BridgeResolutionConfig{
+		ConfirmedThreshold: 10,
+		ProbableThreshold:  5,
+		Weights:            defaultBridgeScoreWeights(),
+	})
+
+	unresolved := res.FindUnresolvedForPaths([]string{"main.py"})
+	if len(unresolved) != 0 {
+		t.Fatalf("expected no unresolved references for probable bridge call, got %+v", unresolved)
+	}
+
+	probable := res.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	if len(probable) != 1 {
+		t.Fatalf("expected 1 probable bridge reference, got %d", len(probable))
+	}
+	if probable[0].Reference.Name != "grpc.insecure_channel" {
+		t.Fatalf("expected probable grpc.insecure_channel, got %s", probable[0].Reference.Name)
+	}
+	if probable[0].Confidence != "medium" {
+		t.Fatalf("expected medium confidence probable bridge, got %s", probable[0].Confidence)
+	}
+}
+
+func TestResolver_ProbableBridgeConflictDropsToUnresolved(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "main.py",
+		Language: "python",
+		Module:   "grpc",
+		References: []parser.Reference{
+			{Name: "grpc.call"},
+		},
+	})
+
+	res := NewResolver(g, nil, nil)
+
+	probable := res.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	if len(probable) != 0 {
+		t.Fatalf("expected no probable bridge references when local symbol conflicts, got %+v", probable)
+	}
+
+	unresolved := res.FindUnresolvedForPaths([]string{"main.py"})
+	if len(unresolved) != 1 {
+		t.Fatalf("expected 1 unresolved reference, got %d", len(unresolved))
+	}
+	if unresolved[0].Reference.Name != "grpc.call" {
+		t.Fatalf("expected grpc.call unresolved, got %s", unresolved[0].Reference.Name)
+	}
+}
+
+func TestResolver_BridgeThresholdConfigControlsClassification(t *testing.T) {
+	g := graph.NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:     "main.py",
+		Language: "python",
+		Module:   "main",
+		References: []parser.Reference{
+			{Name: "grpc.insecure_channel", Context: parser.RefContextService},
+		},
+	})
+
+	highThreshold := NewResolver(g, nil, nil).WithBridgeResolutionConfig(BridgeResolutionConfig{
+		ConfirmedThreshold: 6,
+		ProbableThreshold:  5,
+		Weights:            defaultBridgeScoreWeights(),
+	})
+	highUnresolved := highThreshold.FindUnresolvedForPaths([]string{"main.py"})
+	if len(highUnresolved) != 0 {
+		t.Fatalf("expected no unresolved references with probable bridge, got %+v", highUnresolved)
+	}
+	highProbable := highThreshold.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	if len(highProbable) != 1 {
+		t.Fatalf("expected one probable bridge with higher threshold, got %d", len(highProbable))
+	}
+
+	lowThreshold := NewResolver(g, nil, nil).WithBridgeResolutionConfig(BridgeResolutionConfig{
+		ConfirmedThreshold: 5,
+		ProbableThreshold:  3,
+		Weights:            defaultBridgeScoreWeights(),
+	})
+	lowUnresolved := lowThreshold.FindUnresolvedForPaths([]string{"main.py"})
+	if len(lowUnresolved) != 0 {
+		t.Fatalf("expected no unresolved references with low threshold, got %+v", lowUnresolved)
+	}
+	lowProbable := lowThreshold.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	if len(lowProbable) != 0 {
+		t.Fatalf("expected confirmed bridge to skip probable bucket, got %+v", lowProbable)
+	}
+}
+
 func TestResolver_ImportReferenceNameByLanguage(t *testing.T) {
 	tests := []struct {
 		name     string

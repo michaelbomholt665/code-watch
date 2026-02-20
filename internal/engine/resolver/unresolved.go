@@ -92,6 +92,18 @@ func (r *Resolver) FindUnresolved() []UnresolvedReference {
 	return unresolved
 }
 
+func (r *Resolver) FindProbableBridgeReferences() []ProbableBridgeReference {
+	var probable []ProbableBridgeReference
+
+	files := r.graph.GetAllFiles()
+
+	for _, file := range files {
+		probable = append(probable, r.findProbableBridgeReferencesInFile(file)...)
+	}
+
+	return probable
+}
+
 func (r *Resolver) FindUnresolvedForPaths(paths []string) []UnresolvedReference {
 	var unresolved []UnresolvedReference
 	seen := make(map[string]bool, len(paths))
@@ -112,35 +124,71 @@ func (r *Resolver) FindUnresolvedForPaths(paths []string) []UnresolvedReference 
 	return unresolved
 }
 
+func (r *Resolver) FindProbableBridgeReferencesForPaths(paths []string) []ProbableBridgeReference {
+	var probable []ProbableBridgeReference
+	seen := make(map[string]bool, len(paths))
+
+	for _, path := range paths {
+		if seen[path] {
+			continue
+		}
+		seen[path] = true
+
+		file, ok := r.graph.GetFile(path)
+		if !ok {
+			continue
+		}
+		probable = append(probable, r.findProbableBridgeReferencesInFile(file)...)
+	}
+
+	return probable
+}
+
 func (r *Resolver) findUnresolvedInFile(file *parser.File) []UnresolvedReference {
 	var unresolved []UnresolvedReference
 	for _, ref := range file.References {
-		if !r.resolveReference(file, ref) {
-			// CONFIDENCE GATING:
-			// Report qualified references (mod.Symbol) even when no import matches.
-			isLikelyError := false
-			for _, imp := range file.Imports {
-				modBase := parser.ModuleReferenceBase(file.Language, imp.Module)
-				if strings.HasPrefix(ref.Name, modBase+".") || (imp.Alias != "" && strings.HasPrefix(ref.Name, imp.Alias+".")) {
-					isLikelyError = true
-					break
-				}
-			}
-
-			if !isLikelyError {
-				parts := strings.Split(ref.Name, ".")
-				if len(parts) > 1 && parts[0] != "" {
-					isLikelyError = true
-				}
-			}
-
-			if isLikelyError {
-				unresolved = append(unresolved, UnresolvedReference{
-					Reference: ref,
-					File:      file.Path,
-				})
-			}
+		result := r.resolveReferenceResult(file, ref)
+		if result.status != referenceUnresolved {
+			continue
+		}
+		if isLikelyErrorReference(file, ref) {
+			unresolved = append(unresolved, UnresolvedReference{
+				Reference: ref,
+				File:      file.Path,
+			})
 		}
 	}
 	return unresolved
+}
+
+func (r *Resolver) findProbableBridgeReferencesInFile(file *parser.File) []ProbableBridgeReference {
+	var probable []ProbableBridgeReference
+	for _, ref := range file.References {
+		result := r.resolveReferenceResult(file, ref)
+		if result.status != referenceProbableBridge {
+			continue
+		}
+		probable = append(probable, ProbableBridgeReference{
+			Reference:  ref,
+			File:       file.Path,
+			Score:      result.bridge.score,
+			Confidence: result.bridge.confidence,
+			Reasons:    append([]string(nil), result.bridge.reasons...),
+		})
+	}
+	return probable
+}
+
+func isLikelyErrorReference(file *parser.File, ref parser.Reference) bool {
+	// CONFIDENCE GATING:
+	// Report qualified references (mod.Symbol) even when no import matches.
+	for _, imp := range file.Imports {
+		modBase := parser.ModuleReferenceBase(file.Language, imp.Module)
+		if strings.HasPrefix(ref.Name, modBase+".") || (imp.Alias != "" && strings.HasPrefix(ref.Name, imp.Alias+".")) {
+			return true
+		}
+	}
+
+	parts := strings.Split(ref.Name, ".")
+	return len(parts) > 1 && parts[0] != ""
 }

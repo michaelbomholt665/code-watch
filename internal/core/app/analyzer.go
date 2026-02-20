@@ -92,18 +92,41 @@ func (a *App) newResolver() *resolver.Resolver {
 
 	if a.Config == nil || !a.Config.DB.Enabled {
 		res := resolver.NewResolver(a.Graph, excludedSymbols, excludedImports)
+		res.WithBridgeResolutionConfig(a.resolverBridgeConfig())
 		res.WithExplicitBridges(a.loadResolverBridges())
 		return res
 	}
 
 	if a.symbolStore == nil {
 		res := resolver.NewResolver(a.Graph, excludedSymbols, excludedImports)
+		res.WithBridgeResolutionConfig(a.resolverBridgeConfig())
 		res.WithExplicitBridges(a.loadResolverBridges())
 		return res
 	}
 	res := resolver.NewResolverWithSymbolLookup(a.Graph, excludedSymbols, excludedImports, a.symbolStore)
+	res.WithBridgeResolutionConfig(a.resolverBridgeConfig())
 	res.WithExplicitBridges(a.loadResolverBridges())
 	return res
+}
+
+func (a *App) resolverBridgeConfig() resolver.BridgeResolutionConfig {
+	if a == nil || a.Config == nil {
+		return resolver.BridgeResolutionConfig{}
+	}
+	scoring := a.Config.Resolver.BridgeScoring
+	return resolver.BridgeResolutionConfig{
+		ConfirmedThreshold: scoring.ConfirmedThreshold,
+		ProbableThreshold:  scoring.ProbableThreshold,
+		Weights: resolver.BridgeScoreWeights{
+			ExplicitRuleMatch:       scoring.WeightExplicitRuleMatch,
+			BridgeContext:           scoring.WeightBridgeContext,
+			BridgeImportEvidence:    scoring.WeightBridgeImportEvidence,
+			UniqueCrossLangMatch:    scoring.WeightUniqueCrossLangMatch,
+			AmbiguousCrossLangMatch: scoring.WeightAmbiguousCrossLangMatch,
+			LocalOrModuleConflict:   scoring.WeightLocalOrModuleConflict,
+			StdlibConflict:          scoring.WeightStdlibConflict,
+		},
+	}
 }
 
 func (a *App) loadResolverBridges() []resolver.ExplicitBridge {
@@ -137,6 +160,12 @@ func (a *App) AnalyzeHallucinations() []resolver.UnresolvedReference {
 	return unresolved
 }
 
+func (a *App) AnalyzeProbableBridges() []resolver.ProbableBridgeReference {
+	res := a.newResolver()
+	defer func() { _ = res.Close() }()
+	return res.FindProbableBridgeReferences()
+}
+
 func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []resolver.UnresolvedReference {
 	if len(affectedSet) == 0 {
 		return a.cachedUnresolved()
@@ -166,6 +195,12 @@ func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []re
 	a.unresolvedMu.Unlock()
 
 	return a.cachedUnresolved()
+}
+
+func (a *App) AnalyzeProbableBridgesForPaths(paths []string) []resolver.ProbableBridgeReference {
+	res := a.newResolver()
+	defer func() { _ = res.Close() }()
+	return res.FindProbableBridgeReferencesForPaths(paths)
 }
 
 func (a *App) AnalyzeUnusedImports() []resolver.UnusedImport {

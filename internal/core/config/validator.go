@@ -349,6 +349,20 @@ func validateArchitecture(cfg *Config) error {
 	return nil
 }
 
+func validateResolver(cfg *Config) error {
+	scoring := cfg.Resolver.BridgeScoring
+	if scoring.ConfirmedThreshold < 1 {
+		return fmt.Errorf("resolver.bridge_scoring.confirmed_threshold must be >= 1")
+	}
+	if scoring.ProbableThreshold < 1 {
+		return fmt.Errorf("resolver.bridge_scoring.probable_threshold must be >= 1")
+	}
+	if scoring.ProbableThreshold > scoring.ConfirmedThreshold {
+		return fmt.Errorf("resolver.bridge_scoring.probable_threshold must be <= resolver.bridge_scoring.confirmed_threshold")
+	}
+	return nil
+}
+
 func validateLanguages(cfg *Config) error {
 	for language, settings := range cfg.Languages {
 		if strings.TrimSpace(language) == "" {

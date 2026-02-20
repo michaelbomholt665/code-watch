@@ -29,6 +29,7 @@ func (p *PresentationService) GenerateMarkdownReport(req MarkdownReportRequest) 
 	metrics := p.app.Graph.ComputeModuleMetrics()
 	hotspots := p.app.Graph.TopComplexity(p.app.Config.Architecture.TopComplexity)
 	violations := p.app.ArchitectureViolations()
+	probableBridges := p.app.AnalyzeProbableBridges()
 	unresolved := p.app.AnalyzeHallucinations()
 	unused := p.app.AnalyzeUnusedImports()
 
@@ -53,13 +54,14 @@ func (p *PresentationService) GenerateMarkdownReport(req MarkdownReportRequest) 
 		verbosity = p.app.Config.Output.Report.Verbosity
 	}
 	md, err := report.NewMarkdownGenerator().Generate(report.MarkdownReportData{
-		TotalModules:  p.app.Graph.ModuleCount(),
-		TotalFiles:    p.app.Graph.FileCount(),
-		Cycles:        cycles,
-		Unresolved:    unresolved,
-		UnusedImports: unused,
-		Violations:    violations,
-		Hotspots:      hotspots,
+		TotalModules:    p.app.Graph.ModuleCount(),
+		TotalFiles:      p.app.Graph.FileCount(),
+		Cycles:          cycles,
+		ProbableBridges: probableBridges,
+		Unresolved:      unresolved,
+		UnusedImports:   unused,
+		Violations:      violations,
+		Hotspots:        hotspots,
 	}, report.MarkdownReportOptions{
 		ProjectName:         filepath.Base(root),
 		ProjectRoot:         root,

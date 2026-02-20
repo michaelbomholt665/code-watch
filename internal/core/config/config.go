@@ -22,6 +22,7 @@ type Config struct {
 	Alerts              Alerts              `toml:"alerts"`
 	Architecture        Architecture        `toml:"architecture"`
 	Secrets             Secrets             `toml:"secrets"`
+	Resolver            ResolverSettings    `toml:"resolver"`
 }
 
 type DynamicGrammar struct {
@@ -201,6 +202,23 @@ type SecretPattern struct {
 type SecretExcludePattern struct {
 	Dirs  []string `toml:"dirs"`
 	Files []string `toml:"files"`
+}
+
+type ResolverSettings struct {
+	BridgeScoring ResolverBridgeScoring `toml:"bridge_scoring"`
+}
+
+type ResolverBridgeScoring struct {
+	ConfirmedThreshold int `toml:"confirmed_threshold"`
+	ProbableThreshold  int `toml:"probable_threshold"`
+
+	WeightExplicitRuleMatch       int `toml:"weight_explicit_rule_match"`
+	WeightBridgeContext           int `toml:"weight_bridge_context"`
+	WeightBridgeImportEvidence    int `toml:"weight_bridge_import_evidence"`
+	WeightUniqueCrossLangMatch    int `toml:"weight_unique_cross_language_match"`
+	WeightAmbiguousCrossLangMatch int `toml:"weight_ambiguous_cross_language_match"`
+	WeightLocalOrModuleConflict   int `toml:"weight_local_or_module_conflict"`
+	WeightStdlibConflict          int `toml:"weight_stdlib_conflict"`
 }
 
 func (g GrammarVerification) IsEnabled() bool {

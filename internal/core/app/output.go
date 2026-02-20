@@ -78,6 +78,15 @@ func (a *App) GenerateOutputs(
 		}
 		tsv := dependenciesTSV
 
+		probableBridges := a.AnalyzeProbableBridges()
+		if len(probableBridges) > 0 {
+			probableTSV, err := tsvGen.GenerateProbableBridges(probableBridges)
+			if err != nil {
+				return fmt.Errorf("generate probable-bridge TSV block: %w", err)
+			}
+			tsv = strings.TrimRight(tsv, "\n") + "\n\n" + strings.TrimRight(probableTSV, "\n") + "\n"
+		}
+
 		if len(unusedImports) > 0 {
 			unusedTSV, err := tsvGen.GenerateUnusedImports(unusedImports)
 			if err != nil {
@@ -184,19 +193,21 @@ func (a *App) GenerateOutputs(
 		if unresolved == nil {
 			unresolved = a.AnalyzeHallucinations()
 		}
+		probableBridges := a.AnalyzeProbableBridges()
 		root, err := a.resolveOutputRoot()
 		if err != nil {
 			return err
 		}
 		// Use the same logic as PresentationService for consistency
 		md, err := report.NewMarkdownGenerator().Generate(report.MarkdownReportData{
-			TotalModules:  a.Graph.ModuleCount(),
-			TotalFiles:    a.Graph.FileCount(),
-			Cycles:        cycles,
-			Unresolved:    unresolved,
-			UnusedImports: unusedImports,
-			Violations:    violations,
-			Hotspots:      hotspots,
+			TotalModules:    a.Graph.ModuleCount(),
+			TotalFiles:      a.Graph.FileCount(),
+			Cycles:          cycles,
+			ProbableBridges: probableBridges,
+			Unresolved:      unresolved,
+			UnusedImports:   unusedImports,
+			Violations:      violations,
+			Hotspots:        hotspots,
 		}, report.MarkdownReportOptions{
 			ProjectName:         filepath.Base(root),
 			ProjectRoot:         root,

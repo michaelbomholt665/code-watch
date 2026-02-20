@@ -194,13 +194,16 @@ Markdown report generation is enabled when `output.markdown` is set (or via CLI 
 
 Report characteristics:
 - YAML frontmatter with `project`, `generated_at`, and `version`
-- executive summary table (modules/files/cycles/violations/hotspots/unresolved/unused)
+- executive summary table (modules/files/cycles/violations/hotspots/probable-bridges/unresolved/unused)
 - detailed sections:
 - circular imports (with impact/severity)
 - architecture violations
 - complexity hotspots
+- probable bridge references
 - unresolved references
 - unused imports
+- TSV probable-bridge appendix rows when findings exist:
+- `Type`, `File`, `Reference`, `Line`, `Column`, `Confidence`, `Score`, `Reasons`
 - optional Mermaid dependency diagram embedding when `output.report.include_mermaid=true`
 - configurable presentation:
 - `output.report.verbosity` = `summary|standard|detailed`
@@ -234,4 +237,3 @@ An aggregated view of the architecture graph.
 - **Clustering**: Modules grouped by defined architecture layers
 - **Edges**: Aggregated into single weighted arrows (`deps:N`) between clusters
 - **Violations**: Highlighted in bright red
-

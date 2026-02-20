@@ -176,6 +176,17 @@ severity = "medium"
 dirs = []
 files = []
 
+[resolver.bridge_scoring]
+confirmed_threshold = 8
+probable_threshold = 5
+weight_explicit_rule_match = 10
+weight_bridge_context = 4
+weight_bridge_import_evidence = 3
+weight_unique_cross_language_match = 2
+weight_ambiguous_cross_language_match = -2
+weight_local_or_module_conflict = -4
+weight_stdlib_conflict = -3
+
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"

@@ -14,11 +14,12 @@ type MarkdownReportData struct {
 	TotalModules int
 	TotalFiles   int
 
-	Cycles        [][]string
-	Unresolved    []resolver.UnresolvedReference
-	UnusedImports []resolver.UnusedImport
-	Violations    []graph.ArchitectureViolation
-	Hotspots      []graph.ComplexityHotspot
+	Cycles          [][]string
+	ProbableBridges []resolver.ProbableBridgeReference
+	Unresolved      []resolver.UnresolvedReference
+	UnusedImports   []resolver.UnusedImport
+	Violations      []graph.ArchitectureViolation
+	Hotspots        []graph.ComplexityHotspot
 }
 
 type MarkdownReportOptions struct {
@@ -60,6 +61,7 @@ func (m *MarkdownGenerator) Generate(data MarkdownReportData, opts MarkdownRepor
 		b.WriteString("- [Circular Imports](#circular-imports)\n")
 		b.WriteString("- [Architecture Violations](#architecture-violations)\n")
 		b.WriteString("- [Complexity Hotspots](#complexity-hotspots)\n")
+		b.WriteString("- [Probable Bridge References](#probable-bridge-references)\n")
 		b.WriteString("- [Unresolved References](#unresolved-references)\n")
 		b.WriteString("- [Unused Imports](#unused-imports)\n")
 		if opts.IncludeMermaid && strings.TrimSpace(opts.MermaidDiagram) != "" {
@@ -76,12 +78,14 @@ func (m *MarkdownGenerator) Generate(data MarkdownReportData, opts MarkdownRepor
 	b.WriteString(fmt.Sprintf("| Circular Imports | %d |\n", len(data.Cycles)))
 	b.WriteString(fmt.Sprintf("| Architecture Violations | %d |\n", len(data.Violations)))
 	b.WriteString(fmt.Sprintf("| Complexity Hotspots | %d |\n", len(data.Hotspots)))
+	b.WriteString(fmt.Sprintf("| Probable Bridge References | %d |\n", len(data.ProbableBridges)))
 	b.WriteString(fmt.Sprintf("| Unresolved References | %d |\n", len(data.Unresolved)))
 	b.WriteString(fmt.Sprintf("| Unused Imports | %d |\n\n", len(data.UnusedImports)))
 
 	m.writeCycles(&b, data.Cycles, opts.CollapsibleSections)
 	m.writeViolations(&b, data.Violations, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeHotspots(&b, data.Hotspots, opts.ProjectRoot, opts.CollapsibleSections, verbosity)
+	m.writeProbableBridges(&b, data.ProbableBridges, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeUnresolved(&b, data.Unresolved, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeUnusedImports(&b, data.UnusedImports, opts.ProjectRoot, opts.CollapsibleSections, verbosity)
 
@@ -93,6 +97,36 @@ func (m *MarkdownGenerator) Generate(data MarkdownReportData, opts MarkdownRepor
 	}
 
 	return b.String(), nil
+}
+
+func (m *MarkdownGenerator) writeProbableBridges(b *strings.Builder, rows []resolver.ProbableBridgeReference, projectRoot string, collapsible bool) {
+	b.WriteString("## Probable Bridge References\n")
+	if len(rows) == 0 {
+		b.WriteString("No probable bridge references detected.\n\n")
+		return
+	}
+	rendered := make([]string, 0, len(rows))
+	for _, row := range rows {
+		reasons := strings.Join(row.Reasons, ",")
+		rendered = append(rendered, fmt.Sprintf(
+			"| `%s` | `%s` | %d | `%s` | `%s:%d:%d` |\n",
+			row.Reference.Name,
+			row.Confidence,
+			row.Score,
+			reasons,
+			relPath(projectRoot, row.File),
+			row.Reference.Location.Line,
+			row.Reference.Location.Column,
+		))
+	}
+	m.writeTableWithCollapse(
+		b,
+		"Probable bridge details",
+		collapsible,
+		len(rendered) > 15,
+		[]string{"| Reference | Confidence | Score | Reasons | Location |\n", "| --- | --- | --- | --- | --- |\n"},
+		rendered,
+	)
 }
 
 func (m *MarkdownGenerator) writeCycles(b *strings.Builder, cycles [][]string, collapsible bool) {
