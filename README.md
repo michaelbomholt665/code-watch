@@ -27,6 +27,7 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Detects unresolved references using local symbols, imports, stdlib, and builtins
 - Treats known cross-language bridge calls (FFI/process/service patterns) as first-class resolver contexts to reduce polyglot false positives
 - Supports explicit bridge mappings from `.circular-bridge.toml` to resolve known cross-language links deterministically
+- Scores bridge-like references and classifies medium-confidence matches as "probable bridge references" instead of silently marking them resolved
 - Builds a universal cross-language symbol table and runs a second-pass probabilistic resolver for ambiguous references
 - Persists resolver symbol indexes to SQLite (`symbols` table in the configured DB) with incremental per-file upsert/delete/prune updates
 - Adds framework-aware service contract linking heuristics (for example gRPC/Thrift-style client/server symbol families)
@@ -357,6 +358,17 @@ severity = "medium"
 dirs = []
 files = []
 
+[resolver.bridge_scoring]
+confirmed_threshold = 8
+probable_threshold = 5
+weight_explicit_rule_match = 10
+weight_bridge_context = 4
+weight_bridge_import_evidence = 3
+weight_unique_cross_language_match = 2
+weight_ambiguous_cross_language_match = -2
+weight_local_or_module_conflict = -4
+weight_stdlib_conflict = -3
+
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
@@ -456,6 +468,8 @@ references = ["circular_mcp.server.*"]
   - `<!-- circular:<marker>:end -->`
 - TSV unused import rows appended when findings exist:
   - `Type`, `File`, `Language`, `Module`, `Alias`, `Item`, `Line`, `Column`, `Confidence`
+- TSV probable bridge rows appended when findings exist:
+  - `Type`, `File`, `Reference`, `Line`, `Column`, `Confidence`, `Score`, `Reasons`
 - TSV architecture violation rows appended when findings exist:
   - `Type`, `Rule`, `FromModule`, `FromLayer`, `ToModule`, `ToLayer`, `File`, `Line`, `Column`
 - TSV secret rows appended when findings exist (masked value only):
@@ -473,187 +487,13 @@ Mermaid:
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
 flowchart LR
-  circular_cmd_circular["circular/cmd/circular\n(0 funcs, 1 files)\n(d=13 in=0 out=1)\n(imp=1.5)"]
-  circular_internal_core_app["circular/internal/core/app\n(40 funcs, 14 files)\n(d=11 in=1 out=12)\n(imp=69.0)\n(cx=110)"]
-  circular_internal_core_app_helpers["circular/internal/core/app/helpers\n(23 funcs, 5 files)\n(d=10 in=1 out=7)\n(imp=25.0)"]
-  circular_internal_core_config["circular/internal/core/config\n(43 funcs, 5 files)\n(d=1 in=4 out=2)\n(imp=60.5)\n(cx=101)"]
-  circular_internal_core_config_helpers["circular/internal/core/config/helpers\n(3 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=12.0)"]
-  circular_internal_core_ports["circular/internal/core/ports\n(19 funcs, 1 files)\n(d=6 in=6 out=5)\n(imp=17.0)"]
-  circular_internal_core_watcher["circular/internal/core/watcher\n(5 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=23.0)"]
-  circular_internal_data_history["circular/internal/data/history\n(16 funcs, 6 files)\n(d=0 in=7 out=0)\n(imp=31.0)"]
-  circular_internal_data_query["circular/internal/data/query\n(13 funcs, 3 files)\n(d=5 in=3 out=2)\n(imp=30.0)"]
-  circular_internal_engine_graph["circular/internal/engine/graph\n(59 funcs, 10 files)\n(d=4 in=8 out=2)\n(imp=59.0)"]
-  circular_internal_engine_parser["circular/internal/engine/parser\n(77 funcs, 15 files)\n(d=3 in=10 out=3)\n(imp=49.0)"]
-  circular_internal_engine_parser_extractors["circular/internal/engine/parser/extractors\n(2 funcs, 1 files)\n(d=4 in=0 out=1)\n(imp=1.5)"]
-  circular_internal_engine_parser_grammar["circular/internal/engine/parser/grammar\n(7 funcs, 3 files)\n(d=2 in=1 out=1)\n(imp=25.5)"]
-  circular_internal_engine_parser_registry["circular/internal/engine/parser/registry\n(5 funcs, 1 files)\n(d=1 in=2 out=1)\n(imp=21.0)"]
-  circular_internal_engine_resolver["circular/internal/engine/resolver\n(26 funcs, 9 files)\n(d=5 in=4 out=3)\n(imp=41.5)"]
-  circular_internal_engine_resolver_drivers["circular/internal/engine/resolver/drivers\n(17 funcs, 5 files)\n(d=0 in=1 out=0)\n(imp=13.0)"]
-  circular_internal_engine_secrets["circular/internal/engine/secrets\n(12 funcs, 2 files)\n(d=7 in=4 out=2)\n(imp=30.0)"]
-  circular_internal_mcp_adapters["circular/internal/mcp/adapters\n(14 funcs, 1 files)\n(d=8 in=5 out=6)\n(imp=30.5)"]
-  circular_internal_mcp_contracts["circular/internal/mcp/contracts\n(63 funcs, 1 files)\n(d=0 in=12 out=0)\n(imp=24.5)"]
-  circular_internal_mcp_openapi["circular/internal/mcp/openapi\n(3 funcs, 3 files)\n(d=1 in=1 out=1)\n(imp=33.0)"]
-  circular_internal_mcp_registry["circular/internal/mcp/registry\n(6 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=7.5)"]
-  circular_internal_mcp_runtime["circular/internal/mcp/runtime\n(22 funcs, 5 files)\n(d=10 in=1 out=16)\n(imp=36.5)"]
-  circular_internal_mcp_schema["circular/internal/mcp/schema\n(2 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=5.0)"]
-  circular_internal_mcp_tools_graph["circular/internal/mcp/tools/graph\n(1 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=8.0)"]
-  circular_internal_mcp_tools_overlays["circular/internal/mcp/tools/overlays\n(15 funcs, 1 files)\n(d=5 in=0 out=1)\n(imp=12.0)"]
-  circular_internal_mcp_tools_query["circular/internal/mcp/tools/query\n(4 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=9.5)"]
-  circular_internal_mcp_tools_report["circular/internal/mcp/tools/report\n(2 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=4.5)"]
-  circular_internal_mcp_tools_scan["circular/internal/mcp/tools/scan\n(1 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=5.5)"]
-  circular_internal_mcp_tools_secrets["circular/internal/mcp/tools/secrets\n(2 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=9.5)"]
-  circular_internal_mcp_tools_system["circular/internal/mcp/tools/system\n(7 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=8.5)"]
-  circular_internal_mcp_transport["circular/internal/mcp/transport\n(6 funcs, 1 files)\n(d=2 in=1 out=2)\n(imp=24.5)"]
-  circular_internal_mcp_validate["circular/internal/mcp/validate\n(2 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=49.5)"]
-  circular_internal_shared_util["circular/internal/shared/util\n(6 funcs, 1 files)\n(d=0 in=8 out=0)\n(imp=21.5)"]
-  circular_internal_shared_version["circular/internal/shared/version\n(1 funcs, 1 files)\n(d=0 in=3 out=0)\n(imp=6.0)"]
-  circular_internal_ui_cli["circular/internal/ui/cli\n(8 funcs, 7 files)\n(d=12 in=1 out=11)\n(imp=61.0)"]
-  circular_internal_ui_report["circular/internal/ui/report\n(21 funcs, 4 files)\n(d=9 in=3 out=3)\n(imp=20.0)"]
-  circular_internal_ui_report_formats["circular/internal/ui/report/formats\n(24 funcs, 9 files)\n(d=8 in=1 out=5)\n(imp=68.5)\n(cx=123)"]
-  __external_aggregate__["External/Stdlib\n(47 modules)"]
+  m["\n(0 funcs, 127 files)\n(d=0 in=0 out=0)\n(cx=1)"]
 
   classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
-  class circular_cmd_circular,circular_internal_core_app,circular_internal_core_app_helpers,circular_internal_core_config,circular_internal_core_config_helpers,circular_internal_core_ports,circular_internal_core_watcher,circular_internal_data_history,circular_internal_data_query,circular_internal_engine_graph,circular_internal_engine_parser,circular_internal_engine_parser_extractors,circular_internal_engine_parser_grammar,circular_internal_engine_parser_registry,circular_internal_engine_resolver,circular_internal_engine_resolver_drivers,circular_internal_engine_secrets,circular_internal_mcp_adapters,circular_internal_mcp_contracts,circular_internal_mcp_openapi,circular_internal_mcp_registry,circular_internal_mcp_runtime,circular_internal_mcp_schema,circular_internal_mcp_tools_graph,circular_internal_mcp_tools_overlays,circular_internal_mcp_tools_query,circular_internal_mcp_tools_report,circular_internal_mcp_tools_scan,circular_internal_mcp_tools_secrets,circular_internal_mcp_tools_system,circular_internal_mcp_transport,circular_internal_mcp_validate,circular_internal_shared_util,circular_internal_shared_version,circular_internal_ui_cli,circular_internal_ui_report,circular_internal_ui_report_formats internalNode;
-  classDef externalNode fill:#efefef,stroke:#808080,stroke-dasharray:4 3,color:#000000;
-  class __external_aggregate__ externalNode;
+  class m internalNode;
   classDef hotspotNode stroke:#8a4f00,stroke-width:2px,color:#000000;
-  class circular_internal_core_app,circular_internal_core_config,circular_internal_ui_report_formats hotspotNode;
+  class m hotspotNode;
 
-  circular_cmd_circular --> circular_internal_ui_cli
-  circular_internal_core_app --> circular_internal_core_app_helpers
-  circular_internal_core_app --> circular_internal_core_config
-  circular_internal_core_app --> circular_internal_core_ports
-  circular_internal_core_app --> circular_internal_core_watcher
-  circular_internal_core_app --> circular_internal_data_history
-  circular_internal_core_app --> circular_internal_data_query
-  circular_internal_core_app --> circular_internal_engine_graph
-  circular_internal_core_app --> circular_internal_engine_parser
-  circular_internal_core_app --> circular_internal_engine_resolver
-  circular_internal_core_app --> circular_internal_engine_secrets
-  circular_internal_core_app --> circular_internal_shared_version
-  circular_internal_core_app --> circular_internal_ui_report
-  circular_internal_core_app_helpers --> circular_internal_core_config
-  circular_internal_core_app_helpers --> circular_internal_core_ports
-  circular_internal_core_app_helpers --> circular_internal_engine_graph
-  circular_internal_core_app_helpers --> circular_internal_engine_parser
-  circular_internal_core_app_helpers --> circular_internal_engine_secrets
-  circular_internal_core_app_helpers --> circular_internal_shared_util
-  circular_internal_core_app_helpers --> circular_internal_ui_report
-  circular_internal_core_config --> circular_internal_core_config_helpers
-  circular_internal_core_config --> circular_internal_shared_version
-  circular_internal_core_ports --> circular_internal_data_history
-  circular_internal_core_ports --> circular_internal_data_query
-  circular_internal_core_ports --> circular_internal_engine_graph
-  circular_internal_core_ports --> circular_internal_engine_parser
-  circular_internal_core_ports --> circular_internal_engine_resolver
-  circular_internal_data_query --> circular_internal_data_history
-  circular_internal_data_query --> circular_internal_engine_graph
-  circular_internal_engine_graph --> circular_internal_engine_parser
-  circular_internal_engine_graph --> circular_internal_shared_util
-  circular_internal_engine_parser --> circular_internal_engine_parser_grammar
-  circular_internal_engine_parser --> circular_internal_engine_parser_registry
-  circular_internal_engine_parser --> circular_internal_shared_util
-  circular_internal_engine_parser_extractors --> circular_internal_engine_parser
-  circular_internal_engine_parser_grammar --> circular_internal_engine_parser_registry
-  circular_internal_engine_parser_registry --> circular_internal_shared_util
-  circular_internal_engine_resolver --> circular_internal_engine_graph
-  circular_internal_engine_resolver --> circular_internal_engine_parser
-  circular_internal_engine_resolver --> circular_internal_engine_resolver_drivers
-  circular_internal_engine_secrets --> circular_internal_core_ports
-  circular_internal_engine_secrets --> circular_internal_engine_parser
-  circular_internal_mcp_adapters --> circular_internal_core_ports
-  circular_internal_mcp_adapters --> circular_internal_data_history
-  circular_internal_mcp_adapters --> circular_internal_engine_parser
-  circular_internal_mcp_adapters --> circular_internal_engine_secrets
-  circular_internal_mcp_adapters --> circular_internal_mcp_contracts
-  circular_internal_mcp_adapters --> circular_internal_shared_util
-  circular_internal_mcp_openapi --> circular_internal_mcp_contracts
-  circular_internal_mcp_runtime --> circular_internal_core_config
-  circular_internal_mcp_runtime --> circular_internal_core_ports
-  circular_internal_mcp_runtime --> circular_internal_data_history
-  circular_internal_mcp_runtime --> circular_internal_mcp_adapters
-  circular_internal_mcp_runtime --> circular_internal_mcp_contracts
-  circular_internal_mcp_runtime --> circular_internal_mcp_openapi
-  circular_internal_mcp_runtime --> circular_internal_mcp_registry
-  circular_internal_mcp_runtime --> circular_internal_mcp_tools_graph
-  circular_internal_mcp_runtime --> circular_internal_mcp_tools_query
-  circular_internal_mcp_runtime --> circular_internal_mcp_tools_report
-  circular_internal_mcp_runtime --> circular_internal_mcp_tools_scan
-  circular_internal_mcp_runtime --> circular_internal_mcp_tools_secrets
-  circular_internal_mcp_runtime --> circular_internal_mcp_tools_system
-  circular_internal_mcp_runtime --> circular_internal_mcp_transport
-  circular_internal_mcp_runtime --> circular_internal_mcp_validate
-  circular_internal_mcp_runtime --> circular_internal_shared_util
-  circular_internal_mcp_schema --> circular_internal_mcp_contracts
-  circular_internal_mcp_tools_graph --> circular_internal_mcp_adapters
-  circular_internal_mcp_tools_graph --> circular_internal_mcp_contracts
-  circular_internal_mcp_tools_overlays --> circular_internal_engine_graph
-  circular_internal_mcp_tools_query --> circular_internal_mcp_adapters
-  circular_internal_mcp_tools_query --> circular_internal_mcp_contracts
-  circular_internal_mcp_tools_report --> circular_internal_mcp_contracts
-  circular_internal_mcp_tools_scan --> circular_internal_mcp_adapters
-  circular_internal_mcp_tools_scan --> circular_internal_mcp_contracts
-  circular_internal_mcp_tools_secrets --> circular_internal_mcp_adapters
-  circular_internal_mcp_tools_secrets --> circular_internal_mcp_contracts
-  circular_internal_mcp_tools_system --> circular_internal_mcp_contracts
-  circular_internal_mcp_transport --> circular_internal_mcp_contracts
-  circular_internal_mcp_transport --> circular_internal_mcp_schema
-  circular_internal_mcp_validate --> circular_internal_mcp_contracts
-  circular_internal_ui_cli --> circular_internal_core_app
-  circular_internal_ui_cli --> circular_internal_core_config
-  circular_internal_ui_cli --> circular_internal_core_ports
-  circular_internal_ui_cli --> circular_internal_data_history
-  circular_internal_ui_cli --> circular_internal_data_query
-  circular_internal_ui_cli --> circular_internal_engine_parser
-  circular_internal_ui_cli --> circular_internal_engine_resolver
-  circular_internal_ui_cli --> circular_internal_mcp_runtime
-  circular_internal_ui_cli --> circular_internal_shared_util
-  circular_internal_ui_cli --> circular_internal_shared_version
-  circular_internal_ui_cli --> circular_internal_ui_report
-  circular_internal_ui_report --> circular_internal_data_history
-  circular_internal_ui_report --> circular_internal_engine_graph
-  circular_internal_ui_report --> circular_internal_ui_report_formats
-  circular_internal_ui_report_formats --> circular_internal_engine_graph
-  circular_internal_ui_report_formats --> circular_internal_engine_parser
-  circular_internal_ui_report_formats --> circular_internal_engine_resolver
-  circular_internal_ui_report_formats --> circular_internal_engine_secrets
-  circular_internal_ui_report_formats --> circular_internal_shared_util
-  circular_cmd_circular -->|ext:1| __external_aggregate__
-  circular_internal_core_app -->|ext:11| __external_aggregate__
-  circular_internal_core_app_helpers -->|ext:6| __external_aggregate__
-  circular_internal_core_config -->|ext:7| __external_aggregate__
-  circular_internal_core_config_helpers -->|ext:3| __external_aggregate__
-  circular_internal_core_ports -->|ext:2| __external_aggregate__
-  circular_internal_core_watcher -->|ext:8| __external_aggregate__
-  circular_internal_data_history -->|ext:12| __external_aggregate__
-  circular_internal_data_query -->|ext:7| __external_aggregate__
-  circular_internal_engine_graph -->|ext:13| __external_aggregate__
-  circular_internal_engine_parser -->|ext:19| __external_aggregate__
-  circular_internal_engine_parser_grammar -->|ext:10| __external_aggregate__
-  circular_internal_engine_parser_registry -->|ext:4| __external_aggregate__
-  circular_internal_engine_resolver -->|ext:9| __external_aggregate__
-  circular_internal_engine_resolver_drivers -->|ext:5| __external_aggregate__
-  circular_internal_engine_secrets -->|ext:8| __external_aggregate__
-  circular_internal_mcp_adapters -->|ext:7| __external_aggregate__
-  circular_internal_mcp_contracts -->|ext:1| __external_aggregate__
-  circular_internal_mcp_openapi -->|ext:10| __external_aggregate__
-  circular_internal_mcp_registry -->|ext:3| __external_aggregate__
-  circular_internal_mcp_runtime -->|ext:9| __external_aggregate__
-  circular_internal_mcp_tools_graph -->|ext:1| __external_aggregate__
-  circular_internal_mcp_tools_overlays -->|ext:4| __external_aggregate__
-  circular_internal_mcp_tools_query -->|ext:4| __external_aggregate__
-  circular_internal_mcp_tools_report -->|ext:1| __external_aggregate__
-  circular_internal_mcp_tools_scan -->|ext:1| __external_aggregate__
-  circular_internal_mcp_tools_secrets -->|ext:1| __external_aggregate__
-  circular_internal_mcp_tools_system -->|ext:1| __external_aggregate__
-  circular_internal_mcp_transport -->|ext:8| __external_aggregate__
-  circular_internal_mcp_validate -->|ext:3| __external_aggregate__
-  circular_internal_shared_util -->|ext:6| __external_aggregate__
-  circular_internal_ui_cli -->|ext:15| __external_aggregate__
-  circular_internal_ui_report -->|ext:6| __external_aggregate__
-  circular_internal_ui_report_formats -->|ext:7| __external_aggregate__
-
-  linkStyle 99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132 stroke:#777777,stroke-dasharray:4 3;
 
   subgraph legend_info["Legend"]
     legend_metrics["Node line 1: module\nline 2: funcs/files\n(d=depth in=fan-in out=fan-out)\n(cx=complexity hotspot score)"]

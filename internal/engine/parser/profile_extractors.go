@@ -9,24 +9,10 @@ import (
 
 func DefaultExtractorForLanguage(lang string) (Extractor, bool) {
 	switch lang {
-	case "go":
-		return &GoExtractor{}, true
-	case "python":
-		return &PythonExtractor{}, true
-	case "javascript":
-		return newJavaScriptProfileExtractor("javascript"), true
-	case "typescript":
-		return newTypeScriptProfileExtractor("typescript"), true
-	case "tsx":
-		return newTypeScriptProfileExtractor("tsx"), true
-	case "java":
-		return &javaProfileExtractor{}, true
-	case "rust":
-		return &rustProfileExtractor{}, true
-	case "html":
-		return &htmlProfileExtractor{}, true
-	case "css":
-		return &cssProfileExtractor{}, true
+	case "go", "python", "javascript", "typescript", "tsx", "java", "rust", "html", "css":
+		// Use the new Universal Extractor for all tree-sitter languages
+		// to enable usage tags, confidence scores, and ancestry paths.
+		return NewUniversalExtractor(), true
 	case "gomod":
 		return &goModProfileExtractor{}, true
 	case "gosum":

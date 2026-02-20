@@ -7,10 +7,12 @@
 | Phase | Status | Notes |
 | :--- | :--- | :--- |
 | **I: Concurrency** | ✅ Implemented | `SQLiteSymbolStore` in `internal/engine/graph/symbol_store.go` |
-| **II: Universal Parser** | ❌ Not Implemented | Still using language-specific extractors (golang.go, python.go) |
-| **III: Schema v4** | ⚠️ Partial | Basic symbol schema exists, missing confidence/ancestry fields |
-| **IV: Overlays** | ❌ Not Implemented | No AI semantic overlay system |
-| **V: Surgical API** | ❌ Not Implemented | No `get_symbol_context` tool |
+| **II: Universal Parser** | ✅ Implemented | `internal/engine/parser/universal.go` and default extractor routing in `internal/engine/parser/profile_extractors.go` |
+| **III: Schema v4** | ✅ Implemented | `symbols` schema includes `usage_tag`, `confidence`, `ancestry` (plus `line_number` in v5 migration path) |
+| **IV: Overlays** | ✅ Implemented | `semantic_overlays` schema + MCP overlay tooling in `internal/mcp/tools/overlays/handler.go` |
+| **V: Surgical API** | ✅ Implemented | Symbol context extraction in `internal/ui/report/surgical.go` |
+
+**Plan completion:** ✅ Fully implemented.
 
 ## 1. Objective
 Transition the current lightweight analyzer from a volatile memory-first approach to a **Persistent Symbol & Pattern Store** architecture. This system must handle 7+ backends and 165 languages with "architectural truth," providing a high-concurrency, AI-teachable interface via MCP.
