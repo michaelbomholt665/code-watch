@@ -2,8 +2,8 @@
 package parser
 
 import (
+	"circular/internal/core/errors"
 	"circular/internal/shared/util"
-	"errors"
 	"fmt"
 	"path"
 	"path/filepath"
@@ -67,7 +67,7 @@ func (p *Parser) RegisterDefaultExtractors() error {
 				p.RegisterExtractor(lang, NewDynamicExtractor(*spec.DynamicConfig))
 				continue
 			}
-			return fmt.Errorf("no default extractor for enabled language: %s", lang)
+			return errors.New(errors.CodeNotSupported, fmt.Sprintf("no default extractor for enabled language: %s", lang))
 		}
 		p.RegisterExtractor(lang, extractor)
 	}
@@ -77,12 +77,12 @@ func (p *Parser) RegisterDefaultExtractors() error {
 func (p *Parser) ParseFile(path string, content []byte) (*File, error) {
 	lang := p.detectLanguage(path)
 	if lang == "" {
-		return nil, errors.New("unsupported language")
+		return nil, errors.New(errors.CodeNotSupported, "unsupported language")
 	}
 
 	extractor := p.extractors[lang]
 	if extractor == nil {
-		return nil, fmt.Errorf("no extractor for: %s", lang)
+		return nil, errors.New(errors.CodeNotSupported, fmt.Sprintf("no extractor for: %s", lang))
 	}
 
 	grammar := p.loader.languages[lang]
@@ -90,7 +90,7 @@ func (p *Parser) ParseFile(path string, content []byte) (*File, error) {
 		if rawExtractor, ok := extractor.(RawExtractor); ok {
 			return rawExtractor.ExtractRaw(content, path)
 		}
-		return nil, fmt.Errorf("grammar not loaded: %s", lang)
+		return nil, errors.New(errors.CodeInternal, fmt.Sprintf("grammar not loaded: %s", lang))
 	}
 
 	parser := sitter.NewParser()
@@ -99,12 +99,16 @@ func (p *Parser) ParseFile(path string, content []byte) (*File, error) {
 
 	tree := parser.Parse(content, nil)
 	if tree == nil {
-		return nil, errors.New("parse failed")
+		return nil, errors.New(errors.CodeInternal, "parse failed")
 	}
 	defer tree.Close()
 
 	root := tree.RootNode()
-	return extractor.Extract(root, content, path)
+	res, err := extractor.Extract(root, content, path)
+	if err != nil {
+		return nil, errors.Wrap(err, errors.CodeInternal, "extraction failed")
+	}
+	return res, nil
 }
 
 func (p *Parser) detectLanguage(path string) string {
