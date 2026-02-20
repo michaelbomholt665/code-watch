@@ -3,12 +3,12 @@ package app
 import (
 	"circular/internal/core/app/helpers"
 	"circular/internal/core/config"
+	"circular/internal/core/errors"
 	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
 	secretengine "circular/internal/engine/secrets"
-	"fmt"
 	"sync"
 
 	"github.com/gobwas/glob"
@@ -70,16 +70,16 @@ type Dependencies struct {
 func New(cfg *config.Config) (*App, error) {
 	registry, err := buildParserRegistry(cfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errors.CodeInternal, "failed to build parser registry")
 	}
 	loader, err := parser.NewGrammarLoaderWithRegistry(cfg.GrammarsPath, registry, cfg.GrammarVerification.IsEnabled())
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errors.CodeInternal, "failed to initialize grammar loader")
 	}
 
 	parserImpl := parser.NewParser(loader)
 	if err := parserImpl.RegisterDefaultExtractors(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errors.CodeInternal, "failed to register default extractors")
 	}
 
 	return NewWithDependencies(cfg, Dependencies{
@@ -89,19 +89,19 @@ func New(cfg *config.Config) (*App, error) {
 
 func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 	if cfg == nil {
-		return nil, fmt.Errorf("config must not be nil")
+		return nil, errors.New(errors.CodeValidationError, "config must not be nil")
 	}
 	if deps.CodeParser == nil {
-		return nil, fmt.Errorf("code parser dependency must not be nil")
+		return nil, errors.New(errors.CodeValidationError, "code parser dependency must not be nil")
 	}
 
 	secretExcludeDirs, err := helpers.CompileGlobs(cfg.Secrets.Exclude.Dirs, "secret exclude dir")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errors.CodeValidationError, "failed to compile secret exclude dirs")
 	}
 	secretExcludeFiles, err := helpers.CompileGlobs(cfg.Secrets.Exclude.Files, "secret exclude file")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errors.CodeValidationError, "failed to compile secret exclude files")
 	}
 	secretScanner := deps.SecretScanner
 	if cfg.Secrets.Enabled && secretScanner == nil {
@@ -119,7 +119,7 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 			Patterns:         customPatterns,
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, errors.CodeInternal, "failed to initialize secret scanner")
 		}
 	}
 
@@ -137,7 +137,7 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 		fileContents:       make(map[string][]byte),
 	}
 	if err := app.initSymbolStore(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, errors.CodeInternal, "failed to initialize symbol store")
 	}
 	return app, nil
 }
@@ -169,5 +169,9 @@ func buildParserRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, er
 		})
 	}
 
-	return parser.BuildLanguageRegistry(overrides, dynamic)
+	registry, err := parser.BuildLanguageRegistry(overrides, dynamic)
+	if err != nil {
+		return nil, errors.Wrap(err, errors.CodeInternal, "failed to build parser registry")
+	}
+	return registry, nil
 }
