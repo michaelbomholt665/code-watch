@@ -14,6 +14,7 @@ xdot.png
 docs/reports/
 out/
 docs/fix.md
+error.md
 
 # Local runtime/cache state
 .cache/

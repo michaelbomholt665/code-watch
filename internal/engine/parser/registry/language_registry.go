@@ -17,6 +17,17 @@ type LanguageSpec struct {
 	Enabled             bool
 	ExtractorReady      bool
 	RequireVerification bool
+	// Dynamic grammar support
+	IsDynamic     bool
+	LibraryPath   string
+	SymbolName    string
+	DynamicConfig *DynamicExtractorConfig
+}
+
+type DynamicExtractorConfig struct {
+	NamespaceNode   string   `toml:"namespace_node"`
+	ImportNode      string   `toml:"import_node"`
+	DefinitionNodes []string `toml:"definition_nodes"`
 }
 
 type LanguageOverride struct {
@@ -120,8 +131,20 @@ func DefaultLanguageRegistry() map[string]LanguageSpec {
 	}
 }
 
-func BuildLanguageRegistry(overrides map[string]LanguageOverride) (map[string]LanguageSpec, error) {
+func BuildLanguageRegistry(overrides map[string]LanguageOverride, dynamic []LanguageSpec) (map[string]LanguageSpec, error) {
 	registry := cloneLanguageRegistry(DefaultLanguageRegistry())
+
+	// Add dynamic grammars
+	for _, dg := range dynamic {
+		if _, ok := registry[dg.Name]; ok {
+			return nil, fmt.Errorf("dynamic grammar %q conflicts with built-in language", dg.Name)
+		}
+		dg.IsDynamic = true
+		dg.Enabled = true
+		dg.ExtractorReady = true
+		registry[dg.Name] = dg
+	}
+
 	if overrides == nil {
 		return registry, nil
 	}

@@ -673,7 +673,25 @@ func buildGrammarRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, e
 			Filenames:  append([]string(nil), languageCfg.Filenames...),
 		}
 	}
-	return parser.BuildLanguageRegistry(overrides)
+
+	dynamic := make([]parser.LanguageSpec, 0, len(cfg.DynamicGrammars))
+	for _, dg := range cfg.DynamicGrammars {
+		dynamic = append(dynamic, parser.LanguageSpec{
+			Name:       dg.Name,
+			Extensions: dg.Extensions,
+			Filenames:  dg.Filenames,
+			IsDynamic:  true,
+			LibraryPath: dg.Library,
+			SymbolName:  "tree_sitter_" + dg.Name,
+			DynamicConfig: &parser.DynamicExtractorConfig{
+				NamespaceNode:   dg.NamespaceNode,
+				ImportNode:      dg.ImportNode,
+				DefinitionNodes: dg.DefinitionNodes,
+			},
+		})
+	}
+
+	return parser.BuildLanguageRegistry(overrides, dynamic)
 }
 
 func parseQueryTrace(raw string) (string, string, error) {

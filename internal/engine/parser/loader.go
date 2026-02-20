@@ -2,6 +2,7 @@
 package parser
 
 import (
+	"circular/internal/engine/parser/grammar"
 	"circular/internal/shared/util"
 	"fmt"
 	"os"
@@ -25,7 +26,7 @@ type GrammarLoader struct {
 }
 
 func NewGrammarLoader(grammarsPath string) (*GrammarLoader, error) {
-	registry, err := BuildLanguageRegistry(nil)
+	registry, err := BuildLanguageRegistry(nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -35,7 +36,7 @@ func NewGrammarLoader(grammarsPath string) (*GrammarLoader, error) {
 func NewGrammarLoaderWithRegistry(grammarsPath string, registry map[string]LanguageSpec, verifyArtifacts bool) (*GrammarLoader, error) {
 	if registry == nil {
 		var err error
-		registry, err = BuildLanguageRegistry(nil)
+		registry, err = BuildLanguageRegistry(nil, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -74,6 +75,14 @@ func NewGrammarLoaderWithRegistry(grammarsPath string, registry map[string]Langu
 	for _, langID := range util.SortedStringKeys(gl.registry) {
 		spec := gl.registry[langID]
 		if !spec.Enabled {
+			continue
+		}
+		if spec.IsDynamic {
+			lang, err := grammar.LoadDynamic(spec.LibraryPath, spec.Name)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load dynamic grammar %q: %w", langID, err)
+			}
+			gl.languages[langID] = lang
 			continue
 		}
 		switch langID {

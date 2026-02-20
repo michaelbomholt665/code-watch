@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 ## 2026-02-14
 
 ### Added
+- `parser:` Added dynamic Tree-sitter grammar support via `dlopen` (Linux/macOS) for runtime language loading without binary recompilation.
+- `parser:` Added `DynamicExtractor`, a generic configuration-driven AST extractor that maps language-specific AST nodes to universal dependency concepts (namespaces, imports, definitions).
+- `config:` Added `[[dynamic_grammars]]` TOML schema (`name`, `library`, `extensions`, `namespace_node`, `import_node`, `definition_nodes`) with startup validation.
 - `graph:` Added `internal/engine/graph/symbol_store.go` SQLite symbol-store adapter with project-scoped sync, canonical/service-key indexes, and file-path-based pruning for persistent resolver lookups.
 - `graph:` Added `internal/engine/graph/symbol_store_test.go` coverage for symbol sync/lookup/prune behavior and project-key isolation.
 - `architecture:` Added `internal/core/ports/ports.go` with initial hexagonal driven ports (`CodeParser`, `SecretScanner`, `HistoryStore`) as the refactor phase-1 baseline.
@@ -97,6 +100,12 @@ All notable changes to this project will be documented in this file.
 - `secrets:` Entropy checks are now limited to a high-risk extension set (`.env`, `.json`, `.key`, `.pem`, `.p12`, `.pfx`, `.crt`, `.cer`, `.yaml`, `.yml`, `.toml`, `.ini`, `.conf`, `.properties`).
 
 ### Fixed
+- Improved Go unused import detection accuracy:
+  - Fixed false positives for side-effect imports (`_ "pkg"`) and dot imports (`. "pkg"`) by correctly capturing `blank_identifier` and `dot` node kinds in the Go extractor.
+  - Enhanced reference extraction to recursively walk all type-bearing nodes (struct fields, interface methods, function signatures, variable types) in the Go extractor.
+  - Fixed missing references in top-level variable and constant declarations by ensuring type and value nodes are traversed during extraction.
+  - Refined `LocalSymbols` logic to prevent package names and types from being incorrectly treated as local variables.
+  - Improved `hasSymbolUse` heuristic in the resolver to explicitly handle Go type decorators like pointers, slices, and maps.
 - `pathing:` Normalized shared prefix/path comparisons to avoid mixed-separator false negatives (for example Windows-style `\` vs slash-normalized patterns).
 
 ### Docs

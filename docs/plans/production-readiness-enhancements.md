@@ -3,6 +3,25 @@
 
 This document outlines the final steps to make `circular` an enterprise-grade tool, focusing on CI/CD integration, deeper secret scanning, and noise reduction.
 
+## Implementation Status (2026-02-20)
+
+| Phase | Status | Notes |
+| :--- | :--- | :--- |
+| **Phase 1: SARIF Output** | ❌ Not Implemented | No `internal/ui/report/formats/sarif.go` |
+| **Phase 2: Git History Scanning** | ❌ Not Implemented | No `internal/engine/secrets/git_scanner.go` |
+| **Phase 3: Generated Code Handling** | ❌ Not Implemented | No header detection or exclusion |
+
+### What's Implemented
+- Basic secret detection with pattern matching and entropy
+- Multiple output formats (DOT, Mermaid, PlantUML, TSV, Markdown)
+- MCP integration for CI/CD workflows
+
+### What's Missing
+- SARIF output for GitHub Code Scanning
+- Git history secret scanning
+- Generated code detection (`DO NOT EDIT` headers)
+- Inline `// circular:ignore` comment support
+
 ## Objective
 Implement SARIF output, Git history scanning, and generated code handling.
 

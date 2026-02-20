@@ -5,6 +5,46 @@ import (
 	"testing"
 )
 
+func TestGoExtraction_QualifiedTypes(t *testing.T) {
+	loader, err := NewGrammarLoader("./grammars")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	p := NewParser(loader)
+	p.RegisterExtractor("go", &GoExtractor{})
+
+	code := `
+package test
+import "circular/internal/core/ports"
+type Deps struct {
+	Analysis ports.AnalysisService
+}
+`
+	file, err := p.ParseFile("test.go", []byte(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	foundPorts := false
+	foundAnalysis := false
+	for _, ref := range file.References {
+		if ref.Name == "ports" {
+			foundPorts = true
+		}
+		if ref.Name == "ports.AnalysisService" {
+			foundAnalysis = true
+		}
+	}
+
+	if !foundPorts {
+		t.Error("Expected reference 'ports' not found")
+	}
+	if !foundAnalysis {
+		t.Error("Expected reference 'ports.AnalysisService' not found")
+	}
+}
+
 func TestPythonExtraction(t *testing.T) {
 	loader, err := NewGrammarLoader("./grammars")
 	if err != nil {
@@ -200,7 +240,7 @@ func TestProfileExtractor_MetadataParityAndBridgeContexts(t *testing.T) {
 		"typescript": {Enabled: &trueVal},
 		"java":       {Enabled: &trueVal},
 		"rust":       {Enabled: &trueVal},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,7 +359,7 @@ func TestExtraction_MultiLanguage(t *testing.T) {
 		"css":        {Enabled: &trueVal},
 		"gomod":      {Enabled: &trueVal},
 		"gosum":      {Enabled: &trueVal},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

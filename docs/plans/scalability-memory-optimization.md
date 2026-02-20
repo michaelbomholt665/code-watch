@@ -3,6 +3,26 @@
 
 This plan addresses memory constraints when analyzing massive codebases (e.g., >100,000 files) by transitioning from an all-in-memory model to a hybrid memory/disk approach.
 
+## Implementation Status (2026-02-20)
+
+| Phase | Status | Notes |
+| :--- | :--- | :--- |
+| **Phase 1: Storage-backed Graph** | ⚠️ Partial | `SQLiteSymbolStore` exists, but no graph edge persistence |
+| **Phase 2: Lazy Loading** | ❌ Not Implemented | No paginated tool responses, no tainted scanning |
+| **Phase 3: Resource Management** | ❌ Not Implemented | No parser pool, basic connection pooling only |
+
+### What's Implemented
+- SQLite symbol store with WAL mode (`internal/engine/graph/symbol_store.go`)
+- SQLite history store with retry logic (`internal/data/history/store.go`)
+- Basic connection pooling (MaxOpenConns=1)
+
+### What's Missing
+- LRU cache for graph nodes
+- Disk-backed graph edge storage
+- Lazy loading for large queries
+- Parser instance pooling
+- Memory profiling integration
+
 ## Objective
 Reduce the RAM footprint of the `Graph` and MCP server by utilizing SQLite for cold data and implementing lazy-loading for AST nodes and symbol tables.
 

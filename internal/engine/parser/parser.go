@@ -63,6 +63,10 @@ func (p *Parser) RegisterDefaultExtractors() error {
 		}
 		extractor, ok := DefaultExtractorForLanguage(lang)
 		if !ok {
+			if spec.IsDynamic && spec.DynamicConfig != nil {
+				p.RegisterExtractor(lang, NewDynamicExtractor(*spec.DynamicConfig))
+				continue
+			}
 			return fmt.Errorf("no default extractor for enabled language: %s", lang)
 		}
 		p.RegisterExtractor(lang, extractor)

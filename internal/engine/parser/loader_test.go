@@ -60,7 +60,7 @@ func TestNewGrammarLoaderWithRegistry_EnableExpandedLanguages(t *testing.T) {
 		"css":        {Enabled: &trueVal},
 		"gomod":      {Enabled: &trueVal},
 		"gosum":      {Enabled: &trueVal},
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

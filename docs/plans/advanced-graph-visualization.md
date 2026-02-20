@@ -3,6 +3,27 @@
 
 This plan describes enhancements to the graphical output of `circular` to provide more meaningful architectural insights and reduce visual noise.
 
+## Implementation Status (2026-02-20)
+
+| Phase | Status | Notes |
+| :--- | :--- | :--- |
+| **Phase 1: Importance Scoring** | ⚠️ Partial | `ModuleMetrics` has Fan-In/Fan-Out, missing `ImportanceScore` |
+| **Phase 2: C4-style Diagrams** | ⚠️ Partial | Layer subgraphs exist in Mermaid, missing edge aggregation |
+| **Phase 3: New Viz Types** | ❌ Not Implemented | No treemap, no sequence diagrams |
+
+### What's Implemented
+- Module metrics (Fan-In, Fan-Out, Depth) in `internal/engine/graph/metrics.go`
+- Layer-based subgraphs in Mermaid output
+- Cycle/violation highlighting
+- Complexity hotspots
+
+### What's Missing
+- Importance scoring formula
+- Edge aggregation for high-level views
+- Treemap visualization
+- Sequence diagram generation
+- Interactive HTML reports
+
 ## Objective
 Implement Importance/Complexity scoring, C4-style architecture diagrams, and new visualization types (Treemaps, Sequence Diagrams).
 

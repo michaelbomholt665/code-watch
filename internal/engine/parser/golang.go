@@ -29,6 +29,7 @@ func (e *GoExtractor) Extract(root *sitter.Node, source []byte, filePath string)
 		"parameter_declaration": e.extractParam,
 		"method_declaration":    e.extractMethod,
 		"range_clause":          e.extractRange,
+		"func_literal":          e.extractFuncLiteral,
 		"identifier":            e.captureLocal,
 		"selector_expression":   e.extractReference,
 		"type_identifier":       e.captureLocal,
@@ -91,7 +92,7 @@ func (e *GoExtractor) walkImports(ctx *ExtractionContext, node *sitter.Node) {
 				spec := child.Child(j)
 				kind := spec.Kind()
 
-				if kind == "package_identifier" || kind == "_" || kind == "." {
+				if kind == "package_identifier" || kind == "_" || kind == "." || kind == "blank_identifier" || kind == "dot" {
 					alias = ctx.Text(spec)
 				} else if kind == "interpreted_string_literal" || kind == "raw_string_literal" {
 					path = strings.Trim(ctx.Text(spec), "\"`")
@@ -126,6 +127,25 @@ func (e *GoExtractor) extractMethod(ctx *ExtractionContext, node *sitter.Node) b
 	return false // Continue walking into body
 }
 
+func (e *GoExtractor) extractFuncLiteral(ctx *ExtractionContext, node *sitter.Node) bool {
+	// Capture parameters and their names
+	params := node.ChildByFieldName("parameters")
+	if params != nil {
+		// parameter_list -> parameter_declaration
+		for i := uint(0); i < params.ChildCount(); i++ {
+			child := params.Child(i)
+			if child.Kind() == "parameter_declaration" {
+				e.extractParam(ctx, child)
+			}
+		}
+	}
+	results := node.ChildByFieldName("result")
+	if results != nil {
+		e.walkForReferences(ctx, results)
+	}
+	return false // Continue walking into body
+}
+
 func (e *GoExtractor) extractCallable(ctx *ExtractionContext, node *sitter.Node, kind DefinitionKind) {
 	nameNode := node.ChildByFieldName("name")
 	if nameNode == nil {
@@ -141,11 +161,11 @@ func (e *GoExtractor) extractCallable(ctx *ExtractionContext, node *sitter.Node,
 	// Capture types in parameters and results
 	params := node.ChildByFieldName("parameters")
 	if params != nil {
-		e.extractSignatureTypes(ctx, params)
+		e.walkForReferences(ctx, params)
 	}
 	results := node.ChildByFieldName("result")
 	if results != nil {
-		e.extractSignatureTypes(ctx, results)
+		e.walkForReferences(ctx, results)
 	}
 
 	exported := len(name) > 0 && unicode.IsUpper(rune(name[0]))
@@ -163,9 +183,28 @@ func (e *GoExtractor) extractCallable(ctx *ExtractionContext, node *sitter.Node,
 	if score == 0 {
 		score = 1
 	}
-	fullName := name
+
+	// For methods, try to prepend receiver type to name
+	displayName := name
+	if kind == KindMethod {
+		receiver := node.ChildByFieldName("receiver")
+		if receiver != nil {
+			// receiver typically looks like (p *Parser) or (p Parser)
+			// We want 'Parser'
+			recvText := ctx.Text(receiver)
+			recvText = strings.Trim(recvText, "()")
+			parts := strings.Fields(recvText)
+			if len(parts) > 0 {
+				typeName := parts[len(parts)-1]
+				typeName = strings.TrimLeft(typeName, "*")
+				displayName = typeName + "." + name
+			}
+		}
+	}
+
+	fullName := displayName
 	if ctx.File.Module != "" {
-		fullName = ctx.File.Module + "." + name
+		fullName = ctx.File.Module + "." + displayName
 	}
 	paramsText := ""
 	if params != nil {
@@ -204,19 +243,22 @@ func (e *GoExtractor) extractCallable(ctx *ExtractionContext, node *sitter.Node,
 	})
 }
 
-func (e *GoExtractor) extractSignatureTypes(ctx *ExtractionContext, node *sitter.Node) {
+func (e *GoExtractor) walkForReferences(ctx *ExtractionContext, node *sitter.Node) {
 	var walk func(*sitter.Node)
 	walk = func(n *sitter.Node) {
 		if n == nil {
 			return
 		}
 		nk := n.Kind()
+		if nk == "func_literal" {
+			e.extractFuncLiteral(ctx, n)
+		}
 		if nk == "selector_expression" || nk == "qualified_type" {
 			e.extractReference(ctx, n)
 			return
 		}
-		if nk == "type_identifier" {
-			e.captureLocal(ctx, n)
+		if nk == "type_identifier" || nk == "identifier" {
+			e.extractReference(ctx, n)
 		}
 		for i := uint(0); i < n.ChildCount(); i++ {
 			walk(n.Child(i))
@@ -284,7 +326,7 @@ func (e *GoExtractor) computeGoComplexity(body *sitter.Node, depth int) (branche
 func (e *GoExtractor) extractType(ctx *ExtractionContext, node *sitter.Node) bool {
 	for i := uint(0); i < node.ChildCount(); i++ {
 		child := node.Child(i)
-		if child.Kind() == "type_spec" {
+		if child.Kind() == "type_spec" || child.Kind() == "type_alias" {
 			e.extractTypeSpec(ctx, child)
 			nameNode := child.ChildByFieldName("name")
 			if nameNode != nil {
@@ -299,13 +341,27 @@ func (e *GoExtractor) extractTypeSpec(ctx *ExtractionContext, node *sitter.Node)
 	var name string
 	kind := KindType
 
-	for i := uint(0); i < node.ChildCount(); i++ {
-		child := node.Child(i)
+	nameNode := node.ChildByFieldName("name")
+	if nameNode != nil {
+		name = ctx.Text(nameNode)
+	}
 
-		if child.Kind() == "type_identifier" {
-			name = ctx.Text(child)
-		} else if child.Kind() == "interface_type" {
+	if name == "" {
+		// Fallback to searching for type_identifier or identifier if field name lookup fails
+		for i := uint(0); i < node.ChildCount(); i++ {
+			child := node.Child(i)
+			ck := child.Kind()
+			if ck == "type_identifier" || ck == "identifier" {
+				name = ctx.Text(child)
+				break
+			}
+		}
+	}
+
+	for i := uint(0); i < node.ChildCount(); i++ {
+		if node.Child(i).Kind() == "interface_type" {
 			kind = KindInterface
+			break
 		}
 	}
 
@@ -328,6 +384,7 @@ func (e *GoExtractor) extractTypeSpec(ctx *ExtractionContext, node *sitter.Node)
 	if typeNode != nil {
 		typeHint = typeNode.Kind()
 		signature += " " + ctx.Text(typeNode)
+		e.walkForReferences(ctx, typeNode)
 	}
 	if kind == KindInterface {
 		typeHint = "interface"
@@ -344,29 +401,188 @@ func (e *GoExtractor) extractTypeSpec(ctx *ExtractionContext, node *sitter.Node)
 		TypeHint:   typeHint,
 		Location:   ctx.Location(node),
 	})
+	return false
+}
+
+func (e *GoExtractor) extractVarDecl(ctx *ExtractionContext, node *sitter.Node) bool {
+	// Check if we are at the top level (package scope)
+	isTopLevel := false
+	if parent := node.Parent(); parent != nil && parent.Kind() == "source_file" {
+		isTopLevel = true
+	}
+
+	if isTopLevel {
+		e.extractTopLevelVars(ctx, node)
+		return true
+	}
+
+	// For local declarations, we need to capture local symbols AND extract references
+	var walk func(*sitter.Node)
+	walk = func(n *sitter.Node) {
+		if n == nil {
+			return
+		}
+
+		nk := n.Kind()
+		if nk == "var_spec" || nk == "const_spec" || nk == "short_var_declaration" {
+			// In var_spec/const_spec, names come before type/values
+			// In short_var_declaration, names are in 'left' field
+			if nk == "short_var_declaration" {
+				left := n.ChildByFieldName("left")
+				ctx.AppendLocalIdentifiers(left)
+				right := n.ChildByFieldName("right")
+				if right != nil {
+					e.walkForReferences(ctx, right)
+				}
+				return
+			}
+
+			// For var_spec/const_spec
+			hasTypeOrValue := false
+			for i := uint(0); i < n.ChildCount(); i++ {
+				child := n.Child(i)
+				ck := child.Kind()
+				if ck == "identifier" && !hasTypeOrValue {
+					ctx.File.LocalSymbols = append(ctx.File.LocalSymbols, ctx.Text(child))
+				} else if ck != "," && ck != "=" && ck != ":" {
+					hasTypeOrValue = true
+					e.walkForReferences(ctx, child)
+				}
+			}
+			return
+		}
+
+		for i := uint(0); i < n.ChildCount(); i++ {
+			walk(n.Child(i))
+		}
+	}
+
+	walk(node)
 	ctx.ProcessedChildren = true
 	return true
 }
 
-func (e *GoExtractor) extractVarDecl(ctx *ExtractionContext, node *sitter.Node) bool {
-	if node.Kind() == "short_var_declaration" {
-		left := node.ChildByFieldName("left")
-		if left != nil {
-			ctx.AppendLocalIdentifiers(left)
-		}
-		return false
+func (e *GoExtractor) extractTopLevelVars(ctx *ExtractionContext, node *sitter.Node) {
+	kind := KindVariable
+	if node.Kind() == "const_declaration" {
+		kind = KindConstant
 	}
-	ctx.AppendLocalIdentifiers(node)
-	ctx.ProcessedChildren = true
-	return true // Processed local identifiers, skip walking deeper if it's just a simple decl
+
+	var walk func(*sitter.Node)
+	walk = func(n *sitter.Node) {
+		if n == nil {
+			return
+		}
+		if n.Kind() == "import_spec" {
+			return
+		}
+
+		if n.Kind() == "identifier" {
+			// Ensure this identifier is actually a name being defined, not a type or value.
+			// In Go tree-sitter, var/const names are children of var_spec/const_spec.
+			// We only want them if they are in the 'name' field or similar.
+			p := n.Parent()
+			isName := false
+			if p != nil {
+				pk := p.Kind()
+				if pk == "var_spec" || pk == "const_spec" {
+					// Check if n is among the names
+					for i := uint(0); i < p.ChildCount(); i++ {
+						child := p.Child(i)
+						if child.Kind() == "identifier" {
+							if child.Id() == n.Id() {
+								isName = true
+								break
+							}
+						} else {
+							// Once we hit something else (type or =), names are over
+							break
+						}
+					}
+				}
+			}
+
+			if isName {
+				name := ctx.Text(n)
+				if name != "" && name != "_" {
+					exported := isExportedName(name)
+					visibility := "private"
+					if exported {
+						visibility = "public"
+					}
+					fullName := name
+					if ctx.File.Module != "" {
+						fullName = ctx.File.Module + "." + name
+					}
+
+					ctx.File.Definitions = append(ctx.File.Definitions, Definition{
+						Name:       name,
+						FullName:   fullName,
+						Kind:       kind,
+						Exported:   exported,
+						Visibility: visibility,
+						Scope:      "global",
+						Location:   ctx.Location(n),
+					})
+					ctx.File.LocalSymbols = append(ctx.File.LocalSymbols, name)
+				}
+				return
+			}
+		}
+
+		// Extract references from types and values
+		nk := n.Kind()
+		if nk == "type_identifier" || nk == "qualified_type" || nk == "call_expression" || nk == "selector_expression" {
+			e.walkForReferences(ctx, n)
+			return
+		}
+
+		for i := uint(0); i < n.ChildCount(); i++ {
+			walk(n.Child(i))
+		}
+	}
+	walk(node)
 }
 
 func (e *GoExtractor) extractParam(ctx *ExtractionContext, node *sitter.Node) bool {
-	for i := uint(0); i < node.ChildCount(); i++ {
-		child := node.Child(i)
-		if child.Kind() == "identifier" {
-			ctx.File.LocalSymbols = append(ctx.File.LocalSymbols, ctx.Text(child))
+	// parameter_declaration: name (identifier), type (qualified_type, etc.)
+	// or just type (for anonymous params)
+	nameNode := node.ChildByFieldName("name")
+	if nameNode != nil {
+		ctx.File.LocalSymbols = append(ctx.File.LocalSymbols, ctx.Text(nameNode))
+	} else {
+		// Fallback: if it has 2+ identifiers, the first is likely the name
+		// unless it's a variadic param or something.
+		ids := make([]*sitter.Node, 0)
+		for i := uint(0); i < node.ChildCount(); i++ {
+			child := node.Child(i)
+			if child.Kind() == "identifier" {
+				ids = append(ids, child)
+			}
 		}
+		if len(ids) >= 2 {
+			ctx.File.LocalSymbols = append(ctx.File.LocalSymbols, ctx.Text(ids[0]))
+		} else if len(ids) == 1 {
+			// Could be name OR type. Hard to tell without more context.
+			// If the only child is identifier, it might be an anonymous param of type T.
+			// But if it's func(m T), 'm' is identifier, 'T' is type_identifier.
+			// So if we have 1 identifier and 1 type_identifier, identifier is the name.
+			hasType := false
+			for i := uint(0); i < node.ChildCount(); i++ {
+				child := node.Child(i)
+				if child.Kind() == "type_identifier" || child.Kind() == "qualified_type" || child.Kind() == "pointer_type" {
+					hasType = true
+					break
+				}
+			}
+			if hasType {
+				ctx.File.LocalSymbols = append(ctx.File.LocalSymbols, ctx.Text(ids[0]))
+			}
+		}
+	}
+	typeNode := node.ChildByFieldName("type")
+	if typeNode != nil {
+		e.walkForReferences(ctx, typeNode)
 	}
 	return true
 }
@@ -375,6 +591,10 @@ func (e *GoExtractor) extractRange(ctx *ExtractionContext, node *sitter.Node) bo
 	left := node.ChildByFieldName("left")
 	if left != nil {
 		ctx.AppendLocalIdentifiers(left)
+	}
+	right := node.ChildByFieldName("right")
+	if right != nil {
+		e.walkForReferences(ctx, right)
 	}
 	return false
 }
@@ -419,11 +639,27 @@ func (e *GoExtractor) extractReference(ctx *ExtractionContext, node *sitter.Node
 		}
 	}
 
-	// If it's a selector, we might want to capture just Pkg.Symbol
+	// If it's a selector, we want to capture the base part (pkg.Symbol or receiver.Method)
 	if nk == "selector_expression" || nk == "qualified_type" {
 		parts := strings.Split(name, ".")
-		if len(parts) > 2 {
-			name = parts[0] + "." + parts[1]
+		if len(parts) > 1 {
+			// Handle func().Method or receiver.Method
+			if strings.Contains(parts[0], "(") {
+				// It's a call like newSvc(a).Method.
+				// We capture 'Method' as the reference.
+				name = parts[len(parts)-1]
+			} else {
+				// Capture the base part too (e.g. pkg) to help unused import detection
+				ctx.File.References = append(ctx.File.References, Reference{
+					Name:     parts[0],
+					Location: ctx.Location(node),
+				})
+
+				if len(parts) > 2 {
+					// Too deep, like pkg.Sub.Symbol. Just keep first two.
+					name = parts[0] + "." + parts[1]
+				}
+			}
 		}
 		ctx.ProcessedChildren = true
 	}

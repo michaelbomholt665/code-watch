@@ -168,7 +168,25 @@ func buildParserRegistry(cfg *config.Config) (map[string]parser.LanguageSpec, er
 			Filenames:  append([]string(nil), languageCfg.Filenames...),
 		}
 	}
-	return parser.BuildLanguageRegistry(overrides)
+
+	dynamic := make([]parser.LanguageSpec, 0, len(cfg.DynamicGrammars))
+	for _, dg := range cfg.DynamicGrammars {
+		dynamic = append(dynamic, parser.LanguageSpec{
+			Name:        dg.Name,
+			Extensions:  dg.Extensions,
+			Filenames:   dg.Filenames,
+			IsDynamic:   true,
+			LibraryPath: dg.Library,
+			SymbolName:  "tree_sitter_" + dg.Name,
+			DynamicConfig: &parser.DynamicExtractorConfig{
+				NamespaceNode:   dg.NamespaceNode,
+				ImportNode:      dg.ImportNode,
+				DefinitionNodes: dg.DefinitionNodes,
+			},
+		})
+	}
+
+	return parser.BuildLanguageRegistry(overrides, dynamic)
 }
 
 func compileGlobs(patterns []string, label string) ([]glob.Glob, error) {
@@ -329,7 +347,8 @@ func (a *App) ProcessFile(path string) error {
 		return err
 	}
 
-	if file.Language == "python" {
+	switch file.Language {
+	case "python":
 		if len(a.Config.WatchPaths) == 0 {
 			return fmt.Errorf("python resolver requires at least one watch path")
 		}
@@ -339,7 +358,7 @@ func (a *App) ProcessFile(path string) error {
 		}
 		r := resolver.NewPythonResolver(matchingPath)
 		file.Module = r.GetModuleName(path)
-	} else if file.Language == "go" {
+	case "go":
 		moduleName, ok, err := a.resolveGoModule(path)
 		if err != nil {
 			return err
@@ -348,6 +367,16 @@ func (a *App) ProcessFile(path string) error {
 			file.Module = moduleName
 		}
 	}
+
+	// Update FullName for all definitions now that we have the module name
+	if file.Module != "" {
+		for i := range file.Definitions {
+			if !strings.HasPrefix(file.Definitions[i].FullName, file.Module+".") {
+				file.Definitions[i].FullName = file.Module + "." + file.Definitions[i].FullName
+			}
+		}
+	}
+
 	if a.secretScanner != nil && !a.shouldSkipSecretScan(path) {
 		previousSecrets := []parser.Secret(nil)
 		if previousFile != nil {

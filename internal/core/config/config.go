@@ -22,6 +22,7 @@ type Config struct {
 	GrammarsPath        string              `toml:"grammars_path"`
 	GrammarVerification GrammarVerification `toml:"grammar_verification"`
 	Languages           map[string]Language `toml:"languages"`
+	DynamicGrammars     []DynamicGrammar    `toml:"dynamic_grammars"`
 	WatchPaths          []string            `toml:"watch_paths"`
 	Exclude             Exclude             `toml:"exclude"`
 	Watch               Watch               `toml:"watch"`
@@ -29,6 +30,16 @@ type Config struct {
 	Alerts              Alerts              `toml:"alerts"`
 	Architecture        Architecture        `toml:"architecture"`
 	Secrets             Secrets             `toml:"secrets"`
+}
+
+type DynamicGrammar struct {
+	Name            string   `toml:"name"`
+	Library         string   `toml:"library"`
+	Extensions      []string `toml:"extensions"`
+	Filenames       []string `toml:"filenames"`
+	NamespaceNode   string   `toml:"namespace_node"`
+	ImportNode      string   `toml:"import_node"`
+	DefinitionNodes []string `toml:"definition_nodes"`
 }
 
 type Paths struct {
@@ -234,6 +245,9 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 	if err := validateLanguages(&cfg); err != nil {
+		return nil, err
+	}
+	if err := validateDynamicGrammars(&cfg); err != nil {
 		return nil, err
 	}
 	if err := validateSecrets(&cfg); err != nil {
@@ -891,6 +905,38 @@ func validateLanguages(cfg *Config) error {
 			if strings.TrimSpace(name) == "" {
 				return fmt.Errorf("languages.%s.filenames must not include empty values", language)
 			}
+		}
+	}
+	return nil
+}
+
+func validateDynamicGrammars(cfg *Config) error {
+	seen := make(map[string]bool)
+	for i, dg := range cfg.DynamicGrammars {
+		ref := fmt.Sprintf("dynamic_grammars[%d]", i)
+		name := strings.TrimSpace(dg.Name)
+		if name == "" {
+			return fmt.Errorf("%s.name must not be empty", ref)
+		}
+		if seen[name] {
+			return fmt.Errorf("duplicate dynamic grammar name %q", name)
+		}
+		seen[name] = true
+
+		if strings.TrimSpace(dg.Library) == "" {
+			return fmt.Errorf("%s.library must not be empty", ref)
+		}
+		if len(dg.Extensions) == 0 && len(dg.Filenames) == 0 {
+			return fmt.Errorf("%s must define at least one extension or filename", ref)
+		}
+		if dg.NamespaceNode == "" {
+			return fmt.Errorf("%s.namespace_node must not be empty", ref)
+		}
+		if dg.ImportNode == "" {
+			return fmt.Errorf("%s.import_node must not be empty", ref)
+		}
+		if len(dg.DefinitionNodes) == 0 {
+			return fmt.Errorf("%s.definition_nodes must not be empty", ref)
 		}
 	}
 	return nil

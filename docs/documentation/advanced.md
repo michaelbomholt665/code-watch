@@ -30,6 +30,32 @@ This document covers the implemented advanced feature set from `docs/plans/high-
 - entropy checks gated to high-risk file extensions to reduce scan noise/cost on general source files
 - explicit bridge mapping support via `.circular-bridge.toml` (`internal/engine/resolver/bridge.go` + app resolver wiring)
 - read-only CQL support for advanced module queries (`internal/data/query/cql.go`, `internal/data/query/service.go`)
+- runtime Tree-sitter grammar loading via `dlopen` (Linux/macOS) for custom language support without recompilation
+
+## Dynamic Grammar Support
+
+Circular supports runtime loading of Tree-sitter grammars. This allows adding support for new languages by providing a shared object (`.so`) file and mapping AST nodes to universal dependency concepts.
+
+### Configuration
+
+Add a `[[dynamic_grammars]]` block to your `circular.toml`:
+
+```toml
+[[dynamic_grammars]]
+name = "kotlin"
+library = "./grammars/kotlin/kotlin.so"
+extensions = [".kt"]
+namespace_node = "package_header"
+import_node = "import_header"
+definition_nodes = ["class_declaration", "function_declaration"]
+```
+
+- **library**: Path to the shared object (`.so`) file.
+- **namespace_node**: AST node kind representing the package or namespace declaration.
+- **import_node**: AST node kind representing import statements.
+- **definition_nodes**: List of AST node kinds representing symbol definitions (e.g., classes, functions, interfaces).
+
+Circular uses a generic `DynamicExtractor` to traverse the AST and extract dependencies based on these configured node kinds.
 
 ## CLI Enablement
 

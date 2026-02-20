@@ -46,6 +46,10 @@ func (r *Resolver) findUnusedInFile(file *parser.File) []UnusedImport {
 		if file.Language == "go" && imp.Alias == "." {
 			continue
 		}
+		// Pseudo-packages in Go.
+		if file.Language == "go" && (imp.Module == "C" || imp.Module == "unsafe") {
+			continue
+		}
 
 		name := importReferenceName(file.Language, imp)
 		if name == "" {
@@ -121,13 +125,26 @@ func hasSymbolUse(refHits map[string]int, symbol string) bool {
 	prefix := symbol + "."
 	prefixCall := symbol + "("
 	prefixChained := symbol + "()."
+	ptrPrefix := "*" + symbol + "."
+	refPrefix := "&" + symbol + "."
+	slicePrefix := "[]" + symbol + "."
+	mapPrefix := "map[" + symbol + "."
 
 	for ref := range refHits {
 		if strings.HasPrefix(ref, prefix) ||
 			strings.HasPrefix(ref, prefixCall) ||
 			strings.HasPrefix(ref, prefixChained) ||
+			strings.HasPrefix(ref, ptrPrefix) ||
+			strings.HasPrefix(ref, refPrefix) ||
+			strings.HasPrefix(ref, slicePrefix) ||
+			strings.HasPrefix(ref, mapPrefix) ||
 			strings.Contains(ref, "."+symbol+".") ||
-			strings.HasSuffix(ref, "."+symbol) {
+			strings.HasSuffix(ref, "."+symbol) ||
+			ref == symbol {
+			return true
+		}
+		// Also handle wrapped types like []*pkg.Type, []pkg.Type, etc.
+		if strings.Contains(ref, symbol+".") {
 			return true
 		}
 	}

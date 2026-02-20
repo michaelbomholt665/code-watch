@@ -66,6 +66,15 @@ auto_sync_config = true
 # extensions = [".js", ".cjs", ".mjs"]
 # filenames = []
 
+[[dynamic_grammars]]
+# Example: Adding Kotlin support via shared object grammar
+# name = "kotlin"
+# library = "./grammars/kotlin/kotlin.so"
+# extensions = [".kt"]
+# namespace_node = "package_header"
+# import_node = "import_header"
+# definition_nodes = ["class_declaration", "function_declaration"]
+
 [exclude]
 dirs = [".git", "node_modules", "vendor"]
 files = ["*.tmp", "*.log"]
@@ -229,6 +238,15 @@ top_complexity = 5
 - override extension ownership for a language
 - `languages.<id>.filenames` (`[]string`)
 - optional exact-file routing (for example `go.mod`, `go.sum`)
+- `dynamic_grammars` (`[]table`)
+- runtime Tree-sitter grammar loading via `dlopen`
+- `name`: required unique language identifier
+- `library`: required path to `.so` (Unix) or `.dll` (Windows) grammar file
+- `extensions`: optional list of file extensions
+- `filenames`: optional list of exact filenames
+- `namespace_node`: required AST node kind for package/namespace extraction
+- `import_node`: required AST node kind for import extraction
+- `definition_nodes`: required list of AST node kinds for symbol definition extraction
 - `watch_paths` (`[]string`)
 - defaults to `["."]`
 - `exclude.symbols` (`[]string`)
