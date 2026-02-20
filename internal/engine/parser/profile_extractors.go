@@ -865,8 +865,8 @@ func (e *goSumProfileExtractor) ExtractRaw(source []byte, filePath string) (*Fil
 			continue
 		}
 		mod := fields[0]
-		if strings.HasSuffix(mod, "/go.mod") {
-			mod = strings.TrimSuffix(mod, "/go.mod")
+		if before, ok := strings.CutSuffix(mod, "/go.mod"); ok {
+			mod = before
 		}
 		if mod == "" || seen[mod] {
 			continue
