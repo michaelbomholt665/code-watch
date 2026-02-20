@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 
 ### Docs
 - Updated `docs/documentation/architecture.md` and `docs/documentation/packages.md` to document the new `internal/core/app/helpers` package and helper delegation.
+- Updated `docs/documentation/configuration.md` to note the loader/validator split for config decoding.
 
 ## 2026-02-14
 

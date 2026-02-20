@@ -1,6 +1,7 @@
 # Configuration Reference
 
 Config is decoded from TOML in `internal/core/config`.
+Loading/defaulting lives in `internal/core/config/loader.go`, and validation rules live in `internal/core/config/validator.go` (with shared helpers in `internal/core/config/helpers/validators.go`).
 
 ## Full Schema
 
