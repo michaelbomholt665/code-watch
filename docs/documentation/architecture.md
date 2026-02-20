@@ -49,6 +49,7 @@ Main responsibilities:
 - emit DOT/TSV/Mermaid/PlantUML/Markdown outputs
 - publish update payloads for UI mode
 - normalize path comparisons and prefix checks through shared utilities to keep module/path matching separator-agnostic across Linux/macOS/Windows
+- delegates app-scoped helper logic (diagram mode selection, output path routing, secret masking/detection helpers) to `internal/core/app/helpers`
 
 ## Data Flow
 

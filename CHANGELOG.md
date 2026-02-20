@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-02-20
+
+### Changed
+- `app:` Split `internal/core/app/app.go` into focused helper and orchestration files, and moved reusable helper logic into `internal/core/app/helpers`.
+
+### Docs
+- Updated `docs/documentation/architecture.md` and `docs/documentation/packages.md` to document the new `internal/core/app/helpers` package and helper delegation.
+
 ## 2026-02-14
 
 ### Added

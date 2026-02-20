@@ -2,6 +2,7 @@
 package app
 
 import (
+	"circular/internal/core/app/helpers"
 	"circular/internal/core/config"
 	"circular/internal/data/history"
 	"circular/internal/engine/graph"
@@ -463,13 +464,13 @@ func TestResolveDiagramPath_SeparatorAware(t *testing.T) {
 	root := filepath.Join("workspace", "repo")
 	diagramsDir := filepath.Join(root, "docs", "diagrams")
 
-	if got := resolveDiagramPath("graph.mmd", root, diagramsDir); got != filepath.Join(diagramsDir, "graph.mmd") {
+	if got := helpers.ResolveDiagramPath("graph.mmd", root, diagramsDir); got != filepath.Join(diagramsDir, "graph.mmd") {
 		t.Fatalf("expected filename output under diagrams dir, got %q", got)
 	}
-	if got := resolveDiagramPath("docs/graph.mmd", root, diagramsDir); got != filepath.Join(root, "docs", "graph.mmd") {
+	if got := helpers.ResolveDiagramPath("docs/graph.mmd", root, diagramsDir); got != filepath.Join(root, "docs", "graph.mmd") {
 		t.Fatalf("expected slash path output under root, got %q", got)
 	}
-	if got := resolveDiagramPath(`docs\graph.mmd`, root, diagramsDir); got != filepath.Join(root, `docs\graph.mmd`) {
+	if got := helpers.ResolveDiagramPath(`docs\graph.mmd`, root, diagramsDir); got != filepath.Join(root, `docs\graph.mmd`) {
 		t.Fatalf("expected backslash path output under root, got %q", got)
 	}
 }
@@ -602,54 +603,54 @@ func TestApp_GenerateOutputs_ComponentAndFlowDiagramModes(t *testing.T) {
 }
 
 func TestResolveDiagramMode(t *testing.T) {
-	mode, err := resolveDiagramMode(config.DiagramOutput{})
+	mode, err := helpers.ResolveDiagramMode(config.DiagramOutput{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mode != diagramModeDependency {
+	if mode != helpers.DiagramModeDependency {
 		t.Fatalf("expected dependency mode, got %v", mode)
 	}
 
-	mode, err = resolveDiagramMode(config.DiagramOutput{Architecture: true})
+	mode, err = helpers.ResolveDiagramMode(config.DiagramOutput{Architecture: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mode != diagramModeArchitecture {
+	if mode != helpers.DiagramModeArchitecture {
 		t.Fatalf("expected architecture mode, got %v", mode)
 	}
 
-	mode, err = resolveDiagramMode(config.DiagramOutput{Component: true})
+	mode, err = helpers.ResolveDiagramMode(config.DiagramOutput{Component: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mode != diagramModeComponent {
+	if mode != helpers.DiagramModeComponent {
 		t.Fatalf("expected component mode, got %v", mode)
 	}
 
-	mode, err = resolveDiagramMode(config.DiagramOutput{Flow: true})
+	mode, err = helpers.ResolveDiagramMode(config.DiagramOutput{Flow: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mode != diagramModeFlow {
+	if mode != helpers.DiagramModeFlow {
 		t.Fatalf("expected flow mode, got %v", mode)
 	}
 
-	mode, err = resolveDiagramMode(config.DiagramOutput{Architecture: true, Flow: true})
+	mode, err = helpers.ResolveDiagramMode(config.DiagramOutput{Architecture: true, Flow: true})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if mode != diagramModeDependency {
+	if mode != helpers.DiagramModeDependency {
 		t.Fatalf("expected dependency mode when multiple modes enabled, got %v", mode)
 	}
 
-	modes, err := resolveDiagramModes(config.DiagramOutput{Architecture: true, Component: true, Flow: true})
+	modes, err := helpers.ResolveDiagramModes(config.DiagramOutput{Architecture: true, Component: true, Flow: true})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(modes) != 4 {
 		t.Fatalf("expected 4 modes with dependency baseline, got %d", len(modes))
 	}
-	if modes[0] != diagramModeDependency || modes[1] != diagramModeArchitecture || modes[2] != diagramModeComponent || modes[3] != diagramModeFlow {
+	if modes[0] != helpers.DiagramModeDependency || modes[1] != helpers.DiagramModeArchitecture || modes[2] != helpers.DiagramModeComponent || modes[3] != helpers.DiagramModeFlow {
 		t.Fatalf("unexpected multi-mode ordering: %#v", modes)
 	}
 }
@@ -726,7 +727,7 @@ func TestUniqueScanRoots_DeduplicatesRelativeAndAbsolute(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roots := uniqueScanRoots([]string{".", tmpDir, "./"})
+	roots := helpers.UniqueScanRoots([]string{".", tmpDir, "./"})
 	if len(roots) != 1 {
 		t.Fatalf("expected 1 unique root, got %d (%v)", len(roots), roots)
 	}

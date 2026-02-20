@@ -90,6 +90,11 @@
 - provides `NewAnalysisService(...)`/`(*App).AnalysisService()` as a compatibility-preserving service extraction surface for scan/query/history/watch plus trace/impact/cycle/file-list/summary use cases
 - uses `presentation_service.go` as a focused collaborator for summary rendering and markdown report generation, keeping `App` methods as compatibility wrappers
 
+## `internal/core/app/helpers`
+
+- app-scoped helpers for diagram-mode selection, output-path resolution, secret masking/incremental detection helpers, and metric leader formatting
+- keeps orchestration logic slim by consolidating low-level helpers used across `app`, `presentation_service`, and output wiring
+
 ## `internal/core/ports`
 
 - defines focused infrastructure ports used by the core orchestration layer

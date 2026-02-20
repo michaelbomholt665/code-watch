@@ -1,6 +1,7 @@
 package app
 
 import (
+	"circular/internal/core/app/helpers"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/version"
@@ -11,15 +12,19 @@ import (
 	"time"
 )
 
-type presentationService struct {
-	app *App
+type PresentationService struct {
+	app        *App
+	archEngine *graph.LayerRuleEngine
 }
 
-func newPresentationService(app *App) *presentationService {
-	return &presentationService{app: app}
+func newPresentationService(app *App) *PresentationService {
+	return &PresentationService{
+		app:        app,
+		archEngine: graph.NewLayerRuleEngine(helpers.ArchitectureModelFromConfig(app.Config.Architecture)),
+	}
 }
 
-func (p *presentationService) GenerateMarkdownReport(req MarkdownReportRequest) (MarkdownReportResult, error) {
+func (p *PresentationService) GenerateMarkdownReport(req MarkdownReportRequest) (MarkdownReportResult, error) {
 	cycles := p.app.Graph.DetectCycles()
 	metrics := p.app.Graph.ComputeModuleMetrics()
 	hotspots := p.app.Graph.TopComplexity(p.app.Config.Architecture.TopComplexity)
@@ -37,7 +42,7 @@ func (p *presentationService) GenerateMarkdownReport(req MarkdownReportRequest) 
 		mermaidGen := report.NewMermaidGenerator(p.app.Graph)
 		mermaidGen.SetModuleMetrics(metrics)
 		mermaidGen.SetComplexityHotspots(hotspots)
-		mermaidDiagram, err = mermaidGen.Generate(cycles, violations, architectureModelFromConfig(p.app.Config.Architecture))
+		mermaidDiagram, err = mermaidGen.Generate(cycles, violations, helpers.ArchitectureModelFromConfig(p.app.Config.Architecture))
 		if err != nil {
 			return MarkdownReportResult{}, fmt.Errorf("generate mermaid diagram for markdown report: %w", err)
 		}
@@ -86,7 +91,7 @@ func (p *presentationService) GenerateMarkdownReport(req MarkdownReportRequest) 
 		if outPath == "" {
 			return MarkdownReportResult{}, fmt.Errorf("output path is required when write_file=true")
 		}
-		if err := writeArtifact(outPath, md); err != nil {
+		if err := helpers.WriteArtifact(outPath, md); err != nil {
 			return MarkdownReportResult{}, fmt.Errorf("write markdown report %q: %w", outPath, err)
 		}
 		result.Written = true
@@ -94,7 +99,7 @@ func (p *presentationService) GenerateMarkdownReport(req MarkdownReportRequest) 
 	return result, nil
 }
 
-func (p *presentationService) PrintSummary(
+func (p *PresentationService) PrintSummary(
 	fileCount, moduleCount int,
 	duration time.Duration,
 	cycles [][]string,
@@ -151,7 +156,7 @@ func (p *presentationService) PrintSummary(
 				finding.Severity,
 				finding.Location.File,
 				finding.Location.Line,
-				maskSecretValue(finding.Value),
+				helpers.MaskSecretValue(finding.Value),
 			)
 		}
 	} else {
@@ -159,9 +164,9 @@ func (p *presentationService) PrintSummary(
 	}
 
 	if len(metrics) > 0 {
-		topDepth := metricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.Depth }, 3, 0)
-		topFanIn := metricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.FanIn }, 3, 1)
-		topFanOut := metricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.FanOut }, 3, 1)
+		topDepth := helpers.MetricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.Depth }, 3, 0)
+		topFanIn := helpers.MetricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.FanIn }, 3, 1)
+		topFanOut := helpers.MetricLeaders(metrics, func(m graph.ModuleMetrics) int { return m.FanOut }, 3, 1)
 
 		fmt.Println("📊 Dependency Metrics:")
 		if len(topDepth) > 0 {
