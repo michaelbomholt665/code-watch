@@ -26,8 +26,8 @@ func (g *Graph) TopComplexity(n int) []ComplexityHotspot {
 	defer g.mu.RUnlock()
 
 	hotspots := make([]ComplexityHotspot, 0)
-	for _, file := range g.files {
-		for _, def := range file.Definitions {
+	for moduleName, defs := range g.definitions {
+		for _, def := range defs {
 			if def.Kind != parser.KindFunction && def.Kind != parser.KindMethod {
 				continue
 			}
@@ -41,8 +41,8 @@ func (g *Graph) TopComplexity(n int) []ComplexityHotspot {
 			}
 
 			hotspots = append(hotspots, ComplexityHotspot{
-				Module:     file.Module,
-				File:       file.Path,
+				Module:     moduleName,
+				File:       def.Location.File,
 				Definition: def.Name,
 				Kind:       def.Kind,
 				Score:      score,

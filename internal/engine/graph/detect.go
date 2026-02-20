@@ -113,16 +113,16 @@ func (g *Graph) InvalidateTransitive(changedFile string) []string {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	file := g.files[changedFile]
-	if file == nil {
+	moduleName, ok := g.fileToModule[changedFile]
+	if !ok {
 		return nil
 	}
 
 	toRecheck := []string{changedFile}
 	seen := map[string]bool{changedFile: true}
-	modSeen := map[string]bool{file.Module: true}
+	modSeen := map[string]bool{moduleName: true}
 
-	queue := []string{file.Module}
+	queue := []string{moduleName}
 	for len(queue) > 0 {
 		mod := queue[0]
 		queue = queue[1:]

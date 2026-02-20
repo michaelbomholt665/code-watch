@@ -32,7 +32,7 @@ func (g *Graph) AnalyzeImpact(path string) (ImpactReport, error) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 
-	targetFile, ok := g.files[path]
+	moduleName, ok := g.fileToModule[path]
 	if !ok {
 		if mod, exists := g.modules[path]; exists {
 			targetPath := ""
@@ -46,7 +46,7 @@ func (g *Graph) AnalyzeImpact(path string) (ImpactReport, error) {
 		return ImpactReport{}, &ImpactTargetError{Target: path}
 	}
 
-	return g.analyzeImpactForModule(targetFile.Module, path), nil
+	return g.analyzeImpactForModule(moduleName, path), nil
 }
 
 func (g *Graph) analyzeImpactForModule(targetModule, targetPath string) ImpactReport {

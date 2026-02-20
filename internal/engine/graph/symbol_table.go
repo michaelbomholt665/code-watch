@@ -47,22 +47,21 @@ func (g *Graph) BuildUniversalSymbolTable() *UniversalSymbolTable {
 		byServiceKey: make(map[string][]SymbolRecord),
 	}
 
-	for _, file := range g.files {
-		for i := range file.Definitions {
-			def := file.Definitions[i]
+	for moduleName, defs := range g.definitions {
+		for _, def := range defs {
 			rec := SymbolRecord{
 				Name:       def.Name,
 				FullName:   def.FullName,
-				Module:     file.Module,
-				Language:   file.Language,
-				File:       file.Path,
+				Module:     moduleName,
+				Language:   g.fileToLanguage[def.Location.File],
+				File:       def.Location.File,
 				Kind:       def.Kind,
 				Exported:   def.Exported,
 				Visibility: def.Visibility,
 				Scope:      def.Scope,
 				Signature:  def.Signature,
 				TypeHint:   def.TypeHint,
-				IsService:  isLikelyServiceDefinition(def),
+				IsService:  isLikelyServiceDefinition(*def),
 			}
 			if len(def.Decorators) > 0 {
 				rec.Decorators = append([]string(nil), def.Decorators...)

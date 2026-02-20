@@ -23,8 +23,8 @@ func TestGraph_AddRemoveFile(t *testing.T) {
 
 	g.AddFile(f1)
 
-	if len(g.files) != 1 {
-		t.Errorf("Expected 1 file, got %d", len(g.files))
+	if g.FileCount() != 1 {
+		t.Errorf("Expected 1 file, got %d", g.FileCount())
 	}
 	if len(g.modules) != 1 {
 		t.Errorf("Expected 1 module, got %d", len(g.modules))
@@ -37,8 +37,8 @@ func TestGraph_AddRemoveFile(t *testing.T) {
 	}
 
 	g.RemoveFile("/path/to/a.go")
-	if len(g.files) != 0 {
-		t.Errorf("Expected 0 files, got %d", len(g.files))
+	if g.FileCount() != 0 {
+		t.Errorf("Expected 0 files, got %d", g.FileCount())
 	}
 	if len(g.modules) != 0 {
 		t.Errorf("Expected 0 modules, got %d", len(g.modules))

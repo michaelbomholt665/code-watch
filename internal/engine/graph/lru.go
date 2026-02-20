@@ -92,6 +92,31 @@ func (c *LRUCache[K, V]) Evict(key K) {
 	delete(c.items, key)
 }
 
+// Peek returns the cached value without moving it to the front.
+func (c *LRUCache[K, V]) Peek(key K) (V, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	el, ok := c.items[key]
+	if !ok {
+		var zero V
+		return zero, false
+	}
+	return el.Value.(*lruEntry[K, V]).value, true
+}
+
+// Keys returns all keys currently in the cache.
+func (c *LRUCache[K, V]) Keys() []K {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	keys := make([]K, 0, len(c.items))
+	for k := range c.items {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // Len returns the current number of items in the cache.
 func (c *LRUCache[K, V]) Len() int {
 	c.mu.Lock()

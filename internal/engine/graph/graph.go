@@ -11,8 +11,10 @@ type Graph struct {
 	mu sync.RWMutex
 
 	// Core data
-	files   map[string]*parser.File // path -> file
-	modules map[string]*Module      // module name -> module info
+	fileCache    *LRUCache[string, *parser.File] // path -> file
+	fileToModule map[string]string               // path -> module name
+	fileToLanguage map[string]string             // path -> language
+	modules      map[string]*Module              // module name -> module info
 
 	// Relationships
 	imports    map[string]map[string]*ImportEdge // from -> to -> edge
@@ -26,10 +28,11 @@ type Graph struct {
 }
 
 type Module struct {
-	Name     string
-	Files    []string // Paths to files in this module
-	Exports  map[string]*parser.Definition
-	RootPath string // For Go: module root, Python: package root
+	Name          string
+	Files         []string // Paths to files in this module
+	Exports       map[string]*parser.Definition
+	MaxComplexity int    // Max complexity score across all files in this module
+	RootPath      string // For Go: module root, Python: package root
 }
 
 type ImportEdge struct {
@@ -47,9 +50,15 @@ type ModuleMetrics struct {
 }
 
 func NewGraph() *Graph {
+	return NewGraphWithCapacity(1000)
+}
+
+func NewGraphWithCapacity(capacity int) *Graph {
 	return &Graph{
-		files:       make(map[string]*parser.File),
-		modules:     make(map[string]*Module),
+		fileCache:      NewLRUCache[string, *parser.File](capacity),
+		fileToModule:   make(map[string]string),
+		fileToLanguage: make(map[string]string),
+		modules:        make(map[string]*Module),
 		imports:     make(map[string]map[string]*ImportEdge),
 		importedBy:  make(map[string]map[string]bool),
 		definitions: make(map[string]map[string]*parser.Definition),
@@ -63,11 +72,13 @@ func (g *Graph) AddFile(file *parser.File) {
 
 	// If this file already exists, remove prior contributions first.
 	// This prevents stale imports/definitions after file edits.
-	if _, exists := g.files[file.Path]; exists {
+	if _, exists := g.fileCache.Get(file.Path); exists {
 		g.removeFileLocked(file.Path)
 	}
 
-	g.files[file.Path] = cloneFile(file)
+	g.fileCache.Put(file.Path, cloneFile(file))
+	g.fileToModule[file.Path] = file.Module
+	g.fileToLanguage[file.Path] = file.Language
 
 	mod, ok := g.modules[file.Module]
 	if !ok {
@@ -92,12 +103,25 @@ func (g *Graph) AddFile(file *parser.File) {
 	if g.definitions[file.Module] == nil {
 		g.definitions[file.Module] = make(map[string]*parser.Definition)
 	}
+	fileMaxComplexity := 0
 	for i := range file.Definitions {
 		def := cloneDefinition(&file.Definitions[i])
 		if def.Exported {
 			mod.Exports[def.Name] = def
 		}
 		g.definitions[file.Module][def.Name] = def
+
+		sc := def.ComplexityScore
+		if sc == 0 {
+			sc = (def.BranchCount * 2) + (def.NestingDepth * 2) + def.ParameterCount + (def.LOC / 10)
+		}
+		if sc > fileMaxComplexity {
+			fileMaxComplexity = sc
+		}
+	}
+
+	if fileMaxComplexity > mod.MaxComplexity {
+		mod.MaxComplexity = fileMaxComplexity
 	}
 
 	if g.imports[file.Module] == nil {
@@ -127,12 +151,12 @@ func (g *Graph) RemoveFile(path string) {
 }
 
 func (g *Graph) removeFileLocked(path string) {
-	file, ok := g.files[path]
+	moduleName, ok := g.fileToModule[path]
 	if !ok {
 		return
 	}
 
-	if mod, ok := g.modules[file.Module]; ok {
+	if mod, ok := g.modules[moduleName]; ok {
 		for i, p := range mod.Files {
 			if p == path {
 				mod.Files = append(mod.Files[:i], mod.Files[i+1:]...)
@@ -141,30 +165,30 @@ func (g *Graph) removeFileLocked(path string) {
 		}
 
 		if len(mod.Files) == 0 {
-			for to := range g.imports[file.Module] {
+			for to := range g.imports[moduleName] {
 				if g.importedBy[to] != nil {
-					delete(g.importedBy[to], file.Module)
+					delete(g.importedBy[to], moduleName)
 				}
 			}
 
-			delete(g.modules, file.Module)
-			delete(g.imports, file.Module)
-			delete(g.definitions, file.Module)
+			delete(g.modules, moduleName)
+			delete(g.imports, moduleName)
+			delete(g.definitions, moduleName)
 		} else {
 			mod.Exports = make(map[string]*parser.Definition)
-			g.definitions[file.Module] = make(map[string]*parser.Definition)
+			g.definitions[moduleName] = make(map[string]*parser.Definition)
 
-			oldImports := g.imports[file.Module]
-			g.imports[file.Module] = make(map[string]*ImportEdge)
+			oldImports := g.imports[moduleName]
+			g.imports[moduleName] = make(map[string]*ImportEdge)
 
 			for _, filePath := range mod.Files {
-				if f, ok := g.files[filePath]; ok {
+				if f, ok := g.fileCache.Get(filePath); ok {
 					for i := range f.Definitions {
 						def := cloneDefinition(&f.Definitions[i])
 						if def.Exported {
 							mod.Exports[def.Name] = def
 						}
-						g.definitions[file.Module][def.Name] = def
+						g.definitions[moduleName][def.Name] = def
 					}
 					for _, imp := range f.Imports {
 						edge := &ImportEdge{
@@ -183,16 +207,18 @@ func (g *Graph) removeFileLocked(path string) {
 			}
 
 			for to := range oldImports {
-				if _, stillImported := g.imports[file.Module][to]; !stillImported {
+				if _, stillImported := g.imports[moduleName][to]; !stillImported {
 					if g.importedBy[to] != nil {
-						delete(g.importedBy[to], file.Module)
+						delete(g.importedBy[to], moduleName)
 					}
 				}
 			}
 		}
 	}
 
-	delete(g.files, path)
+	g.fileCache.Evict(path)
+	delete(g.fileToModule, path)
+	delete(g.fileToLanguage, path)
 }
 
 func (g *Graph) GetModule(name string) (*Module, bool) {
@@ -246,13 +272,13 @@ func (g *Graph) HasDefinitions(moduleName string) bool {
 func (g *Graph) FileCount() int {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	return len(g.files)
+	return len(g.fileToModule)
 }
 
 func (g *Graph) GetFile(path string) (*parser.File, bool) {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	f, ok := g.files[path]
+	f, ok := g.fileCache.Get(path)
 	if !ok {
 		return nil, false
 	}
@@ -262,9 +288,12 @@ func (g *Graph) GetFile(path string) (*parser.File, bool) {
 func (g *Graph) GetAllFiles() []*parser.File {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
-	files := make([]*parser.File, 0, len(g.files))
-	for _, f := range g.files {
-		files = append(files, cloneFile(f))
+	keys := g.fileCache.Keys()
+	files := make([]*parser.File, 0, len(keys))
+	for _, k := range keys {
+		if f, ok := g.fileCache.Peek(k); ok {
+			files = append(files, cloneFile(f))
+		}
 	}
 	return files
 }
@@ -356,28 +385,29 @@ func (g *Graph) ComputeModuleMetrics() map[string]ModuleMetrics {
 	}
 
 	// Compute max complexity score per module for the importance formula.
-	maxComplexity := make(map[string]int, len(moduleNames))
-	for _, file := range g.files {
-		for _, def := range file.Definitions {
-			sc := def.ComplexityScore
-			if sc == 0 {
-				sc = (def.BranchCount * 2) + (def.NestingDepth * 2) + def.ParameterCount + (def.LOC / 10)
-			}
-			if sc > maxComplexity[file.Module] {
-				maxComplexity[file.Module] = sc
-			}
-		}
-	}
-
 	metrics := make(map[string]ModuleMetrics, len(moduleNames))
 	for _, name := range moduleNames {
 		fi := fanIn[name]
 		fo := fanOut[name]
+
+		maxComplexity := 0
+		if defs, ok := g.definitions[name]; ok {
+			for _, def := range defs {
+				sc := def.ComplexityScore
+				if sc == 0 {
+					sc = (def.BranchCount * 2) + (def.NestingDepth * 2) + def.ParameterCount + (def.LOC / 10)
+				}
+				if sc > maxComplexity {
+					maxComplexity = sc
+				}
+			}
+		}
+
 		metrics[name] = ModuleMetrics{
 			Depth:           depthByComp[componentOf[name]],
 			FanIn:           fi,
 			FanOut:          fo,
-			ImportanceScore: CalculateImportanceScore(fi, fo, maxComplexity[name], name),
+			ImportanceScore: CalculateImportanceScore(fi, fo, maxComplexity, name),
 		}
 	}
 
