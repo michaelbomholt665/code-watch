@@ -7,14 +7,21 @@ import (
 	"sync"
 )
 
+type FileLoader interface {
+	LoadFile(path string) (*parser.File, error)
+}
+
 type Graph struct {
 	mu sync.RWMutex
 
 	// Core data
-	fileCache    *LRUCache[string, *parser.File] // path -> file
-	fileToModule map[string]string               // path -> module name
-	fileToLanguage map[string]string             // path -> language
-	modules      map[string]*Module              // module name -> module info
+	fileCache      *LRUCache[string, *parser.File] // path -> file
+	fileToModule   map[string]string               // path -> module name
+	fileToLanguage map[string]string               // path -> language
+	modules        map[string]*Module              // module name -> module info
+
+	loader FileLoader
+
 
 	// Relationships
 	imports    map[string]map[string]*ImportEdge // from -> to -> edge
@@ -64,6 +71,12 @@ func NewGraphWithCapacity(capacity int) *Graph {
 		definitions: make(map[string]map[string]*parser.Definition),
 		dirty:       make(map[string]bool),
 	}
+}
+
+func (g *Graph) SetLoader(loader FileLoader) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.loader = loader
 }
 
 func (g *Graph) AddFile(file *parser.File) {
@@ -277,12 +290,26 @@ func (g *Graph) FileCount() int {
 
 func (g *Graph) GetFile(path string) (*parser.File, bool) {
 	g.mu.RLock()
-	defer g.mu.RUnlock()
 	f, ok := g.fileCache.Get(path)
-	if !ok {
-		return nil, false
+	loader := g.loader
+	g.mu.RUnlock()
+
+	if ok {
+		return cloneFile(f), true
 	}
-	return cloneFile(f), true
+
+	if loader != nil {
+		// Attempt to reload from persistent store
+		reloaded, err := loader.LoadFile(path)
+		if err == nil && reloaded != nil {
+			g.mu.Lock()
+			g.fileCache.Put(path, cloneFile(reloaded))
+			g.mu.Unlock()
+			return reloaded, true
+		}
+	}
+
+	return nil, false
 }
 
 func (g *Graph) GetAllFiles() []*parser.File {

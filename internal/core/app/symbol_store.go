@@ -32,6 +32,9 @@ func (a *App) initSymbolStore() error {
 		return fmt.Errorf("open sqlite symbol store: %w", err)
 	}
 	a.symbolStore = store
+	if a.Graph != nil {
+		a.Graph.SetLoader(store)
+	}
 	return nil
 }
 
