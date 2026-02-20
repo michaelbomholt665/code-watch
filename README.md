@@ -40,7 +40,10 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Traces shortest import chain between modules (`--trace`)
 - Analyzes blast radius for a file/module (`--impact`)
 - Validates optional architecture layer rules
-- Reports top complexity hotspots from parser heuristics
+- Reports top complexity hotspots from parser heuristics and calculates module `ImportanceScore`
+- Generates C4-style architecture diagrams with edge aggregation
+- Generates interactive D3 HTML treemaps for codebase visualization
+- Generates Mermaid sequence diagrams for call-graph tracing
 - Captures enriched definition metadata (visibility, scope, signature, decorators/type hints) across Go/Python/JavaScript/TypeScript/Java/Rust definitions
 - Provides an advanced read-only CQL parser/executor in `internal/data/query` (`SELECT modules WHERE ...`) for power-user graph queries
 - Emits outputs:

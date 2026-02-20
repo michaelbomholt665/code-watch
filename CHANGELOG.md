@@ -7,6 +7,14 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - `app:` Split `internal/core/app/app.go` into focused helper and orchestration files, and moved reusable helper logic into `internal/core/app/helpers`.
 
+### Added
+- `graph:` Added `ImportanceScore` metric to `ModuleMetrics` using a weighted heuristic (`FanIn/FanOut/Complexity/IsAPI`) to rank module significance.
+- `output:` Added `GenerateC4` to Mermaid generator for clustered, edge-aggregated architecture views with red violation highlighting.
+- `output:` Added `GenerateInteractiveReport` HTML generator producing a self-contained D3.js interactive treemap for complexity/size visualization.
+- `output:` Added `TraceCallSequence` Mermaid generator to produce sequence diagrams from cross-module symbol reference traces.
+- `output:` Updated PlantUML generation to use bright red (`#CC0000`) for cycle and violation edges.
+
+
 ### Docs
 - Updated `docs/documentation/architecture.md` and `docs/documentation/packages.md` to document the new `internal/core/app/helpers` package and helper delegation.
 - Updated `docs/documentation/configuration.md` to note the loader/validator split for config decoding.

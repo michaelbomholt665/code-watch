@@ -424,6 +424,155 @@ func (m *MermaidGenerator) GenerateFlow(entryPoints []string, maxDepth int) (str
 	return b.String(), nil
 }
 
+// GenerateC4 produces a C4-style, cluster-aggregated Mermaid flowchart.
+//
+// Each layer (from the ArchitectureModel, or auto-clustered by path prefix when
+// no model is configured) becomes a subgraph. Edges between clusters are
+// drawn as single thick arrows labelled with the total dependency count.
+// Violation edges are highlighted in red.
+func (m *MermaidGenerator) GenerateC4(model graph.ArchitectureModel, violations []graph.ArchitectureViolation) (string, error) {
+	modules := m.graph.Modules()
+	imports := m.graph.GetImports()
+	moduleNames := util.SortedStringKeys(modules)
+	moduleSet := make(map[string]bool, len(moduleNames))
+	for _, name := range moduleNames {
+		moduleSet[name] = true
+	}
+
+	// Determine cluster for each module.
+	layerByModule := classifyLayers(moduleNames, modules, model)
+
+	// If no model, auto-cluster by first path component.
+	if !model.Enabled || len(model.Layers) == 0 {
+		for _, name := range moduleNames {
+			parts := strings.SplitN(name, "/", 2)
+			layerByModule[name] = parts[0]
+		}
+	}
+
+	// Collect unique cluster names (preserve insertion order via moduleNames).
+	clusterOrder := make([]string, 0)
+	clusterSeen := make(map[string]bool)
+	for _, name := range moduleNames {
+		cl := layerByModule[name]
+		if cl == "" {
+			cl = "other"
+			layerByModule[name] = cl
+		}
+		if !clusterSeen[cl] {
+			clusterSeen[cl] = true
+			clusterOrder = append(clusterOrder, cl)
+		}
+	}
+
+	// Build module-level ID map (used inside subgraphs).
+	moduleIDs := makeIDs(moduleNames)
+
+	// Aggregate inter-cluster edge counts.
+	type clusterEdge struct {
+		from, to string
+		count    int
+		isViol   bool
+	}
+	violEdge := violationEdgeSet(violations)
+	// module-level violation set for cluster edge marking.
+	clusterEdgeMap := make(map[string]*clusterEdge)
+	for _, from := range util.SortedStringKeys(imports) {
+		cl := layerByModule[from]
+		if cl == "" {
+			continue
+		}
+		for to := range imports[from] {
+			if !moduleSet[to] {
+				continue
+			}
+			toCluster := layerByModule[to]
+			if toCluster == "" || toCluster == cl {
+				continue
+			}
+			key := cl + "->" + toCluster
+			if clusterEdgeMap[key] == nil {
+				clusterEdgeMap[key] = &clusterEdge{from: cl, to: toCluster}
+			}
+			clusterEdgeMap[key].count++
+			if violEdge[from+"->"+to] {
+				clusterEdgeMap[key].isViol = true
+			}
+		}
+	}
+
+	// Sort cluster edges for deterministic output.
+	clusterEdgeKeys := make([]string, 0, len(clusterEdgeMap))
+	for k := range clusterEdgeMap {
+		clusterEdgeKeys = append(clusterEdgeKeys, k)
+	}
+	sort.Strings(clusterEdgeKeys)
+
+	var b strings.Builder
+	b.WriteString("%%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 50, 'rankSpacing': 110, 'curve': 'basis'}}}%%\n")
+	b.WriteString("flowchart LR\n")
+
+	// Emit a subgraph per cluster.
+	clusterIDs := makeIDs(clusterOrder)
+	for _, cl := range clusterOrder {
+		b.WriteString(fmt.Sprintf("  subgraph %s[\"%s\"]\n", clusterIDs[cl], escapeLabel(cl)))
+		for _, modName := range moduleNames {
+			if layerByModule[modName] != cl {
+				continue
+			}
+			label := moduleLabel(modName, modules[modName], m.metrics, m.hotspot)
+			b.WriteString(fmt.Sprintf("    %s[\"%s\"]\n", moduleIDs[modName], escapeLabel(label)))
+		}
+		b.WriteString("  end\n")
+	}
+	b.WriteString("\n")
+
+	// Style internal nodes.
+	if len(moduleNames) > 0 {
+		b.WriteString("  classDef internalNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;\n")
+		b.WriteString("  class ")
+		b.WriteString(strings.Join(toIDs(moduleNames, moduleIDs), ","))
+		b.WriteString(" internalNode;\n\n")
+	}
+
+	// Emit aggregated cluster-level edges.
+	violLinkIndexes := make([]int, 0)
+	linkIndex := 0
+	for _, key := range clusterEdgeKeys {
+		ce := clusterEdgeMap[key]
+		label := fmt.Sprintf("|deps:%d|", ce.count)
+		fromID := clusterIDs[ce.from]
+		toID := clusterIDs[ce.to]
+		b.WriteString(fmt.Sprintf("  %s -->%s %s\n", fromID, label, toID))
+		if ce.isViol {
+			violLinkIndexes = append(violLinkIndexes, linkIndex)
+		}
+		linkIndex++
+	}
+
+	if len(violLinkIndexes) > 0 {
+		b.WriteString("\n")
+		b.WriteString(fmt.Sprintf("  linkStyle %s stroke:#cc0000,stroke-width:3px;\n", joinInts(violLinkIndexes)))
+	}
+
+	b.WriteString("\n")
+	b.WriteString("  subgraph legend_c4[\"Legend\"]\n")
+	b.WriteString("    legend_c4_nodes[\"Subgraph = layer/cluster\\nNode = module\"]\n")
+	b.WriteString("    legend_c4_edges[\"Edge label deps:N = aggregated import count between clusters\"]\n")
+	if len(violLinkIndexes) > 0 {
+		b.WriteString("    legend_c4_viol[\"Red thick edge = cluster pair has architecture violations\"]\n")
+	}
+	b.WriteString("  end\n")
+	b.WriteString("  classDef legendNode fill:#fff8dc,stroke:#b8a24c,stroke-width:1px,color:#000000;\n")
+	if len(violLinkIndexes) > 0 {
+		b.WriteString("  class legend_c4_nodes,legend_c4_edges,legend_c4_viol legendNode;\n")
+	} else {
+		b.WriteString("  class legend_c4_nodes,legend_c4_edges legendNode;\n")
+	}
+
+	return b.String(), nil
+}
+
 func classifyLayers(moduleNames []string, modules map[string]*graph.Module, model graph.ArchitectureModel) map[string]string {
 	layerByModule := make(map[string]string, len(moduleNames))
 	if !model.Enabled || len(model.Layers) == 0 {

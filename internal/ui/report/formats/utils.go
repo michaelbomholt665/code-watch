@@ -20,6 +20,9 @@ func moduleLabel(module string, mod *graph.Module, metrics map[string]graph.Modu
 	parts := []string{fmt.Sprintf("%s\\n(%d funcs, %d files)", module, exports, fileCount)}
 	if metric, ok := metrics[module]; ok {
 		parts = append(parts, fmt.Sprintf("(d=%d in=%d out=%d)", metric.Depth, metric.FanIn, metric.FanOut))
+		if metric.ImportanceScore > 0 {
+			parts = append(parts, fmt.Sprintf("(imp=%.1f)", metric.ImportanceScore))
+		}
 	}
 	if score, ok := hotspots[module]; ok {
 		parts = append(parts, fmt.Sprintf("(cx=%d)", score))

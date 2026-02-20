@@ -121,10 +121,10 @@ func (p *PlantUMLGenerator) Generate(cycles [][]string, violations []graph.Archi
 			arrow := "-->"
 			if cycleEdges[from+"->"+to] {
 				label = " : CYCLE"
-				arrow = "-[#red,thickness=2]->"
+				arrow = "-[#CC0000,thickness=2]->"
 			} else if violationEdges[from+"->"+to] {
 				label = " : VIOLATION"
-				arrow = "-[#a64d00,dashed]->"
+				arrow = "-[#CC0000,dashed]->"
 			} else if !moduleSet[to] {
 				arrow = "-[#777777,dashed]->"
 			}

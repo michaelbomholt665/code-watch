@@ -212,3 +212,26 @@ Report characteristics:
 - output schemas are additive and backward-compatible
 - DOT/TSV ordering follows existing map-based traversal and may vary
 - Mermaid/PlantUML nodes and edges are sorted for stable diff output
+
+## Advanced Visualizations (Internal)
+
+The reporting engine includes generators for advanced visualization types (currently internal-only, pending CLI wiring):
+
+### Interactive Treemap (`html_interactive.go`)
+Generates a self-contained HTML report with a D3.js zoomable treemap.
+- **Size**: Number of source files in module
+- **Color**: Complexity hotspot score (Blue → Red)
+- **Interactivity**: Zoomable headers, tooltips with detailed metrics
+
+### Sequence Diagrams (`sequence.go`)
+Generates Mermaid `sequenceDiagram` output by tracing symbol references.
+- **Trace**: Breadth-first traversal of cross-module calls
+- **Depth**: Configurable max-depth
+- **Output**: Participant lines and interaction arrows
+
+### C4-Style Architecture (`mermaid.go`)
+An aggregated view of the architecture graph.
+- **Clustering**: Modules grouped by defined architecture layers
+- **Edges**: Aggregated into single weighted arrows (`deps:N`) between clusters
+- **Violations**: Highlighted in bright red
+

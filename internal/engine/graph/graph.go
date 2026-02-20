@@ -40,9 +40,10 @@ type ImportEdge struct {
 }
 
 type ModuleMetrics struct {
-	Depth  int
-	FanIn  int
-	FanOut int
+	Depth           int
+	FanIn           int
+	FanOut          int
+	ImportanceScore float64 // (FanIn*2) + (FanOut*1) + (Complexity*0.5) + (IsAPI?10:0)
 }
 
 func NewGraph() *Graph {
@@ -354,12 +355,29 @@ func (g *Graph) ComputeModuleMetrics() map[string]ModuleMetrics {
 		computeDepth(comp)
 	}
 
+	// Compute max complexity score per module for the importance formula.
+	maxComplexity := make(map[string]int, len(moduleNames))
+	for _, file := range g.files {
+		for _, def := range file.Definitions {
+			sc := def.ComplexityScore
+			if sc == 0 {
+				sc = (def.BranchCount * 2) + (def.NestingDepth * 2) + def.ParameterCount + (def.LOC / 10)
+			}
+			if sc > maxComplexity[file.Module] {
+				maxComplexity[file.Module] = sc
+			}
+		}
+	}
+
 	metrics := make(map[string]ModuleMetrics, len(moduleNames))
 	for _, name := range moduleNames {
+		fi := fanIn[name]
+		fo := fanOut[name]
 		metrics[name] = ModuleMetrics{
-			Depth:  depthByComp[componentOf[name]],
-			FanIn:  fanIn[name],
-			FanOut: fanOut[name],
+			Depth:           depthByComp[componentOf[name]],
+			FanIn:           fi,
+			FanOut:          fo,
+			ImportanceScore: CalculateImportanceScore(fi, fo, maxComplexity[name], name),
 		}
 	}
 
