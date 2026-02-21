@@ -258,19 +258,15 @@ func (s *SQLiteSymbolStore) PruneToPaths(paths []string) error {
 			return fmt.Errorf("clear file blobs for empty path set: %w", err)
 		}
 	} else {
-		if err := deleteMissingPaths(tx, s.projectKey, paths); err != nil {
+		if err := loadTempPaths(tx, s.projectKey, paths); err != nil {
 			_ = tx.Rollback()
 			return err
 		}
-		placeholders := make([]string, 0, len(paths))
-		args := make([]any, 0, len(paths)+1)
-		args = append(args, s.projectKey)
-		for _, p := range paths {
-			placeholders = append(placeholders, "?")
-			args = append(args, p)
+		if err := deleteMissingPathsWithTemp(tx, s.projectKey); err != nil {
+			_ = tx.Rollback()
+			return err
 		}
-		query := fmt.Sprintf(`DELETE FROM file_blobs WHERE project_key = ? AND file_path NOT IN (%s)`, strings.Join(placeholders, ","))
-		if _, err := tx.Exec(query, args...); err != nil {
+		if _, err := tx.Exec(`DELETE FROM file_blobs WHERE project_key = ? AND file_path NOT IN (SELECT file_path FROM current_paths WHERE project_key = ?)`, s.projectKey, s.projectKey); err != nil {
 			_ = tx.Rollback()
 			return fmt.Errorf("delete stale file blobs: %w", err)
 		}
@@ -504,16 +500,39 @@ PRAGMA user_version = 6;
 }
 
 func deleteMissingPaths(tx *sql.Tx, projectKey string, paths []string) error {
-	placeholders := make([]string, 0, len(paths))
-	args := make([]any, 0, len(paths)+1)
-	args = append(args, projectKey)
-	for _, p := range paths {
-		placeholders = append(placeholders, "?")
-		args = append(args, p)
+	if err := loadTempPaths(tx, projectKey, paths); err != nil {
+		return err
 	}
-	query := fmt.Sprintf(`DELETE FROM symbols WHERE project_key = ? AND file_path NOT IN (%s)`, strings.Join(placeholders, ","))
-	if _, err := tx.Exec(query, args...); err != nil {
+	return deleteMissingPathsWithTemp(tx, projectKey)
+}
+
+func deleteMissingPathsWithTemp(tx *sql.Tx, projectKey string) error {
+	if _, err := tx.Exec(`DELETE FROM symbols WHERE project_key = ? AND file_path NOT IN (SELECT file_path FROM current_paths WHERE project_key = ?)`, projectKey, projectKey); err != nil {
 		return fmt.Errorf("delete stale symbol rows: %w", err)
+	}
+	return nil
+}
+
+func loadTempPaths(tx *sql.Tx, projectKey string, paths []string) error {
+	if _, err := tx.Exec(`CREATE TEMP TABLE IF NOT EXISTS current_paths (
+  project_key TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  PRIMARY KEY (project_key, file_path)
+)`); err != nil {
+		return fmt.Errorf("create temp paths table: %w", err)
+	}
+	if _, err := tx.Exec(`DELETE FROM current_paths WHERE project_key = ?`, projectKey); err != nil {
+		return fmt.Errorf("clear temp paths table: %w", err)
+	}
+	stmt, err := tx.Prepare(`INSERT OR REPLACE INTO current_paths (project_key, file_path) VALUES (?, ?)`)
+	if err != nil {
+		return fmt.Errorf("prepare temp path insert: %w", err)
+	}
+	defer stmt.Close()
+	for _, p := range paths {
+		if _, err := stmt.Exec(projectKey, p); err != nil {
+			return fmt.Errorf("insert temp path: %w", err)
+		}
 	}
 	return nil
 }

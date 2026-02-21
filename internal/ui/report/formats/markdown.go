@@ -1,6 +1,7 @@
 package formats
 
 import (
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/resolver"
 	"fmt"
@@ -14,12 +15,15 @@ type MarkdownReportData struct {
 	TotalModules int
 	TotalFiles   int
 
-	Cycles          [][]string
-	ProbableBridges []resolver.ProbableBridgeReference
-	Unresolved      []resolver.UnresolvedReference
-	UnusedImports   []resolver.UnusedImport
-	Violations      []graph.ArchitectureViolation
-	Hotspots        []graph.ComplexityHotspot
+	Cycles            [][]string
+	ProbableBridges   []resolver.ProbableBridgeReference
+	Unresolved        []resolver.UnresolvedReference
+	UnusedImports     []resolver.UnusedImport
+	Violations        []graph.ArchitectureViolation
+	ArchitectureRules []ports.ArchitectureRule
+	RuleViolations    []ports.ArchitectureRuleViolation
+	RuleSummary       ports.ArchitectureRuleSummary
+	Hotspots          []graph.ComplexityHotspot
 }
 
 type MarkdownReportOptions struct {
@@ -59,7 +63,9 @@ func (m *MarkdownGenerator) Generate(data MarkdownReportData, opts MarkdownRepor
 		b.WriteString("## Table of Contents\n")
 		b.WriteString("- [Executive Summary](#executive-summary)\n")
 		b.WriteString("- [Circular Imports](#circular-imports)\n")
+		b.WriteString("- [Architecture Rules](#architecture-rules)\n")
 		b.WriteString("- [Architecture Violations](#architecture-violations)\n")
+		b.WriteString("- [Architecture Rule Violations](#architecture-rule-violations)\n")
 		b.WriteString("- [Complexity Hotspots](#complexity-hotspots)\n")
 		b.WriteString("- [Probable Bridge References](#probable-bridge-references)\n")
 		b.WriteString("- [Unresolved References](#unresolved-references)\n")
@@ -76,14 +82,18 @@ func (m *MarkdownGenerator) Generate(data MarkdownReportData, opts MarkdownRepor
 	b.WriteString(fmt.Sprintf("| Total Modules | %d |\n", data.TotalModules))
 	b.WriteString(fmt.Sprintf("| Total Files | %d |\n", data.TotalFiles))
 	b.WriteString(fmt.Sprintf("| Circular Imports | %d |\n", len(data.Cycles)))
+	b.WriteString(fmt.Sprintf("| Architecture Rules | %d |\n", len(data.ArchitectureRules)))
 	b.WriteString(fmt.Sprintf("| Architecture Violations | %d |\n", len(data.Violations)))
+	b.WriteString(fmt.Sprintf("| Architecture Rule Violations | %d |\n", len(data.RuleViolations)))
 	b.WriteString(fmt.Sprintf("| Complexity Hotspots | %d |\n", len(data.Hotspots)))
 	b.WriteString(fmt.Sprintf("| Probable Bridge References | %d |\n", len(data.ProbableBridges)))
 	b.WriteString(fmt.Sprintf("| Unresolved References | %d |\n", len(data.Unresolved)))
 	b.WriteString(fmt.Sprintf("| Unused Imports | %d |\n\n", len(data.UnusedImports)))
 
 	m.writeCycles(&b, data.Cycles, opts.CollapsibleSections)
+	m.writeArchitectureRules(&b, data.ArchitectureRules, data.RuleSummary, opts.CollapsibleSections)
 	m.writeViolations(&b, data.Violations, opts.ProjectRoot, opts.CollapsibleSections)
+	m.writeRuleViolations(&b, data.RuleViolations, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeHotspots(&b, data.Hotspots, opts.ProjectRoot, opts.CollapsibleSections, verbosity)
 	m.writeProbableBridges(&b, data.ProbableBridges, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeUnresolved(&b, data.Unresolved, opts.ProjectRoot, opts.CollapsibleSections)
@@ -183,6 +193,107 @@ func (m *MarkdownGenerator) writeViolations(b *strings.Builder, rows []graph.Arc
 		[]string{"| Rule | From Layer | To Layer | From Module | To Module | Location |\n", "| --- | --- | --- | --- | --- | --- |\n"},
 		rendered,
 	)
+}
+
+func (m *MarkdownGenerator) writeArchitectureRules(b *strings.Builder, rules []ports.ArchitectureRule, summary ports.ArchitectureRuleSummary, collapsible bool) {
+	b.WriteString("## Architecture Rules\n")
+	if len(rules) == 0 {
+		b.WriteString("No architecture rules configured.\n\n")
+		return
+	}
+	rendered := make([]string, 0, len(rules))
+	for _, rule := range rules {
+		modules := strings.Join(rule.Modules, ", ")
+		allowCount := len(rule.Imports.Allow)
+		denyCount := len(rule.Imports.Deny)
+		maxFiles := "-"
+		if rule.MaxFiles > 0 {
+			maxFiles = fmt.Sprintf("%d", rule.MaxFiles)
+		}
+		rendered = append(rendered, fmt.Sprintf(
+			"| `%s` | %s | %s | %d | %d | %s |\n",
+			rule.Name,
+			modules,
+			maxFiles,
+			allowCount,
+			denyCount,
+			formatRuleExcludes(rule.Exclude),
+		))
+	}
+	header := []string{
+		"| Rule | Modules | Max Files | Import Allow | Import Deny | Excludes |\n",
+		"| --- | --- | --- | --- | --- | --- |\n",
+	}
+	m.writeTableWithCollapse(
+		b,
+		"Architecture rule details",
+		collapsible,
+		len(rendered) > 10,
+		header,
+		rendered,
+	)
+	if summary.RuleCount > 0 {
+		b.WriteString(fmt.Sprintf("Rules applied to %d modules; %d violations (%d import, %d file-count).\n\n",
+			summary.ModuleCount,
+			summary.ViolationCount,
+			summary.ImportViolations,
+			summary.FileViolations,
+		))
+	}
+}
+
+func (m *MarkdownGenerator) writeRuleViolations(b *strings.Builder, rows []ports.ArchitectureRuleViolation, projectRoot string, collapsible bool) {
+	b.WriteString("## Architecture Rule Violations\n")
+	if len(rows) == 0 {
+		b.WriteString("No architecture rule violations detected.\n\n")
+		return
+	}
+	rendered := make([]string, 0, len(rows))
+	for _, row := range rows {
+		location := "-"
+		if row.File != "" {
+			location = fmt.Sprintf("%s:%d:%d", relPath(projectRoot, row.File), row.Line, row.Column)
+		}
+		target := row.Target
+		if target == "" {
+			target = "-"
+		}
+		detail := row.Message
+		if row.Type == "file_count" {
+			detail = fmt.Sprintf("files %d > limit %d", row.Actual, row.Limit)
+		}
+		rendered = append(rendered, fmt.Sprintf(
+			"| `%s` | `%s` | `%s` | `%s` | %s | %s |\n",
+			row.RuleName,
+			row.Module,
+			row.Type,
+			target,
+			detail,
+			location,
+		))
+	}
+	m.writeTableWithCollapse(
+		b,
+		"Architecture rule violation details",
+		collapsible,
+		len(rendered) > 10,
+		[]string{"| Rule | Module | Type | Target | Detail | Location |\n", "| --- | --- | --- | --- | --- | --- |\n"},
+		rendered,
+	)
+}
+
+func formatRuleExcludes(exclude ports.ArchitectureRuleExclude) string {
+	parts := make([]string, 0, 2)
+	if exclude.Tests {
+		parts = append(parts, "tests")
+	}
+	if len(exclude.Files) > 0 {
+		parts = append(parts, "files:"+strings.Join(exclude.Files, ","))
+	}
+	if len(parts) == 0 {
+		return "-"
+	}
+	return strings.Join(parts, ",")
 }
 
 func (m *MarkdownGenerator) writeHotspots(b *strings.Builder, hotspots []graph.ComplexityHotspot, projectRoot string, collapsible bool, verbosity string) {

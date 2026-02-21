@@ -182,7 +182,7 @@ func Run(args []string) int {
 		return 1
 	}
 
-	if _, err := analysis.SyncOutputs(context.Background(), ports.SyncOutputsRequest{}); err != nil {
+	if _, err := analysis.SyncOutputsWithSnapshot(context.Background(), ports.SyncOutputsRequest{}, summary); err != nil {
 		slog.Error("failed to generate outputs", "error", err)
 	}
 
@@ -858,6 +858,7 @@ func writeSARIFReport(
 		projectRoot,
 		snapshot.Cycles,
 		snapshot.Violations,
+		snapshot.RuleViolations,
 		allSecrets,
 	)
 	if err != nil {

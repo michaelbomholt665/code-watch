@@ -296,3 +296,16 @@ allow = ["core"]
 name = "core-self-only"
 from = "core"
 allow = ["core"]
+
+[[architecture.rules]]
+name = "api-size"
+kind = "package"
+modules = ["internal/api"]
+max_files = 30
+exclude = { tests = true, files = ["index.ts", "__init__.py"] }
+
+[[architecture.rules]]
+name = "api-imports"
+kind = "package"
+modules = ["internal/api"]
+imports = { allow = ["internal/core/**"], deny = ["internal/engine/**"] }

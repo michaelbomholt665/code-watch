@@ -2,6 +2,7 @@ package app
 
 import (
 	"circular/internal/core/app/helpers"
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/version"
@@ -45,7 +46,10 @@ func (a *App) GenerateOutputs(
 	unusedImports []resolver.UnusedImport,
 	metrics map[string]graph.ModuleMetrics,
 	violations []graph.ArchitectureViolation,
+	ruleViolations []ports.ArchitectureRuleViolation,
+	ruleSummary ports.ArchitectureRuleSummary,
 	hotspots []graph.ComplexityHotspot,
+	probableBridges []resolver.ProbableBridgeReference,
 ) error {
 	archModel := helpers.ArchitectureModelFromConfig(a.Config.Architecture)
 	diagramModes, err := helpers.ResolveDiagramModes(a.Config.Output.Diagrams)
@@ -80,7 +84,6 @@ func (a *App) GenerateOutputs(
 		}
 		tsv := dependenciesTSV
 
-		probableBridges := a.AnalyzeProbableBridges(ctx)
 		if len(probableBridges) > 0 {
 			probableTSV, err := tsvGen.GenerateProbableBridges(probableBridges)
 			if err != nil {
@@ -102,6 +105,13 @@ func (a *App) GenerateOutputs(
 				return fmt.Errorf("generate architecture-violation TSV block: %w", err)
 			}
 			tsv = strings.TrimRight(tsv, "\n") + "\n\n" + strings.TrimRight(violationsTSV, "\n") + "\n"
+		}
+		if len(ruleViolations) > 0 {
+			rulesTSV, err := tsvGen.GenerateArchitectureRuleViolations(ruleViolations)
+			if err != nil {
+				return fmt.Errorf("generate architecture-rule TSV block: %w", err)
+			}
+			tsv = strings.TrimRight(tsv, "\n") + "\n\n" + strings.TrimRight(rulesTSV, "\n") + "\n"
 		}
 		allSecrets := a.allSecrets(0)
 		if len(allSecrets) > 0 {
@@ -192,24 +202,23 @@ func (a *App) GenerateOutputs(
 	}
 
 	if targets.Markdown != "" {
-		if unresolved == nil {
-			unresolved = a.AnalyzeHallucinations(ctx)
-		}
-		probableBridges := a.AnalyzeProbableBridges(ctx)
 		root, err := a.resolveOutputRoot()
 		if err != nil {
 			return err
 		}
 		// Use the same logic as PresentationService for consistency
 		md, err := report.NewMarkdownGenerator().Generate(report.MarkdownReportData{
-			TotalModules:    a.Graph.ModuleCount(),
-			TotalFiles:      a.Graph.FileCount(),
-			Cycles:          cycles,
-			ProbableBridges: probableBridges,
-			Unresolved:      unresolved,
-			UnusedImports:   unusedImports,
-			Violations:      violations,
-			Hotspots:        hotspots,
+			TotalModules:      a.Graph.ModuleCount(),
+			TotalFiles:        a.Graph.FileCount(),
+			Cycles:            cycles,
+			ProbableBridges:   probableBridges,
+			Unresolved:        unresolved,
+			UnusedImports:     unusedImports,
+			Violations:        violations,
+			ArchitectureRules: append([]ports.ArchitectureRule(nil), a.archRules...),
+			RuleViolations:    ruleViolations,
+			RuleSummary:       ruleSummary,
+			Hotspots:          hotspots,
 		}, report.MarkdownReportOptions{
 			ProjectName:         filepath.Base(root),
 			ProjectRoot:         root,

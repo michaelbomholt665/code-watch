@@ -267,8 +267,21 @@ func validateArchitecture(cfg *Config) error {
 		return nil
 	}
 
-	if len(arch.Layers) == 0 {
-		return fmt.Errorf("architecture.enabled=true requires at least one layer")
+	hasLayerRules := false
+	for _, rule := range arch.Rules {
+		kind := strings.TrimSpace(strings.ToLower(rule.Kind))
+		if kind == "" && (rule.From != "" || len(rule.Allow) > 0) {
+			kind = "layer"
+		} else if kind == "" && len(rule.Modules) > 0 {
+			kind = "package"
+		}
+		if kind == "" || kind == "layer" {
+			hasLayerRules = true
+			break
+		}
+	}
+	if hasLayerRules && len(arch.Layers) == 0 {
+		return fmt.Errorf("architecture.enabled=true requires at least one layer when layer rules are configured")
 	}
 
 	layerNames := make(map[string]bool, len(arch.Layers))
@@ -356,26 +369,85 @@ func validateArchitecture(cfg *Config) error {
 		}
 		ruleNames[rule.Name] = true
 
-		if !layerNames[rule.From] {
-			return fmt.Errorf("architecture rule %q references unknown from layer %q", rule.Name, rule.From)
+		kind := strings.TrimSpace(strings.ToLower(rule.Kind))
+		if kind == "" && (rule.From != "" || len(rule.Allow) > 0) {
+			kind = "layer"
 		}
-		if previous, exists := ruleByFrom[rule.From]; exists {
-			return fmt.Errorf("architecture layer %q has multiple rules (%q, %q); define exactly one", rule.From, previous, rule.Name)
-		}
-		ruleByFrom[rule.From] = rule.Name
-		if len(rule.Allow) == 0 {
-			return fmt.Errorf("architecture rule %q must include at least one allowed layer", rule.Name)
-		}
+		switch kind {
+		case "", "layer":
+			if !layerNames[rule.From] {
+				return fmt.Errorf("architecture rule %q references unknown from layer %q", rule.Name, rule.From)
+			}
+			if previous, exists := ruleByFrom[rule.From]; exists {
+				return fmt.Errorf("architecture layer %q has multiple rules (%q, %q); define exactly one", rule.From, previous, rule.Name)
+			}
+			ruleByFrom[rule.From] = rule.Name
+			if len(rule.Allow) == 0 {
+				return fmt.Errorf("architecture rule %q must include at least one allowed layer", rule.Name)
+			}
 
-		allowedSet := make(map[string]bool, len(rule.Allow))
-		for _, to := range rule.Allow {
-			if !layerNames[to] {
-				return fmt.Errorf("architecture rule %q references unknown allowed layer %q", rule.Name, to)
+			allowedSet := make(map[string]bool, len(rule.Allow))
+			for _, to := range rule.Allow {
+				if !layerNames[to] {
+					return fmt.Errorf("architecture rule %q references unknown allowed layer %q", rule.Name, to)
+				}
+				if allowedSet[to] {
+					return fmt.Errorf("architecture rule %q repeats allowed layer %q", rule.Name, to)
+				}
+				allowedSet[to] = true
 			}
-			if allowedSet[to] {
-				return fmt.Errorf("architecture rule %q repeats allowed layer %q", rule.Name, to)
+		case "package":
+			if len(rule.Modules) == 0 {
+				return fmt.Errorf("architecture rule %q must define at least one module pattern", rule.Name)
 			}
-			allowedSet[to] = true
+			if rule.MaxFiles <= 0 && len(rule.Imports.Allow) == 0 && len(rule.Imports.Deny) == 0 {
+				return fmt.Errorf("architecture rule %q must set max_files or imports allow/deny rules", rule.Name)
+			}
+			if rule.MaxFiles < 0 {
+				return fmt.Errorf("architecture rule %q max_files must be >= 0", rule.Name)
+			}
+			seenModule := make(map[string]bool, len(rule.Modules))
+			for _, mod := range rule.Modules {
+				if strings.TrimSpace(mod) == "" {
+					return fmt.Errorf("architecture rule %q module pattern must not be empty", rule.Name)
+				}
+				if seenModule[mod] {
+					return fmt.Errorf("architecture rule %q repeats module pattern %q", rule.Name, mod)
+				}
+				seenModule[mod] = true
+			}
+			seenAllow := make(map[string]bool, len(rule.Imports.Allow))
+			for _, allow := range rule.Imports.Allow {
+				if strings.TrimSpace(allow) == "" {
+					return fmt.Errorf("architecture rule %q imports.allow must not be empty", rule.Name)
+				}
+				if seenAllow[allow] {
+					return fmt.Errorf("architecture rule %q repeats imports.allow pattern %q", rule.Name, allow)
+				}
+				seenAllow[allow] = true
+			}
+			seenDeny := make(map[string]bool, len(rule.Imports.Deny))
+			for _, deny := range rule.Imports.Deny {
+				if strings.TrimSpace(deny) == "" {
+					return fmt.Errorf("architecture rule %q imports.deny must not be empty", rule.Name)
+				}
+				if seenDeny[deny] {
+					return fmt.Errorf("architecture rule %q repeats imports.deny pattern %q", rule.Name, deny)
+				}
+				seenDeny[deny] = true
+			}
+			seenExclude := make(map[string]bool, len(rule.Exclude.Files))
+			for _, excl := range rule.Exclude.Files {
+				if strings.TrimSpace(excl) == "" {
+					return fmt.Errorf("architecture rule %q exclude.files must not contain empty values", rule.Name)
+				}
+				if seenExclude[excl] {
+					return fmt.Errorf("architecture rule %q repeats exclude.files pattern %q", rule.Name, excl)
+				}
+				seenExclude[excl] = true
+			}
+		default:
+			return fmt.Errorf("architecture rule %q has unsupported kind %q", rule.Name, rule.Kind)
 		}
 	}
 

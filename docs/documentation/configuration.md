@@ -442,6 +442,37 @@ Config load fails when:
 - architecture rules violate layer/rule constraints
 - `languages.*.extensions` or `languages.*.filenames` include empty values
 
+## Architecture Rules
+
+Layer rules (`[[architecture.rules]]` with `from`/`allow`) constrain which architecture layers may import each other. Package rules use `kind = "package"` to enforce module limits and import policies:
+
+```toml
+[architecture]
+enabled = true
+
+[[architecture.rules]]
+name = "api-size"
+kind = "package"
+modules = ["internal/api"]
+max_files = 30
+exclude = { tests = true, files = ["index.ts", "__init__.py"] }
+
+[[architecture.rules]]
+name = "api-imports"
+kind = "package"
+modules = ["internal/api"]
+imports = { allow = ["internal/core/**"], deny = ["internal/engine/**"] }
+```
+
+Fields:
+- `architecture.rules[].kind`: `layer` (default when `from/allow` present) or `package`.
+- `architecture.rules[].modules`: module patterns (prefix or glob).
+- `architecture.rules[].max_files`: file-count limit after excludes.
+- `architecture.rules[].imports.allow`: allow-only list of module patterns.
+- `architecture.rules[].imports.deny`: deny list of module patterns.
+- `architecture.rules[].exclude.tests`: exclude `*_test.go`, `_test.py`, `test_*.py`.
+- `architecture.rules[].exclude.files`: file patterns to ignore (globs supported).
+
 ## Migration Notes
 
 - Existing v1-style configs still load without immediate edits.

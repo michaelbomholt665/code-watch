@@ -89,7 +89,7 @@
 - maintains incremental caches for unresolved refs and unused imports
 - runs optional secret detection and publishes aggregate secret counts in UI update payloads
 - updates persisted resolver symbols incrementally per file (`UpsertFile`, `DeleteFile`, `PruneToPaths`) when DB is enabled
-- computes metrics/hotspots/architecture violations
+- computes metrics/hotspots/architecture layer + package rule violations
 - supports trace and impact commands
 - writes DOT/TSV/Mermaid/PlantUML/Markdown outputs
 - supports dependency injection for core parsing/secret-scan collaborators via `NewWithDependencies(...)`
@@ -136,7 +136,7 @@
 - `watch_paths=["."]` when empty
 - `watch.debounce=500ms` when zero
 - `architecture.top_complexity=5` when `<=0`
-- validates architecture layer/rule schema when enabled
+- validates architecture layer and package-rule schema when enabled
 
 ## `internal/engine/parser`
 
@@ -192,7 +192,7 @@
 - transitive invalidation for incremental updates
 - module metrics (depth, fan-in, fan-out)
 - complexity hotspot ranking
-- architecture rule validation
+- architecture rule validation (layer + package)
 - impact analysis (direct + transitive importers)
 - SQLite symbol-store adapter (`symbol_store.go`) for persisted cross-language resolver lookups and incremental symbol row pruning
 - `writer.go` (`BatchWriter`) handles high-throughput concurrent writes to SQLite using a channel-driven goroutine to prevent `SQLITE_BUSY` contention

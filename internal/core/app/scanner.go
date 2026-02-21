@@ -11,7 +11,6 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -23,32 +22,41 @@ func (a *App) InitialScan(ctx context.Context) error {
 	defer span.End()
 
 	finalPaths := helpers.UniqueScanRoots(a.Config.WatchPaths)
-	expandedPaths := make(map[string]bool, len(finalPaths))
+	expandedPaths := append([]string(nil), finalPaths...)
 	for _, p := range finalPaths {
-		expandedPaths[p] = true
-
 		r := resolver.NewGoResolver()
 		if err := r.FindGoMod(p); err == nil {
 			if absRoot, err := filepath.Abs(r.GetModuleRoot()); err == nil {
-				expandedPaths[filepath.Clean(absRoot)] = true
+				expandedPaths = append(expandedPaths, filepath.Clean(absRoot))
 			}
 		}
 	}
-
-	finalPaths = make([]string, 0, len(expandedPaths))
-	for p := range expandedPaths {
-		finalPaths = append(finalPaths, p)
-	}
-	sort.Strings(finalPaths)
+	finalPaths = helpers.UniqueScanRoots(expandedPaths)
 
 	files, err := a.ScanDirectories(finalPaths, a.Config.Exclude.Dirs, a.Config.Exclude.Files)
 	if err != nil {
 		return err
 	}
 
+	var batch batchUpserter
+	if a.symbolStore != nil {
+		b, err := a.symbolStore.BeginBatch()
+		if err != nil {
+			slog.Warn("failed to begin symbol store batch", "error", err)
+		} else {
+			batch = b
+		}
+	}
+
 	for _, filePath := range files {
-		if err := a.ProcessFile(filePath); err != nil {
+		if err := a.processFileWithUpserter(filePath, batch); err != nil {
 			slog.Warn("failed to process file", "path", filePath, "error", err)
+		}
+	}
+	if batch != nil {
+		if err := batch.Commit(); err != nil {
+			_ = batch.Rollback()
+			return err
 		}
 	}
 	if err := a.pruneSymbolStorePaths(); err != nil {
@@ -121,6 +129,20 @@ func (a *App) ScanDirectories(paths []string, excludeDirs, excludeFiles []string
 }
 
 func (a *App) ProcessFile(path string) error {
+	return a.processFileWithUpserter(path, nil)
+}
+
+type fileUpserter interface {
+	UpsertFile(file *parser.File) error
+}
+
+type batchUpserter interface {
+	fileUpserter
+	Commit() error
+	Rollback() error
+}
+
+func (a *App) processFileWithUpserter(path string, upserter fileUpserter) error {
 	start := time.Now()
 	lang := a.codeParser.GetLanguage(path)
 	defer func() {
@@ -184,7 +206,11 @@ func (a *App) ProcessFile(path string) error {
 	}
 	a.Graph.AddFile(file)
 	a.cacheContent(path, content)
-	if err := a.upsertSymbolStoreFile(file); err != nil {
+	if upserter != nil {
+		if err := upserter.UpsertFile(file); err != nil {
+			slog.Warn("failed to upsert persisted symbol rows", "path", path, "error", err)
+		}
+	} else if err := a.upsertSymbolStoreFile(file); err != nil {
 		slog.Warn("failed to upsert persisted symbol rows", "path", path, "error", err)
 	}
 	return nil

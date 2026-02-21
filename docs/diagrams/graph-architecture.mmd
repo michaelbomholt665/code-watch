@@ -1,13 +1,13 @@
 %%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
 flowchart LR
-  api["api"]
-  ui["ui"]
+  cmd["cmd"]
   core["core"]
   engine["engine"]
   data["data"]
+  shared["shared"]
 
   classDef layerNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
-  class api,ui,core,engine,data layerNode;
+  class cmd,core,engine,data,shared layerNode;
 
 
   subgraph legend_info["Legend"]

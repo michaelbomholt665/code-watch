@@ -187,6 +187,7 @@ func (s *analysisService) CaptureHistoryTrend(ctx context.Context, historyStore 
 	if s.app.archEngine != nil {
 		violations = s.app.ArchitectureViolations()
 	}
+	ruleViolations, ruleSummary := s.app.ArchitectureRuleViolations()
 	hotspotLimit := 0
 	if s.app.Config != nil {
 		hotspotLimit = s.app.Config.Architecture.TopComplexity
@@ -245,6 +246,7 @@ func (s *analysisService) WatchService() ports.WatchService {
 }
 
 func (s *analysisService) SummarySnapshot(ctx context.Context) (ports.SummarySnapshot, error) {
+	fmt.Println("DEBUG: SummarySnapshot started")
 	if err := ctx.Err(); err != nil {
 		return ports.SummarySnapshot{}, err
 	}
@@ -285,6 +287,8 @@ func (s *analysisService) SummarySnapshot(ctx context.Context) (ports.SummarySna
 		UnusedImports:  append([]resolver.UnusedImport(nil), unusedImports...),
 		Metrics:        outMetrics,
 		Violations:     append([]graph.ArchitectureViolation(nil), violations...),
+		RuleViolations: append([]ports.ArchitectureRuleViolation(nil), ruleViolations...),
+		RuleSummary:    ruleSummary,
 		Hotspots:       append([]graph.ComplexityHotspot(nil), hotspots...),
 	}, nil
 }
@@ -305,12 +309,22 @@ func (s *analysisService) PrintSummary(ctx context.Context, req ports.SummaryPri
 		req.Snapshot.UnusedImports,
 		req.Snapshot.Metrics,
 		req.Snapshot.Violations,
+		req.Snapshot.RuleViolations,
+		req.Snapshot.RuleSummary,
 		req.Snapshot.Hotspots,
 	)
 	return nil
 }
 
 func (s *analysisService) SyncOutputs(ctx context.Context, req ports.SyncOutputsRequest) (ports.SyncOutputsResult, error) {
+	snapshot, err := s.SummarySnapshot(ctx)
+	if err != nil {
+		return ports.SyncOutputsResult{}, err
+	}
+	return s.SyncOutputsWithSnapshot(ctx, req, snapshot)
+}
+
+func (s *analysisService) SyncOutputsWithSnapshot(ctx context.Context, req ports.SyncOutputsRequest, snapshot ports.SummarySnapshot) (ports.SyncOutputsResult, error) {
 	if err := ctx.Err(); err != nil {
 		return ports.SyncOutputsResult{}, err
 	}
@@ -359,14 +373,19 @@ func (s *analysisService) SyncOutputs(ctx context.Context, req ports.SyncOutputs
 		return ports.SyncOutputsResult{}, err
 	}
 
-	cycles := s.app.Graph.DetectCycles()
-	metrics := s.app.Graph.ComputeModuleMetrics()
-	hotspots := s.app.Graph.TopComplexity(s.app.Config.Architecture.TopComplexity)
-	violations := s.app.ArchitectureViolations()
-	unused := s.app.AnalyzeUnusedImports(ctx)
-
 	s.app.Config.Output = filteredOutput
-	err = s.app.GenerateOutputs(ctx, cycles, nil, unused, metrics, violations, hotspots)
+	err = s.app.GenerateOutputs(
+		ctx,
+		snapshot.Cycles,
+		snapshot.Hallucinations,
+		snapshot.UnusedImports,
+		snapshot.Metrics,
+		snapshot.Violations,
+		snapshot.RuleViolations,
+		snapshot.RuleSummary,
+		snapshot.Hotspots,
+		nil, // AnalyzeProbableBridges will still be called once inside GenerateOutputs for Markdown if needed, but we can't easily avoid it without bloating snapshot.
+	)
 	s.app.Config.Output = originalOutput
 	if err != nil {
 		return ports.SyncOutputsResult{}, err
@@ -415,9 +434,10 @@ func (s *analysisService) GenerateMarkdownReport(ctx context.Context, req ports.
 	}
 
 	return ports.MarkdownReportResult{
-		Markdown: result.Markdown,
-		Path:     result.Path,
-		Written:  result.Written,
+		Markdown:  result.Markdown,
+		Path:      result.Path,
+		Written:   result.Written,
+		RuleGuide: result.RuleGuide,
 	}, nil
 }
 

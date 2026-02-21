@@ -79,6 +79,7 @@ type MarkdownReportResult struct {
 	Markdown string
 	Path     string
 	Written  bool
+	RuleGuide ArchitectureRuleGuide
 }
 
 // SummarySnapshot captures current graph/resolution state for driving adapters.
@@ -91,7 +92,63 @@ type SummarySnapshot struct {
 	UnusedImports  []resolver.UnusedImport
 	Metrics        map[string]graph.ModuleMetrics
 	Violations     []graph.ArchitectureViolation
+	RuleViolations []ArchitectureRuleViolation
+	RuleSummary    ArchitectureRuleSummary
 	Hotspots       []graph.ComplexityHotspot
+}
+
+type ArchitectureRuleSummary struct {
+	RuleCount       int
+	ModuleCount     int
+	ViolationCount  int
+	ImportViolations int
+	FileViolations   int
+}
+
+type ArchitectureRuleKind string
+
+const (
+	ArchitectureRuleKindLayer   ArchitectureRuleKind = "layer"
+	ArchitectureRuleKindPackage ArchitectureRuleKind = "package"
+)
+
+type ArchitectureImportRule struct {
+	Allow []string
+	Deny  []string
+}
+
+type ArchitectureRuleExclude struct {
+	Tests bool
+	Files []string
+}
+
+type ArchitectureRule struct {
+	Name     string
+	Kind     ArchitectureRuleKind
+	Modules  []string
+	MaxFiles int
+	Imports  ArchitectureImportRule
+	Exclude  ArchitectureRuleExclude
+}
+
+type ArchitectureRuleViolation struct {
+	RuleName string
+	RuleKind ArchitectureRuleKind
+	Module   string
+	Target   string
+	Type     string
+	Message  string
+	File     string
+	Line     int
+	Column   int
+	Limit    int
+	Actual   int
+}
+
+type ArchitectureRuleGuide struct {
+	Summary    ArchitectureRuleSummary
+	Rules      []ArchitectureRule
+	Violations []ArchitectureRuleViolation
 }
 
 // SummaryPrintRequest captures terminal-summary rendering inputs.
@@ -142,6 +199,7 @@ type AnalysisService interface {
 	SummarySnapshot(ctx context.Context) (SummarySnapshot, error)
 	PrintSummary(ctx context.Context, req SummaryPrintRequest) error
 	SyncOutputs(ctx context.Context, req SyncOutputsRequest) (SyncOutputsResult, error)
+	SyncOutputsWithSnapshot(ctx context.Context, req SyncOutputsRequest, snapshot SummarySnapshot) (SyncOutputsResult, error)
 	GenerateMarkdownReport(ctx context.Context, req MarkdownReportRequest) (MarkdownReportResult, error)
 	UpdateConfig(ctx context.Context, cfg *config.Config) error
 }

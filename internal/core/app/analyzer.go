@@ -61,16 +61,17 @@ func (a *App) HandleChanges(paths []string) {
 	metrics := a.Graph.ComputeModuleMetrics()
 	hotspots := a.Graph.TopComplexity(a.Config.Architecture.TopComplexity)
 	violations := a.ArchitectureViolations()
+	ruleViolations, ruleSummary := a.ArchitectureRuleViolations()
 	ctx := context.Background()
 	hallucinations := a.AnalyzeHallucinationsIncremental(ctx, affectedSet)
 	unusedImports := a.AnalyzeUnusedImportsIncremental(ctx, affectedSet)
 
-	if err := a.GenerateOutputs(ctx, cycles, hallucinations, unusedImports, metrics, violations, hotspots); err != nil {
+	if err := a.GenerateOutputs(ctx, cycles, hallucinations, unusedImports, metrics, violations, ruleViolations, ruleSummary, hotspots, nil); err != nil {
 		slog.Error("failed to generate outputs", "error", err)
 	}
 
 	duration := time.Since(start)
-	a.PrintSummary(len(paths), a.Graph.ModuleCount(), duration, cycles, hallucinations, unusedImports, metrics, violations, hotspots)
+	a.PrintSummary(len(paths), a.Graph.ModuleCount(), duration, cycles, hallucinations, unusedImports, metrics, violations, ruleViolations, ruleSummary, hotspots)
 	a.emitUpdate(Update{
 		Cycles:         cycles,
 		Hallucinations: hallucinations,
@@ -79,7 +80,7 @@ func (a *App) HandleChanges(paths []string) {
 		SecretCount:    a.SecretCount(),
 	})
 
-	if a.Config.Alerts.Beep && (len(cycles) > 0 || len(hallucinations) > 0 || len(unusedImports) > 0 || len(violations) > 0) {
+	if a.Config.Alerts.Beep && (len(cycles) > 0 || len(hallucinations) > 0 || len(unusedImports) > 0 || len(violations) > 0 || len(ruleViolations) > 0) {
 		fmt.Print("\a")
 	}
 }

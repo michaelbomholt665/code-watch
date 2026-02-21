@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 - `cli:` Added `circular grammars` command to add/list/remove Tree-sitter grammars.
 - `config:` Added `[performance]` section for proactive memory pruning (`max_heap_mb`).
 - `config:` Added `[caches]` section to control LRU capacities.
+- `architecture:` Added package-level architecture rules for file-count limits and import allow/deny policies.
+- `report:` Added architecture rule violations to Markdown reports, TSV exports, and SARIF (`CIRC004`).
 - `engine:` Added parser pool resource tracking to detect leaks and active leases.
 - `graph:` Added memory pressure awareness and proactive LRU cache pruning.
 - `graph:` Optimized Symbol Store concurrency with batching and WAL mode tuning.
@@ -53,6 +55,7 @@ All notable changes to this project will be documented in this file.
 ### Docs
 - Updated `docs/documentation/mcp.md` with multi-transport support details (stdio and SSE).
 - Updated `README.md` features list to include SSE transport and enhanced observability.
+- Added architecture rule documentation and refreshed configuration/output references.
 
 ## 2026-02-20
 

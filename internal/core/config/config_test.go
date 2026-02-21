@@ -310,6 +310,13 @@ paths = ["internal/api"]
 name = "api-only-to-core"
 from = "api"
 allow = ["core"]
+
+[[architecture.rules]]
+name = "api-size"
+kind = "package"
+modules = ["internal/api"]
+max_files = 12
+exclude = { tests = true, files = ["index.ts", "__init__.py"] }
 `
 
 	tmpfile, err := os.CreateTemp("", "config-architecture*.toml")
@@ -337,8 +344,8 @@ allow = ["core"]
 	if len(cfg.Architecture.Layers) != 2 {
 		t.Fatalf("expected 2 layers, got %d", len(cfg.Architecture.Layers))
 	}
-	if len(cfg.Architecture.Rules) != 1 {
-		t.Fatalf("expected 1 rule, got %d", len(cfg.Architecture.Rules))
+	if len(cfg.Architecture.Rules) != 2 {
+		t.Fatalf("expected 2 rules, got %d", len(cfg.Architecture.Rules))
 	}
 }
 
@@ -373,6 +380,43 @@ paths = ["internal/api"]
 	_, err = Load(tmpfile.Name())
 	if err == nil {
 		t.Fatal("expected overlap validation error")
+	}
+}
+
+func TestLoadArchitectureRules_InvalidPackageRule(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[architecture]
+enabled = true
+
+[[architecture.layers]]
+name = "core"
+paths = ["internal/core"]
+
+[[architecture.rules]]
+name = "bad-package-rule"
+kind = "package"
+max_files = 5
+`
+	tmpfile, err := os.CreateTemp("", "config-architecture-badpkg*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = Load(tmpfile.Name())
+	if err == nil {
+		t.Fatal("expected architecture package rule validation error")
+	}
+	if !strings.Contains(err.Error(), "module pattern") {
+		t.Fatalf("expected module pattern validation error, got %v", err)
 	}
 }
 

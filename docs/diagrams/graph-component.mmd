@@ -1,227 +1,382 @@
 %%{init: {'theme': 'base', 'themeVariables': {'textColor': '#000000', 'primaryTextColor': '#000000', 'lineColor': '#333333'}, 'flowchart': {'nodeSpacing': 80, 'rankSpacing': 110, 'curve': 'basis'}}}%%
 flowchart LR
-  circular_cmd_circular["circular/cmd/circular\n(0 funcs, 1 files)\n(d=13 in=0 out=1)"]
-  circular_internal_core_app["circular/internal/core/app\n(22 funcs, 2 files)\n(d=8 in=3 out=7)\n(cx=88)"]
-  circular_internal_core_config["circular/internal/core/config\n(35 funcs, 3 files)\n(d=1 in=4 out=1)\n(cx=101)"]
-  circular_internal_core_watcher["circular/internal/core/watcher\n(5 funcs, 1 files)\n(d=0 in=1 out=0)"]
-  circular_internal_engine_graph["circular/internal/engine/graph\n(37 funcs, 5 files)\n(d=4 in=5 out=2)"]
-  circular_internal_engine_parser["circular/internal/engine/parser\n(45 funcs, 12 files)\n(d=3 in=6 out=3)"]
-  circular_internal_engine_parser_extractors["circular/internal/engine/parser/extractors\n(2 funcs, 1 files)\n(d=4 in=0 out=1)"]
-  circular_internal_engine_parser_grammar["circular/internal/engine/parser/grammar\n(6 funcs, 2 files)\n(d=2 in=1 out=1)"]
-  circular_internal_engine_parser_registry["circular/internal/engine/parser/registry\n(4 funcs, 1 files)\n(d=1 in=2 out=1)"]
-  circular_internal_engine_resolver["circular/internal/engine/resolver\n(13 funcs, 7 files)\n(d=5 in=3 out=3)"]
-  circular_internal_engine_resolver_drivers["circular/internal/engine/resolver/drivers\n(17 funcs, 5 files)\n(d=0 in=1 out=0)"]
-  circular_internal_mcp_adapters["circular/internal/mcp/adapters\n(11 funcs, 1 files)\n(d=9 in=4 out=3)"]
-  circular_internal_mcp_contracts["circular/internal/mcp/contracts\n(33 funcs, 1 files)\n(d=0 in=10 out=0)"]
-  circular_internal_mcp_openapi["circular/internal/mcp/openapi\n(3 funcs, 3 files)\n(d=1 in=1 out=1)"]
-  circular_internal_mcp_registry["circular/internal/mcp/registry\n(6 funcs, 1 files)\n(d=0 in=1 out=0)"]
-  circular_internal_mcp_runtime["circular/internal/mcp/runtime\n(21 funcs, 5 files)\n(d=11 in=1 out=13)"]
-  circular_internal_mcp_schema["circular/internal/mcp/schema\n(2 funcs, 1 files)\n(d=1 in=1 out=1)"]
-  circular_internal_mcp_tools_graph["circular/internal/mcp/tools/graph\n(1 funcs, 1 files)\n(d=10 in=1 out=2)"]
-  circular_internal_mcp_tools_query["circular/internal/mcp/tools/query\n(4 funcs, 1 files)\n(d=10 in=1 out=2)"]
-  circular_internal_mcp_tools_scan["circular/internal/mcp/tools/scan\n(1 funcs, 1 files)\n(d=10 in=1 out=2)"]
-  circular_internal_mcp_tools_system["circular/internal/mcp/tools/system\n(7 funcs, 1 files)\n(d=1 in=1 out=1)"]
-  circular_internal_mcp_transport["circular/internal/mcp/transport\n(6 funcs, 1 files)\n(d=2 in=1 out=2)"]
-  circular_internal_mcp_validate["circular/internal/mcp/validate\n(2 funcs, 1 files)\n(d=1 in=1 out=1)"]
-  circular_internal_shared_util["circular/internal/shared/util\n(5 funcs, 1 files)\n(d=0 in=7 out=0)"]
-  circular_internal_shared_version["circular/internal/shared/version\n(0 funcs, 1 files)\n(d=0 in=2 out=0)"]
-  circular_internal_ui_cli["circular/internal/ui/cli\n(7 funcs, 6 files)\n(d=12 in=1 out=9)"]
-  circular_internal_ui_report["circular/internal/ui/report\n(8 funcs, 3 files)\n(d=7 in=2 out=2)"]
-  circular_internal_ui_report_formats["circular/internal/ui/report/formats\n(16 funcs, 6 files)\n(d=6 in=1 out=4)\n(cx=123)"]
+  circular_cmd_circular["circular/cmd/circular\n(0 funcs, 1 files)\n(d=13 in=0 out=1)\n(imp=1.0)\n(cx=1)"]
+  circular_internal_core_app["circular/internal/core/app\n(0 funcs, 15 files)\n(d=11 in=1 out=15)\n(imp=17.0)\n(cx=1)"]
+  circular_internal_core_app_helpers["circular/internal/core/app/helpers\n(0 funcs, 5 files)\n(d=10 in=1 out=7)\n(imp=9.0)"]
+  circular_internal_core_config["circular/internal/core/config\n(0 funcs, 7 files)\n(d=1 in=7 out=2)\n(imp=16.0)"]
+  circular_internal_core_config_helpers["circular/internal/core/config/helpers\n(0 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=2.0)"]
+  circular_internal_core_errors["circular/internal/core/errors\n(0 funcs, 1 files)\n(d=0 in=3 out=0)\n(imp=6.0)"]
+  circular_internal_core_ports["circular/internal/core/ports\n(0 funcs, 1 files)\n(d=6 in=6 out=6)\n(imp=18.0)"]
+  circular_internal_core_watcher["circular/internal/core/watcher\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)"]
+  circular_internal_data_history["circular/internal/data/history\n(0 funcs, 6 files)\n(d=0 in=7 out=0)\n(imp=14.0)"]
+  circular_internal_data_query["circular/internal/data/query\n(0 funcs, 3 files)\n(d=5 in=3 out=2)\n(imp=8.0)"]
+  circular_internal_engine_graph["circular/internal/engine/graph\n(0 funcs, 12 files)\n(d=4 in=8 out=3)\n(imp=19.0)"]
+  circular_internal_engine_parser["circular/internal/engine/parser\n(0 funcs, 17 files)\n(d=3 in=10 out=4)\n(imp=24.0)"]
+  circular_internal_engine_parser_extractors["circular/internal/engine/parser/extractors\n(0 funcs, 1 files)\n(d=4 in=0 out=1)\n(imp=1.0)"]
+  circular_internal_engine_parser_grammar["circular/internal/engine/parser/grammar\n(0 funcs, 4 files)\n(d=2 in=1 out=1)\n(imp=3.0)"]
+  circular_internal_engine_parser_registry["circular/internal/engine/parser/registry\n(0 funcs, 1 files)\n(d=1 in=2 out=1)\n(imp=5.0)"]
+  circular_internal_engine_resolver["circular/internal/engine/resolver\n(0 funcs, 10 files)\n(d=5 in=4 out=4)\n(imp=12.0)"]
+  circular_internal_engine_resolver_drivers["circular/internal/engine/resolver/drivers\n(0 funcs, 5 files)\n(d=0 in=1 out=0)\n(imp=2.0)"]
+  circular_internal_engine_secrets["circular/internal/engine/secrets\n(0 funcs, 3 files)\n(d=7 in=5 out=3)\n(imp=13.0)"]
+  circular_internal_mcp_adapters["circular/internal/mcp/adapters\n(0 funcs, 1 files)\n(d=8 in=5 out=7)\n(imp=17.0)"]
+  circular_internal_mcp_contracts["circular/internal/mcp/contracts\n(0 funcs, 1 files)\n(d=0 in=12 out=0)\n(imp=24.0)"]
+  circular_internal_mcp_openapi["circular/internal/mcp/openapi\n(0 funcs, 3 files)\n(d=1 in=1 out=1)\n(imp=13.0)"]
+  circular_internal_mcp_registry["circular/internal/mcp/registry\n(0 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=2.0)"]
+  circular_internal_mcp_runtime["circular/internal/mcp/runtime\n(0 funcs, 5 files)\n(d=10 in=1 out=17)\n(imp=19.0)"]
+  circular_internal_mcp_schema["circular/internal/mcp/schema\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)"]
+  circular_internal_mcp_tools_graph["circular/internal/mcp/tools/graph\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)"]
+  circular_internal_mcp_tools_overlays["circular/internal/mcp/tools/overlays\n(0 funcs, 1 files)\n(d=5 in=0 out=1)\n(imp=1.0)"]
+  circular_internal_mcp_tools_query["circular/internal/mcp/tools/query\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)"]
+  circular_internal_mcp_tools_report["circular/internal/mcp/tools/report\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)"]
+  circular_internal_mcp_tools_scan["circular/internal/mcp/tools/scan\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)"]
+  circular_internal_mcp_tools_secrets["circular/internal/mcp/tools/secrets\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)"]
+  circular_internal_mcp_tools_system["circular/internal/mcp/tools/system\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)"]
+  circular_internal_mcp_transport["circular/internal/mcp/transport\n(0 funcs, 3 files)\n(d=2 in=1 out=4)\n(imp=6.0)"]
+  circular_internal_mcp_validate["circular/internal/mcp/validate\n(0 funcs, 1 files)\n(d=1 in=1 out=2)\n(imp=4.0)"]
+  circular_internal_shared_observability["circular/internal/shared/observability\n(0 funcs, 2 files)\n(d=0 in=6 out=0)\n(imp=12.0)"]
+  circular_internal_shared_util["circular/internal/shared/util\n(0 funcs, 5 files)\n(d=0 in=11 out=0)\n(imp=22.0)"]
+  circular_internal_shared_version["circular/internal/shared/version\n(0 funcs, 1 files)\n(d=0 in=4 out=0)\n(imp=8.0)"]
+  circular_internal_ui_cli["circular/internal/ui/cli\n(0 funcs, 9 files)\n(d=12 in=1 out=14)\n(imp=16.0)"]
+  circular_internal_ui_report["circular/internal/ui/report\n(0 funcs, 4 files)\n(d=9 in=3 out=3)\n(imp=9.0)"]
+  circular_internal_ui_report_formats["circular/internal/ui/report/formats\n(0 funcs, 10 files)\n(d=8 in=2 out=6)\n(imp=10.0)"]
   circular_cmd_circular__main(("main"))
   circular_cmd_circular -.-> circular_cmd_circular__main
+  circular_internal_core_app___App(("*App"))
+  circular_internal_core_app -.-> circular_internal_core_app___App
+  circular_internal_core_app__AnalysisService(("AnalysisService"))
+  circular_internal_core_app -.-> circular_internal_core_app__AnalysisService
   circular_internal_core_app__AnalyzeHallucinations(("AnalyzeHallucinations"))
   circular_internal_core_app -.-> circular_internal_core_app__AnalyzeHallucinations
   circular_internal_core_app__AnalyzeHallucinationsIncremental(("AnalyzeHallucinationsIncremental"))
   circular_internal_core_app -.-> circular_internal_core_app__AnalyzeHallucinationsIncremental
   circular_internal_core_app__AnalyzeImpact(("AnalyzeImpact"))
   circular_internal_core_app -.-> circular_internal_core_app__AnalyzeImpact
+  circular_internal_core_app__AnalyzeProbableBridges(("AnalyzeProbableBridges"))
+  circular_internal_core_app -.-> circular_internal_core_app__AnalyzeProbableBridges
+  circular_internal_core_app__AnalyzeProbableBridgesForPaths(("AnalyzeProbableBridgesForPaths"))
+  circular_internal_core_app -.-> circular_internal_core_app__AnalyzeProbableBridgesForPaths
   circular_internal_core_app__AnalyzeUnusedImports(("AnalyzeUnusedImports"))
   circular_internal_core_app -.-> circular_internal_core_app__AnalyzeUnusedImports
   circular_internal_core_app__AnalyzeUnusedImportsIncremental(("AnalyzeUnusedImportsIncremental"))
   circular_internal_core_app -.-> circular_internal_core_app__AnalyzeUnusedImportsIncremental
-  circular_internal_core_app__App(("App"))
-  circular_internal_core_app -.-> circular_internal_core_app__App
   circular_internal_core_app__ArchitectureViolations(("ArchitectureViolations"))
   circular_internal_core_app -.-> circular_internal_core_app__ArchitectureViolations
   circular_internal_core_app__BuildQueryService(("BuildQueryService"))
   circular_internal_core_app -.-> circular_internal_core_app__BuildQueryService
-  circular_internal_core_app__CurrentUpdate(("CurrentUpdate"))
-  circular_internal_core_app -.-> circular_internal_core_app__CurrentUpdate
-  circular_internal_core_app__FormatImpactReport(("FormatImpactReport"))
-  circular_internal_core_app -.-> circular_internal_core_app__FormatImpactReport
-  circular_internal_core_app__GenerateOutputs(("GenerateOutputs"))
-  circular_internal_core_app -.-> circular_internal_core_app__GenerateOutputs
-  circular_internal_core_app__HandleChanges(("HandleChanges"))
-  circular_internal_core_app -.-> circular_internal_core_app__HandleChanges
+  circular_internal_core_app__CaptureHistoryTrend(("CaptureHistoryTrend"))
+  circular_internal_core_app -.-> circular_internal_core_app__CaptureHistoryTrend
+  circular_internal_core_app_helpers__ArchitectureModelFromConfig(("ArchitectureModelFromConfig"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__ArchitectureModelFromConfig
+  circular_internal_core_app_helpers__CompileGlobs(("CompileGlobs"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__CompileGlobs
+  circular_internal_core_app_helpers__DetectSecrets(("DetectSecrets"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__DetectSecrets
+  circular_internal_core_app_helpers__DiagramMode(("DiagramMode"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__DiagramMode
+  circular_internal_core_app_helpers__DiagramOutputPath(("DiagramOutputPath"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__DiagramOutputPath
+  circular_internal_core_app_helpers__FindContainingWatchPath(("FindContainingWatchPath"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__FindContainingWatchPath
+  circular_internal_core_app_helpers__GenerateMermaidByMode(("GenerateMermaidByMode"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__GenerateMermaidByMode
+  circular_internal_core_app_helpers__GeneratePlantUMLByMode(("GeneratePlantUMLByMode"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__GeneratePlantUMLByMode
+  circular_internal_core_app_helpers__LineWithinRanges(("LineWithinRanges"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__LineWithinRanges
+  circular_internal_core_app_helpers__MaskSecretValue(("MaskSecretValue"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__MaskSecretValue
+  circular_internal_core_app_helpers__MetricLeaders(("MetricLeaders"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__MetricLeaders
+  circular_internal_core_app_helpers__PreferredInjectionMode(("PreferredInjectionMode"))
+  circular_internal_core_app_helpers -.-> circular_internal_core_app_helpers__PreferredInjectionMode
+  circular_internal_core_config___Config(("*Config"))
+  circular_internal_core_config -.-> circular_internal_core_config___Config
+  circular_internal_core_config__Active(("Active"))
+  circular_internal_core_config -.-> circular_internal_core_config__Active
+  circular_internal_core_config__ActiveFile(("ActiveFile"))
+  circular_internal_core_config -.-> circular_internal_core_config__ActiveFile
   circular_internal_core_config__ActiveProject(("ActiveProject"))
   circular_internal_core_config -.-> circular_internal_core_config__ActiveProject
+  circular_internal_core_config__Address(("Address"))
+  circular_internal_core_config -.-> circular_internal_core_config__Address
   circular_internal_core_config__Alerts(("Alerts"))
   circular_internal_core_config -.-> circular_internal_core_config__Alerts
+  circular_internal_core_config__Allow(("Allow"))
+  circular_internal_core_config -.-> circular_internal_core_config__Allow
+  circular_internal_core_config__AllowMutations(("AllowMutations"))
+  circular_internal_core_config -.-> circular_internal_core_config__AllowMutations
+  circular_internal_core_config__ApplyEnvOverrides(("ApplyEnvOverrides"))
+  circular_internal_core_config -.-> circular_internal_core_config__ApplyEnvOverrides
   circular_internal_core_config__Architecture(("Architecture"))
   circular_internal_core_config -.-> circular_internal_core_config__Architecture
-  circular_internal_core_config__ArchitectureLayer(("ArchitectureLayer"))
-  circular_internal_core_config -.-> circular_internal_core_config__ArchitectureLayer
-  circular_internal_core_config__ArchitectureRule(("ArchitectureRule"))
-  circular_internal_core_config -.-> circular_internal_core_config__ArchitectureRule
+  circular_internal_core_config__AutoManageOutputs(("AutoManageOutputs"))
+  circular_internal_core_config -.-> circular_internal_core_config__AutoManageOutputs
   circular_internal_core_config__AutoManageOutputsEnabled(("AutoManageOutputsEnabled"))
   circular_internal_core_config -.-> circular_internal_core_config__AutoManageOutputsEnabled
-  circular_internal_core_config__AutoSyncConfigEnabled(("AutoSyncConfigEnabled"))
-  circular_internal_core_config -.-> circular_internal_core_config__AutoSyncConfigEnabled
-  circular_internal_core_config__ComponentDiagramConfig(("ComponentDiagramConfig"))
-  circular_internal_core_config -.-> circular_internal_core_config__ComponentDiagramConfig
-  circular_internal_core_config__Config(("Config"))
-  circular_internal_core_config -.-> circular_internal_core_config__Config
-  circular_internal_core_config__ConfigFiles(("ConfigFiles"))
-  circular_internal_core_config -.-> circular_internal_core_config__ConfigFiles
-  circular_internal_core_config__Database(("Database"))
-  circular_internal_core_config -.-> circular_internal_core_config__Database
-  circular_internal_core_config__DetectProjectRoot(("DetectProjectRoot"))
-  circular_internal_core_config -.-> circular_internal_core_config__DetectProjectRoot
+  circular_internal_core_config_helpers__HasWildcard(("HasWildcard"))
+  circular_internal_core_config_helpers -.-> circular_internal_core_config_helpers__HasWildcard
+  circular_internal_core_config_helpers__IsPathOverlap(("IsPathOverlap"))
+  circular_internal_core_config_helpers -.-> circular_internal_core_config_helpers__IsPathOverlap
+  circular_internal_core_config_helpers__WildcardPatternsOverlap(("WildcardPatternsOverlap"))
+  circular_internal_core_config_helpers -.-> circular_internal_core_config_helpers__WildcardPatternsOverlap
+  circular_internal_core_config_helpers__a(("a"))
+  circular_internal_core_config_helpers -.-> circular_internal_core_config_helpers__a
+  circular_internal_core_config_helpers__pattern(("pattern"))
+  circular_internal_core_config_helpers -.-> circular_internal_core_config_helpers__pattern
+  circular_internal_core_config_helpers__wildcardPrefix(("wildcardPrefix"))
+  circular_internal_core_config_helpers -.-> circular_internal_core_config_helpers__wildcardPrefix
+  circular_internal_core_config_helpers__wildcardSample(("wildcardSample"))
+  circular_internal_core_config_helpers -.-> circular_internal_core_config_helpers__wildcardSample
+  circular_internal_core_errors__AddContext(("AddContext"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__AddContext
+  circular_internal_core_errors__Code(("Code"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__Code
+  circular_internal_core_errors__Context(("Context"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__Context
+  circular_internal_core_errors__Err(("Err"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__Err
+  circular_internal_core_errors__Error(("Error"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__Error
+  circular_internal_core_errors__IsCode(("IsCode"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__IsCode
+  circular_internal_core_errors__Message(("Message"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__Message
+  circular_internal_core_errors__New(("New"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__New
+  circular_internal_core_errors__Unwrap(("Unwrap"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__Unwrap
+  circular_internal_core_errors__WithContext(("WithContext"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__WithContext
+  circular_internal_core_errors__Wrap(("Wrap"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__Wrap
+  circular_internal_core_errors__code(("code"))
+  circular_internal_core_errors -.-> circular_internal_core_errors__code
+  circular_internal_core_ports___parser_File(("*parser.File"))
+  circular_internal_core_ports -.-> circular_internal_core_ports___parser_File
+  circular_internal_core_ports__Cycles(("Cycles"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__Cycles
+  circular_internal_core_ports__Duration(("Duration"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__Duration
+  circular_internal_core_ports__End(("End"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__End
+  circular_internal_core_ports__FileCount(("FileCount"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__FileCount
+  circular_internal_core_ports__FilesScanned(("FilesScanned"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__FilesScanned
+  circular_internal_core_ports__Formats(("Formats"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__Formats
+  circular_internal_core_ports__Hallucinations(("Hallucinations"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__Hallucinations
+  circular_internal_core_ports__HistoryTrendResult(("HistoryTrendResult"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__HistoryTrendResult
+  circular_internal_core_ports__Hotspots(("Hotspots"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__Hotspots
+  circular_internal_core_ports__LatestCycleCount(("LatestCycleCount"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__LatestCycleCount
+  circular_internal_core_ports__LatestModuleCount(("LatestModuleCount"))
+  circular_internal_core_ports -.-> circular_internal_core_ports__LatestModuleCount
+  circular_internal_core_watcher___Watcher(("*Watcher"))
+  circular_internal_core_watcher -.-> circular_internal_core_watcher___Watcher
   circular_internal_core_watcher__Close(("Close"))
   circular_internal_core_watcher -.-> circular_internal_core_watcher__Close
   circular_internal_core_watcher__NewWatcher(("NewWatcher"))
   circular_internal_core_watcher -.-> circular_internal_core_watcher__NewWatcher
+  circular_internal_core_watcher__SetDebounce(("SetDebounce"))
+  circular_internal_core_watcher -.-> circular_internal_core_watcher__SetDebounce
   circular_internal_core_watcher__SetLanguageFilters(("SetLanguageFilters"))
   circular_internal_core_watcher -.-> circular_internal_core_watcher__SetLanguageFilters
   circular_internal_core_watcher__Watch(("Watch"))
   circular_internal_core_watcher -.-> circular_internal_core_watcher__Watch
-  circular_internal_core_watcher__Watcher(("Watcher"))
-  circular_internal_core_watcher -.-> circular_internal_core_watcher__Watcher
+  circular_internal_core_watcher____string(("[]string"))
+  circular_internal_core_watcher -.-> circular_internal_core_watcher____string
+  circular_internal_core_watcher__callbackMu(("callbackMu"))
+  circular_internal_core_watcher -.-> circular_internal_core_watcher__callbackMu
+  circular_internal_core_watcher__computeHash(("computeHash"))
+  circular_internal_core_watcher -.-> circular_internal_core_watcher__computeHash
+  circular_internal_core_watcher__debounce(("debounce"))
+  circular_internal_core_watcher -.-> circular_internal_core_watcher__debounce
   circular_internal_core_watcher__enqueueExistingFiles(("enqueueExistingFiles"))
   circular_internal_core_watcher -.-> circular_internal_core_watcher__enqueueExistingFiles
-  circular_internal_core_watcher__flushChanges(("flushChanges"))
-  circular_internal_core_watcher -.-> circular_internal_core_watcher__flushChanges
-  circular_internal_core_watcher__run(("run"))
-  circular_internal_core_watcher -.-> circular_internal_core_watcher__run
-  circular_internal_core_watcher__scheduleChange(("scheduleChange"))
-  circular_internal_core_watcher -.-> circular_internal_core_watcher__scheduleChange
-  circular_internal_core_watcher__shouldExcludeDir(("shouldExcludeDir"))
-  circular_internal_core_watcher -.-> circular_internal_core_watcher__shouldExcludeDir
-  circular_internal_core_watcher__shouldExcludeFile(("shouldExcludeFile"))
-  circular_internal_core_watcher -.-> circular_internal_core_watcher__shouldExcludeFile
-  circular_internal_core_watcher__watchRecursive(("watchRecursive"))
-  circular_internal_core_watcher -.-> circular_internal_core_watcher__watchRecursive
+  circular_internal_core_watcher__err(("err"))
+  circular_internal_core_watcher -.-> circular_internal_core_watcher__err
+  circular_internal_data_history___Store(("*Store"))
+  circular_internal_data_history -.-> circular_internal_data_history___Store
+  circular_internal_data_history__AvgCycles(("AvgCycles"))
+  circular_internal_data_history -.-> circular_internal_data_history__AvgCycles
+  circular_internal_data_history__AvgFanIn(("AvgFanIn"))
+  circular_internal_data_history -.-> circular_internal_data_history__AvgFanIn
+  circular_internal_data_history__AvgFanOut(("AvgFanOut"))
+  circular_internal_data_history -.-> circular_internal_data_history__AvgFanOut
+  circular_internal_data_history__AvgUnresolved(("AvgUnresolved"))
+  circular_internal_data_history -.-> circular_internal_data_history__AvgUnresolved
+  circular_internal_data_history__BuildTrendReport(("BuildTrendReport"))
+  circular_internal_data_history -.-> circular_internal_data_history__BuildTrendReport
+  circular_internal_data_history__Close(("Close"))
+  circular_internal_data_history -.-> circular_internal_data_history__Close
+  circular_internal_data_history__CommitHash(("CommitHash"))
+  circular_internal_data_history -.-> circular_internal_data_history__CommitHash
+  circular_internal_data_history__CommitTimestamp(("CommitTimestamp"))
+  circular_internal_data_history -.-> circular_internal_data_history__CommitTimestamp
+  circular_internal_data_history__CycleCount(("CycleCount"))
+  circular_internal_data_history -.-> circular_internal_data_history__CycleCount
+  circular_internal_data_history__DeltaAvgFanIn(("DeltaAvgFanIn"))
+  circular_internal_data_history -.-> circular_internal_data_history__DeltaAvgFanIn
+  circular_internal_data_history__DeltaAvgFanOut(("DeltaAvgFanOut"))
+  circular_internal_data_history -.-> circular_internal_data_history__DeltaAvgFanOut
+  circular_internal_data_query__CQLCondition(("CQLCondition"))
+  circular_internal_data_query -.-> circular_internal_data_query__CQLCondition
+  circular_internal_data_query__CQLQuery(("CQLQuery"))
+  circular_internal_data_query -.-> circular_internal_data_query__CQLQuery
+  circular_internal_data_query__Column(("Column"))
+  circular_internal_data_query -.-> circular_internal_data_query__Column
+  circular_internal_data_query__Conditions(("Conditions"))
+  circular_internal_data_query -.-> circular_internal_data_query__Conditions
+  circular_internal_data_query__Dependencies(("Dependencies"))
+  circular_internal_data_query -.-> circular_internal_data_query__Dependencies
+  circular_internal_data_query__DependencyCount(("DependencyCount"))
+  circular_internal_data_query -.-> circular_internal_data_query__DependencyCount
+  circular_internal_data_query__DependencyTrace(("DependencyTrace"))
+  circular_internal_data_query -.-> circular_internal_data_query__DependencyTrace
+  circular_internal_data_query__Depth(("Depth"))
+  circular_internal_data_query -.-> circular_internal_data_query__Depth
+  circular_internal_data_query__ExecuteCQL(("ExecuteCQL"))
+  circular_internal_data_query -.-> circular_internal_data_query__ExecuteCQL
+  circular_internal_data_query__ExportCount(("ExportCount"))
+  circular_internal_data_query -.-> circular_internal_data_query__ExportCount
+  circular_internal_data_query__ExportedSymbols(("ExportedSymbols"))
+  circular_internal_data_query -.-> circular_internal_data_query__ExportedSymbols
+  circular_internal_data_query__Field(("Field"))
+  circular_internal_data_query -.-> circular_internal_data_query__Field
+  circular_internal_engine_graph___Batch(("*Batch"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph___Batch
+  circular_internal_engine_graph___Module(("*Module"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph___Module
+  circular_internal_engine_graph___SQLiteSymbolStore(("*SQLiteSymbolStore"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph___SQLiteSymbolStore
+  circular_internal_engine_graph___parser_File(("*parser.File"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph___parser_File
   circular_internal_engine_graph__AddFile(("AddFile"))
   circular_internal_engine_graph -.-> circular_internal_engine_graph__AddFile
+  circular_internal_engine_graph__Allow(("Allow"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph__Allow
   circular_internal_engine_graph__AnalyzeImpact(("AnalyzeImpact"))
   circular_internal_engine_graph -.-> circular_internal_engine_graph__AnalyzeImpact
-  circular_internal_engine_graph__ArchitectureLayer(("ArchitectureLayer"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__ArchitectureLayer
-  circular_internal_engine_graph__ArchitectureModel(("ArchitectureModel"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__ArchitectureModel
-  circular_internal_engine_graph__ArchitectureRule(("ArchitectureRule"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__ArchitectureRule
-  circular_internal_engine_graph__ArchitectureViolation(("ArchitectureViolation"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__ArchitectureViolation
-  circular_internal_engine_graph__ComplexityHotspot(("ComplexityHotspot"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__ComplexityHotspot
-  circular_internal_engine_graph__ComputeModuleMetrics(("ComputeModuleMetrics"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__ComputeModuleMetrics
-  circular_internal_engine_graph__DetectCycles(("DetectCycles"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__DetectCycles
-  circular_internal_engine_graph__Error(("Error"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__Error
-  circular_internal_engine_graph__FileCount(("FileCount"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__FileCount
-  circular_internal_engine_graph__FindImportChain(("FindImportChain"))
-  circular_internal_engine_graph -.-> circular_internal_engine_graph__FindImportChain
+  circular_internal_engine_graph__Ancestry(("Ancestry"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph__Ancestry
+  circular_internal_engine_graph__BatchSize(("BatchSize"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph__BatchSize
+  circular_internal_engine_graph__BeginBatch(("BeginBatch"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph__BeginBatch
+  circular_internal_engine_graph__Branches(("Branches"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph__Branches
+  circular_internal_engine_graph__BuildUniversalSymbolTable(("BuildUniversalSymbolTable"))
+  circular_internal_engine_graph -.-> circular_internal_engine_graph__BuildUniversalSymbolTable
+  circular_internal_engine_parser___Builder(("*Builder"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser___Builder
+  circular_internal_engine_parser___File(("*File"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser___File
+  circular_internal_engine_parser___GrammarLoader(("*GrammarLoader"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser___GrammarLoader
+  circular_internal_engine_parser___Manifest(("*Manifest"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser___Manifest
+  circular_internal_engine_parser___sitter_Node(("*sitter.Node"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser___sitter_Node
+  circular_internal_engine_parser__AIBVersion(("AIBVersion"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser__AIBVersion
   circular_internal_engine_parser__Add(("Add"))
   circular_internal_engine_parser -.-> circular_internal_engine_parser__Add
+  circular_internal_engine_parser__AddArtifact(("AddArtifact"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser__AddArtifact
+  circular_internal_engine_parser__Alias(("Alias"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser__Alias
+  circular_internal_engine_parser__AllowedAIBVersions(("AllowedAIBVersions"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser__AllowedAIBVersions
+  circular_internal_engine_parser__Ancestry(("Ancestry"))
+  circular_internal_engine_parser -.-> circular_internal_engine_parser__Ancestry
   circular_internal_engine_parser__AppendLocalIdentifiers(("AppendLocalIdentifiers"))
   circular_internal_engine_parser -.-> circular_internal_engine_parser__AppendLocalIdentifiers
-  circular_internal_engine_parser__BuildLanguageRegistry(("BuildLanguageRegistry"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__BuildLanguageRegistry
-  circular_internal_engine_parser__ChildText(("ChildText"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__ChildText
-  circular_internal_engine_parser__DefaultExtractorForLanguage(("DefaultExtractorForLanguage"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__DefaultExtractorForLanguage
-  circular_internal_engine_parser__DefaultLanguageRegistry(("DefaultLanguageRegistry"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__DefaultLanguageRegistry
-  circular_internal_engine_parser__Definition(("Definition"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__Definition
-  circular_internal_engine_parser__Exists(("Exists"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__Exists
-  circular_internal_engine_parser__Extract(("Extract"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__Extract
-  circular_internal_engine_parser__ExtractRaw(("ExtractRaw"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__ExtractRaw
-  circular_internal_engine_parser__ExtractionContext(("ExtractionContext"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__ExtractionContext
-  circular_internal_engine_parser__Extractor(("Extractor"))
-  circular_internal_engine_parser -.-> circular_internal_engine_parser__Extractor
   circular_internal_engine_parser_extractors__Go(("Go"))
   circular_internal_engine_parser_extractors -.-> circular_internal_engine_parser_extractors__Go
   circular_internal_engine_parser_extractors__Python(("Python"))
   circular_internal_engine_parser_extractors -.-> circular_internal_engine_parser_extractors__Python
-  circular_internal_engine_parser_grammar__GrammarArtifact(("GrammarArtifact"))
-  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__GrammarArtifact
+  circular_internal_engine_parser_grammar___sitter_Language(("*sitter.Language"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar___sitter_Language
+  circular_internal_engine_parser_grammar__AIBVersion(("AIBVersion"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__AIBVersion
+  circular_internal_engine_parser_grammar__ActualHash(("ActualHash"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__ActualHash
+  circular_internal_engine_parser_grammar__AllowedAIBVersions(("AllowedAIBVersions"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__AllowedAIBVersions
+  circular_internal_engine_parser_grammar__ApprovedDate(("ApprovedDate"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__ApprovedDate
+  circular_internal_engine_parser_grammar__ArtifactKind(("ArtifactKind"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__ArtifactKind
+  circular_internal_engine_parser_grammar__ArtifactPath(("ArtifactPath"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__ArtifactPath
+  circular_internal_engine_parser_grammar__Artifacts(("Artifacts"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__Artifacts
+  circular_internal_engine_parser_grammar__ExpectedHash(("ExpectedHash"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__ExpectedHash
   circular_internal_engine_parser_grammar__GrammarManifest(("GrammarManifest"))
   circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__GrammarManifest
-  circular_internal_engine_parser_grammar__LoadGrammarManifest(("LoadGrammarManifest"))
-  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__LoadGrammarManifest
-  circular_internal_engine_parser_grammar__VerificationIssue(("VerificationIssue"))
-  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__VerificationIssue
-  circular_internal_engine_parser_grammar__VerifyGrammarArtifacts(("VerifyGrammarArtifacts"))
-  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__VerifyGrammarArtifacts
-  circular_internal_engine_parser_grammar__VerifyLanguageRegistryArtifacts(("VerifyLanguageRegistryArtifacts"))
-  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__VerifyLanguageRegistryArtifacts
-  circular_internal_engine_parser_grammar__verifyArtifactHash(("verifyArtifactHash"))
-  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__verifyArtifactHash
+  circular_internal_engine_parser_grammar__Language(("Language"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__Language
+  circular_internal_engine_parser_grammar__LoadDynamic(("LoadDynamic"))
+  circular_internal_engine_parser_grammar -.-> circular_internal_engine_parser_grammar__LoadDynamic
   circular_internal_engine_parser_registry__BuildLanguageRegistry(("BuildLanguageRegistry"))
   circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__BuildLanguageRegistry
   circular_internal_engine_parser_registry__DefaultLanguageRegistry(("DefaultLanguageRegistry"))
   circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__DefaultLanguageRegistry
-  circular_internal_engine_parser_registry__LanguageOverride(("LanguageOverride"))
-  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__LanguageOverride
-  circular_internal_engine_parser_registry__LanguageSpec(("LanguageSpec"))
-  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__LanguageSpec
-  circular_internal_engine_parser_registry__cloneLanguageRegistry(("cloneLanguageRegistry"))
-  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__cloneLanguageRegistry
-  circular_internal_engine_parser_registry__normalizeExtensions(("normalizeExtensions"))
-  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__normalizeExtensions
-  circular_internal_engine_parser_registry__normalizeFilenames(("normalizeFilenames"))
-  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__normalizeFilenames
-  circular_internal_engine_parser_registry__sortedRegistryIDs(("sortedRegistryIDs"))
-  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__sortedRegistryIDs
-  circular_internal_engine_parser_registry__validateLanguageRegistry(("validateLanguageRegistry"))
-  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__validateLanguageRegistry
-  circular_internal_engine_resolver__FindUnresolved(("FindUnresolved"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__FindUnresolved
-  circular_internal_engine_resolver__FindUnresolvedForPaths(("FindUnresolvedForPaths"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__FindUnresolvedForPaths
-  circular_internal_engine_resolver__FindUnusedImports(("FindUnusedImports"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__FindUnusedImports
-  circular_internal_engine_resolver__IsKnownNonModule(("IsKnownNonModule"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__IsKnownNonModule
-  circular_internal_engine_resolver__NewGoResolver(("NewGoResolver"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__NewGoResolver
-  circular_internal_engine_resolver__NewJavaResolver(("NewJavaResolver"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__NewJavaResolver
-  circular_internal_engine_resolver__NewJavaScriptResolver(("NewJavaScriptResolver"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__NewJavaScriptResolver
-  circular_internal_engine_resolver__NewPythonResolver(("NewPythonResolver"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__NewPythonResolver
-  circular_internal_engine_resolver__NewResolver(("NewResolver"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__NewResolver
-  circular_internal_engine_resolver__NewRustResolver(("NewRustResolver"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__NewRustResolver
-  circular_internal_engine_resolver__Resolver(("Resolver"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__Resolver
-  circular_internal_engine_resolver__UnresolvedReference(("UnresolvedReference"))
-  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__UnresolvedReference
+  circular_internal_engine_parser_registry__DefinitionNodes(("DefinitionNodes"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__DefinitionNodes
+  circular_internal_engine_parser_registry__DynamicConfig(("DynamicConfig"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__DynamicConfig
+  circular_internal_engine_parser_registry__Enabled(("Enabled"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__Enabled
+  circular_internal_engine_parser_registry__Extensions(("Extensions"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__Extensions
+  circular_internal_engine_parser_registry__ExtractorReady(("ExtractorReady"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__ExtractorReady
+  circular_internal_engine_parser_registry__Filenames(("Filenames"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__Filenames
+  circular_internal_engine_parser_registry__GrammarDir(("GrammarDir"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__GrammarDir
+  circular_internal_engine_parser_registry__ImportNode(("ImportNode"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__ImportNode
+  circular_internal_engine_parser_registry__IsDynamic(("IsDynamic"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__IsDynamic
+  circular_internal_engine_parser_registry__LibraryPath(("LibraryPath"))
+  circular_internal_engine_parser_registry -.-> circular_internal_engine_parser_registry__LibraryPath
+  circular_internal_engine_resolver__Alias(("Alias"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__Alias
+  circular_internal_engine_resolver__AmbiguousCrossLangMatch(("AmbiguousCrossLangMatch"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__AmbiguousCrossLangMatch
+  circular_internal_engine_resolver__BridgeContext(("BridgeContext"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__BridgeContext
+  circular_internal_engine_resolver__BridgeImportEvidence(("BridgeImportEvidence"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__BridgeImportEvidence
+  circular_internal_engine_resolver__Bridges(("Bridges"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__Bridges
+  circular_internal_engine_resolver__Close(("Close"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__Close
+  circular_internal_engine_resolver__Confidence(("Confidence"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__Confidence
+  circular_internal_engine_resolver__ConfirmedThreshold(("ConfirmedThreshold"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__ConfirmedThreshold
+  circular_internal_engine_resolver__DiscoverBridgeConfigPaths(("DiscoverBridgeConfigPaths"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__DiscoverBridgeConfigPaths
+  circular_internal_engine_resolver__ExplicitBridge(("ExplicitBridge"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__ExplicitBridge
+  circular_internal_engine_resolver__ExplicitRuleMatch(("ExplicitRuleMatch"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__ExplicitRuleMatch
+  circular_internal_engine_resolver__File(("File"))
+  circular_internal_engine_resolver -.-> circular_internal_engine_resolver__File
   circular_internal_engine_resolver_drivers__FindGoMod(("FindGoMod"))
   circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__FindGoMod
   circular_internal_engine_resolver_drivers__GetModuleName(("GetModuleName"))
   circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__GetModuleName
   circular_internal_engine_resolver_drivers__GetModuleRoot(("GetModuleRoot"))
   circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__GetModuleRoot
-  circular_internal_engine_resolver_drivers__GoResolver(("GoResolver"))
-  circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__GoResolver
-  circular_internal_engine_resolver_drivers__JavaResolver(("JavaResolver"))
-  circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__JavaResolver
-  circular_internal_engine_resolver_drivers__JavaScriptResolver(("JavaScriptResolver"))
-  circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__JavaScriptResolver
   circular_internal_engine_resolver_drivers__ModuleBaseName(("ModuleBaseName"))
   circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__ModuleBaseName
   circular_internal_engine_resolver_drivers__ModulePath(("ModulePath"))
@@ -234,12 +389,46 @@ flowchart LR
   circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__NewJavaScriptResolver
   circular_internal_engine_resolver_drivers__NewPythonResolver(("NewPythonResolver"))
   circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__NewPythonResolver
-  circular_internal_mcp_adapters__Adapter(("Adapter"))
-  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__Adapter
+  circular_internal_engine_resolver_drivers__NewRustResolver(("NewRustResolver"))
+  circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__NewRustResolver
+  circular_internal_engine_resolver_drivers__ResolveImport(("ResolveImport"))
+  circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__ResolveImport
+  circular_internal_engine_resolver_drivers__ResolveModuleName(("ResolveModuleName"))
+  circular_internal_engine_resolver_drivers -.-> circular_internal_engine_resolver_drivers__ResolveModuleName
+  circular_internal_engine_secrets___Adapter(("*Adapter"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets___Adapter
+  circular_internal_engine_secrets___Detector(("*Detector"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets___Detector
+  circular_internal_engine_secrets__ChangedLineRanges(("ChangedLineRanges"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__ChangedLineRanges
+  circular_internal_engine_secrets__Detect(("Detect"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__Detect
+  circular_internal_engine_secrets__DetectInRanges(("DetectInRanges"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__DetectInRanges
+  circular_internal_engine_secrets__End(("End"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__End
+  circular_internal_engine_secrets__EntropyThreshold(("EntropyThreshold"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__EntropyThreshold
+  circular_internal_engine_secrets__IsGitAvailable(("IsGitAvailable"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__IsGitAvailable
+  circular_internal_engine_secrets__MaskValue(("MaskValue"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__MaskValue
+  circular_internal_engine_secrets__MinTokenLength(("MinTokenLength"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__MinTokenLength
+  circular_internal_engine_secrets__Name(("Name"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__Name
+  circular_internal_engine_secrets__NewAdapter(("NewAdapter"))
+  circular_internal_engine_secrets -.-> circular_internal_engine_secrets__NewAdapter
   circular_internal_mcp_adapters__Cycles(("Cycles"))
   circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__Cycles
+  circular_internal_mcp_adapters__GenerateMarkdownReport(("GenerateMarkdownReport"))
+  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__GenerateMarkdownReport
   circular_internal_mcp_adapters__ListModules(("ListModules"))
   circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__ListModules
+  circular_internal_mcp_adapters__ListSecrets(("ListSecrets"))
+  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__ListSecrets
+  circular_internal_mcp_adapters__MapToMCPError(("MapToMCPError"))
+  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__MapToMCPError
   circular_internal_mcp_adapters__ModuleDetails(("ModuleDetails"))
   circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__ModuleDetails
   circular_internal_mcp_adapters__NewAdapter(("NewAdapter"))
@@ -248,60 +437,60 @@ flowchart LR
   circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__ProjectKey
   circular_internal_mcp_adapters__RunScan(("RunScan"))
   circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__RunScan
+  circular_internal_mcp_adapters__ScanSecrets(("ScanSecrets"))
+  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__ScanSecrets
   circular_internal_mcp_adapters__SetProjectKey(("SetProjectKey"))
   circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__SetProjectKey
   circular_internal_mcp_adapters__SyncOutputs(("SyncOutputs"))
   circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__SyncOutputs
-  circular_internal_mcp_adapters__Trace(("Trace"))
-  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__Trace
-  circular_internal_mcp_adapters__TrendSlice(("TrendSlice"))
-  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__TrendSlice
-  circular_internal_mcp_adapters__formatSet(("formatSet"))
-  circular_internal_mcp_adapters -.-> circular_internal_mcp_adapters__formatSet
-  circular_internal_mcp_contracts__CircularToolInput(("CircularToolInput"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__CircularToolInput
-  circular_internal_mcp_contracts__DependencyEdge(("DependencyEdge"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__DependencyEdge
-  circular_internal_mcp_contracts__Error(("Error"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Error
-  circular_internal_mcp_contracts__GraphCyclesInput(("GraphCyclesInput"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__GraphCyclesInput
-  circular_internal_mcp_contracts__GraphCyclesOutput(("GraphCyclesOutput"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__GraphCyclesOutput
-  circular_internal_mcp_contracts__ModuleDetails(("ModuleDetails"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__ModuleDetails
-  circular_internal_mcp_contracts__ModuleSummary(("ModuleSummary"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__ModuleSummary
-  circular_internal_mcp_contracts__OperationDescriptor(("OperationDescriptor"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__OperationDescriptor
-  circular_internal_mcp_contracts__ProjectSummary(("ProjectSummary"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__ProjectSummary
-  circular_internal_mcp_contracts__QueryModuleDetailsInput(("QueryModuleDetailsInput"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__QueryModuleDetailsInput
-  circular_internal_mcp_contracts__QueryModuleDetailsOutput(("QueryModuleDetailsOutput"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__QueryModuleDetailsOutput
-  circular_internal_mcp_contracts__QueryModulesInput(("QueryModulesInput"))
-  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__QueryModulesInput
+  circular_internal_mcp_contracts__AlreadyWatching(("AlreadyWatching"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__AlreadyWatching
+  circular_internal_mcp_contracts__Code(("Code"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Code
+  circular_internal_mcp_contracts__Column(("Column"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Column
+  circular_internal_mcp_contracts__Confidence(("Confidence"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Confidence
+  circular_internal_mcp_contracts__ConfigPath(("ConfigPath"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__ConfigPath
+  circular_internal_mcp_contracts__CycleCount(("CycleCount"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__CycleCount
+  circular_internal_mcp_contracts__Cycles(("Cycles"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Cycles
+  circular_internal_mcp_contracts__DBNamespace(("DBNamespace"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__DBNamespace
+  circular_internal_mcp_contracts__Dependencies(("Dependencies"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Dependencies
+  circular_internal_mcp_contracts__DependencyCount(("DependencyCount"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__DependencyCount
+  circular_internal_mcp_contracts__Depth(("Depth"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Depth
+  circular_internal_mcp_contracts__Description(("Description"))
+  circular_internal_mcp_contracts -.-> circular_internal_mcp_contracts__Description
+  circular_internal_mcp_openapi___openapi3_T(("*openapi3.T"))
+  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi___openapi3_T
   circular_internal_mcp_openapi__ApplyAllowlist(("ApplyAllowlist"))
   circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__ApplyAllowlist
   circular_internal_mcp_openapi__Convert(("Convert"))
   circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__Convert
   circular_internal_mcp_openapi__LoadSpec(("LoadSpec"))
   circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__LoadSpec
+  circular_internal_mcp_openapi____contracts_OperationDescriptor(("[]contracts.OperationDescriptor"))
+  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi____contracts_OperationDescriptor
+  circular_internal_mcp_openapi__allowlist(("allowlist"))
+  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__allowlist
   circular_internal_mcp_openapi__defaultObjectSchema(("defaultObjectSchema"))
   circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__defaultObjectSchema
+  circular_internal_mcp_openapi__error(("error"))
+  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__error
+  circular_internal_mcp_openapi__i(("i"))
+  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__i
+  circular_internal_mcp_openapi__id(("id"))
+  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__id
   circular_internal_mcp_openapi__isHTTPSource(("isHTTPSource"))
   circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__isHTTPSource
   circular_internal_mcp_openapi__isValidOperationID(("isValidOperationID"))
   circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__isValidOperationID
-  circular_internal_mcp_openapi__loadSpecFromURL(("loadSpecFromURL"))
-  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__loadSpecFromURL
-  circular_internal_mcp_openapi__requestSchema(("requestSchema"))
-  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__requestSchema
-  circular_internal_mcp_openapi__schemaRefToMap(("schemaRefToMap"))
-  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__schemaRefToMap
-  circular_internal_mcp_openapi__sortDescriptors(("sortDescriptors"))
-  circular_internal_mcp_openapi -.-> circular_internal_mcp_openapi__sortDescriptors
   circular_internal_mcp_registry__Handler(("Handler"))
   circular_internal_mcp_registry -.-> circular_internal_mcp_registry__Handler
   circular_internal_mcp_registry__HandlerFor(("HandlerFor"))
@@ -310,18 +499,38 @@ flowchart LR
   circular_internal_mcp_registry -.-> circular_internal_mcp_registry__New
   circular_internal_mcp_registry__Register(("Register"))
   circular_internal_mcp_registry -.-> circular_internal_mcp_registry__Register
-  circular_internal_mcp_registry__Registry(("Registry"))
-  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__Registry
   circular_internal_mcp_registry__Tools(("Tools"))
   circular_internal_mcp_registry -.-> circular_internal_mcp_registry__Tools
+  circular_internal_mcp_registry__any(("any"))
+  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__any
+  circular_internal_mcp_registry__bool(("bool"))
+  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__bool
+  circular_internal_mcp_registry__ctx(("ctx"))
+  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__ctx
+  circular_internal_mcp_registry__error(("error"))
+  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__error
+  circular_internal_mcp_registry__handler(("handler"))
+  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__handler
+  circular_internal_mcp_registry__handlers(("handlers"))
+  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__handlers
+  circular_internal_mcp_registry__input(("input"))
+  circular_internal_mcp_registry -.-> circular_internal_mcp_registry__input
+  circular_internal_mcp_runtime___Server(("*Server"))
+  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime___Server
   circular_internal_mcp_runtime__Allows(("Allows"))
   circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__Allows
+  circular_internal_mcp_runtime__Analysis(("Analysis"))
+  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__Analysis
   circular_internal_mcp_runtime__Build(("Build"))
   circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__Build
   circular_internal_mcp_runtime__BuildOperationAllowlist(("BuildOperationAllowlist"))
   circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__BuildOperationAllowlist
-  circular_internal_mcp_runtime__Dependencies(("Dependencies"))
-  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__Dependencies
+  circular_internal_mcp_runtime__ConfigFile(("ConfigFile"))
+  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__ConfigFile
+  circular_internal_mcp_runtime__ConfigPath(("ConfigPath"))
+  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__ConfigPath
+  circular_internal_mcp_runtime__DBNamespace(("DBNamespace"))
+  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__DBNamespace
   circular_internal_mcp_runtime__GenerateConfig(("GenerateConfig"))
   circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__GenerateConfig
   circular_internal_mcp_runtime__GenerateProjectConfig(("GenerateProjectConfig"))
@@ -330,20 +539,54 @@ flowchart LR
   circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__GenerateProjectScript
   circular_internal_mcp_runtime__GenerateScript(("GenerateScript"))
   circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__GenerateScript
-  circular_internal_mcp_runtime__New(("New"))
-  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__New
-  circular_internal_mcp_runtime__OperationAllowlist(("OperationAllowlist"))
-  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__OperationAllowlist
-  circular_internal_mcp_runtime__ProjectContext(("ProjectContext"))
-  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__ProjectContext
-  circular_internal_mcp_runtime__ResolveActiveProjectContext(("ResolveActiveProjectContext"))
-  circular_internal_mcp_runtime -.-> circular_internal_mcp_runtime__ResolveActiveProjectContext
   circular_internal_mcp_schema__BuildToolDefinitions(("BuildToolDefinitions"))
   circular_internal_mcp_schema -.-> circular_internal_mcp_schema__BuildToolDefinitions
-  circular_internal_mcp_schema__ToolDefinition(("ToolDefinition"))
-  circular_internal_mcp_schema -.-> circular_internal_mcp_schema__ToolDefinition
+  circular_internal_mcp_schema__Description(("Description"))
+  circular_internal_mcp_schema -.-> circular_internal_mcp_schema__Description
+  circular_internal_mcp_schema__InputSchema(("InputSchema"))
+  circular_internal_mcp_schema -.-> circular_internal_mcp_schema__InputSchema
+  circular_internal_mcp_schema__Name(("Name"))
+  circular_internal_mcp_schema -.-> circular_internal_mcp_schema__Name
+  circular_internal_mcp_schema__Version(("Version"))
+  circular_internal_mcp_schema -.-> circular_internal_mcp_schema__Version
   circular_internal_mcp_tools_graph__HandleCycles(("HandleCycles"))
   circular_internal_mcp_tools_graph -.-> circular_internal_mcp_tools_graph__HandleCycles
+  circular_internal_mcp_tools_graph__a(("a"))
+  circular_internal_mcp_tools_graph -.-> circular_internal_mcp_tools_graph__a
+  circular_internal_mcp_tools_graph__contracts_GraphCyclesOutput(("contracts.GraphCyclesOutput"))
+  circular_internal_mcp_tools_graph -.-> circular_internal_mcp_tools_graph__contracts_GraphCyclesOutput
+  circular_internal_mcp_tools_graph__ctx(("ctx"))
+  circular_internal_mcp_tools_graph -.-> circular_internal_mcp_tools_graph__ctx
+  circular_internal_mcp_tools_graph__error(("error"))
+  circular_internal_mcp_tools_graph -.-> circular_internal_mcp_tools_graph__error
+  circular_internal_mcp_tools_graph__in(("in"))
+  circular_internal_mcp_tools_graph -.-> circular_internal_mcp_tools_graph__in
+  circular_internal_mcp_tools_graph__maxItems(("maxItems"))
+  circular_internal_mcp_tools_graph -.-> circular_internal_mcp_tools_graph__maxItems
+  circular_internal_mcp_tools_overlays___Overlay(("*Overlay"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays___Overlay
+  circular_internal_mcp_tools_overlays__AddOverlay(("AddOverlay"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__AddOverlay
+  circular_internal_mcp_tools_overlays__AddOverlayOutput(("AddOverlayOutput"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__AddOverlayOutput
+  circular_internal_mcp_tools_overlays__CheckOverlay(("CheckOverlay"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__CheckOverlay
+  circular_internal_mcp_tools_overlays__CreatedAt(("CreatedAt"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__CreatedAt
+  circular_internal_mcp_tools_overlays__File(("File"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__File
+  circular_internal_mcp_tools_overlays__FilePath(("FilePath"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__FilePath
+  circular_internal_mcp_tools_overlays__ID(("ID"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__ID
+  circular_internal_mcp_tools_overlays__ListOverlays(("ListOverlays"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__ListOverlays
+  circular_internal_mcp_tools_overlays__ListOverlaysOutput(("ListOverlaysOutput"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__ListOverlaysOutput
+  circular_internal_mcp_tools_overlays__MarkStale(("MarkStale"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__MarkStale
+  circular_internal_mcp_tools_overlays__Message(("Message"))
+  circular_internal_mcp_tools_overlays -.-> circular_internal_mcp_tools_overlays__Message
   circular_internal_mcp_tools_query__HandleModuleDetails(("HandleModuleDetails"))
   circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__HandleModuleDetails
   circular_internal_mcp_tools_query__HandleModules(("HandleModules"))
@@ -352,16 +595,64 @@ flowchart LR
   circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__HandleTrace
   circular_internal_mcp_tools_query__HandleTrends(("HandleTrends"))
   circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__HandleTrends
-  circular_internal_mcp_tools_query__limitDependencies(("limitDependencies"))
-  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__limitDependencies
-  circular_internal_mcp_tools_query__limitStrings(("limitStrings"))
-  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__limitStrings
-  circular_internal_mcp_tools_query__normalizeLimit(("normalizeLimit"))
-  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__normalizeLimit
-  circular_internal_mcp_tools_query__parseSince(("parseSince"))
-  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__parseSince
+  circular_internal_mcp_tools_query__a(("a"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__a
+  circular_internal_mcp_tools_query__contracts_QueryModuleDetailsOutput(("contracts.QueryModuleDetailsOutput"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__contracts_QueryModuleDetailsOutput
+  circular_internal_mcp_tools_query__contracts_QueryModulesOutput(("contracts.QueryModulesOutput"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__contracts_QueryModulesOutput
+  circular_internal_mcp_tools_query__contracts_QueryTraceOutput(("contracts.QueryTraceOutput"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__contracts_QueryTraceOutput
+  circular_internal_mcp_tools_query__contracts_QueryTrendsOutput(("contracts.QueryTrendsOutput"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__contracts_QueryTrendsOutput
+  circular_internal_mcp_tools_query__ctx(("ctx"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__ctx
+  circular_internal_mcp_tools_query__error(("error"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__error
+  circular_internal_mcp_tools_query__in(("in"))
+  circular_internal_mcp_tools_query -.-> circular_internal_mcp_tools_query__in
+  circular_internal_mcp_tools_report__HandleGenerateMarkdown(("HandleGenerateMarkdown"))
+  circular_internal_mcp_tools_report -.-> circular_internal_mcp_tools_report__HandleGenerateMarkdown
+  circular_internal_mcp_tools_report__contracts_ReportGenerateMarkdownOutput(("contracts.ReportGenerateMarkdownOutput"))
+  circular_internal_mcp_tools_report -.-> circular_internal_mcp_tools_report__contracts_ReportGenerateMarkdownOutput
+  circular_internal_mcp_tools_report__ctx(("ctx"))
+  circular_internal_mcp_tools_report -.-> circular_internal_mcp_tools_report__ctx
+  circular_internal_mcp_tools_report__error(("error"))
+  circular_internal_mcp_tools_report -.-> circular_internal_mcp_tools_report__error
+  circular_internal_mcp_tools_report__in(("in"))
+  circular_internal_mcp_tools_report -.-> circular_internal_mcp_tools_report__in
+  circular_internal_mcp_tools_report__mgr(("mgr"))
+  circular_internal_mcp_tools_report -.-> circular_internal_mcp_tools_report__mgr
   circular_internal_mcp_tools_scan__HandleRun(("HandleRun"))
   circular_internal_mcp_tools_scan -.-> circular_internal_mcp_tools_scan__HandleRun
+  circular_internal_mcp_tools_scan__a(("a"))
+  circular_internal_mcp_tools_scan -.-> circular_internal_mcp_tools_scan__a
+  circular_internal_mcp_tools_scan__contracts_ScanRunOutput(("contracts.ScanRunOutput"))
+  circular_internal_mcp_tools_scan -.-> circular_internal_mcp_tools_scan__contracts_ScanRunOutput
+  circular_internal_mcp_tools_scan__ctx(("ctx"))
+  circular_internal_mcp_tools_scan -.-> circular_internal_mcp_tools_scan__ctx
+  circular_internal_mcp_tools_scan__error(("error"))
+  circular_internal_mcp_tools_scan -.-> circular_internal_mcp_tools_scan__error
+  circular_internal_mcp_tools_scan__in(("in"))
+  circular_internal_mcp_tools_scan -.-> circular_internal_mcp_tools_scan__in
+  circular_internal_mcp_tools_secrets__HandleList(("HandleList"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__HandleList
+  circular_internal_mcp_tools_secrets__HandleScan(("HandleScan"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__HandleScan
+  circular_internal_mcp_tools_secrets__a(("a"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__a
+  circular_internal_mcp_tools_secrets__contracts_SecretsListOutput(("contracts.SecretsListOutput"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__contracts_SecretsListOutput
+  circular_internal_mcp_tools_secrets__contracts_SecretsScanOutput(("contracts.SecretsScanOutput"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__contracts_SecretsScanOutput
+  circular_internal_mcp_tools_secrets__ctx(("ctx"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__ctx
+  circular_internal_mcp_tools_secrets__error(("error"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__error
+  circular_internal_mcp_tools_secrets__in(("in"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__in
+  circular_internal_mcp_tools_secrets__maxItems(("maxItems"))
+  circular_internal_mcp_tools_secrets -.-> circular_internal_mcp_tools_secrets__maxItems
   circular_internal_mcp_tools_system__HandleGenerateConfig(("HandleGenerateConfig"))
   circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__HandleGenerateConfig
   circular_internal_mcp_tools_system__HandleGenerateScript(("HandleGenerateScript"))
@@ -374,189 +665,299 @@ flowchart LR
   circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__HandleSyncOutputs
   circular_internal_mcp_tools_system__HandleWatch(("HandleWatch"))
   circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__HandleWatch
-  circular_internal_mcp_tools_system__Manager(("Manager"))
-  circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__Manager
+  circular_internal_mcp_tools_system____string(("[]string"))
+  circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system____string
+  circular_internal_mcp_tools_system__allowMutations(("allowMutations"))
+  circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__allowMutations
+  circular_internal_mcp_tools_system__contracts_ProjectSummary(("contracts.ProjectSummary"))
+  circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__contracts_ProjectSummary
+  circular_internal_mcp_tools_system__contracts_SystemGenerateConfigOutput(("contracts.SystemGenerateConfigOutput"))
+  circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__contracts_SystemGenerateConfigOutput
+  circular_internal_mcp_tools_system__contracts_SystemGenerateScriptOutput(("contracts.SystemGenerateScriptOutput"))
+  circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__contracts_SystemGenerateScriptOutput
+  circular_internal_mcp_tools_system__contracts_SystemSelectProjectOutput(("contracts.SystemSelectProjectOutput"))
+  circular_internal_mcp_tools_system -.-> circular_internal_mcp_tools_system__contracts_SystemSelectProjectOutput
   circular_internal_mcp_transport__Adapter(("Adapter"))
   circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Adapter
-  circular_internal_mcp_transport__Handler(("Handler"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Handler
-  circular_internal_mcp_transport__NewStdio(("NewStdio"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__NewStdio
-  circular_internal_mcp_transport__Start(("Start"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Start
-  circular_internal_mcp_transport__Stdio(("Stdio"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Stdio
-  circular_internal_mcp_transport__Stop(("Stop"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Stop
-  circular_internal_mcp_transport__handleRPCMessage(("handleRPCMessage"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__handleRPCMessage
-  circular_internal_mcp_transport__mustJSONText(("mustJSONText"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__mustJSONText
-  circular_internal_mcp_transport__normalizeToolError(("normalizeToolError"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__normalizeToolError
-  circular_internal_mcp_transport__parseLegacyToolRequest(("parseLegacyToolRequest"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__parseLegacyToolRequest
-  circular_internal_mcp_transport__rpcError(("rpcError"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__rpcError
-  circular_internal_mcp_transport__rpcRequest(("rpcRequest"))
-  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__rpcRequest
+  circular_internal_mcp_transport__Args(("Args"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Args
+  circular_internal_mcp_transport__Call(("Call"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Call
+  circular_internal_mcp_transport__CallJSON(("CallJSON"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__CallJSON
+  circular_internal_mcp_transport__Code(("Code"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Code
+  circular_internal_mcp_transport__Data(("Data"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Data
+  circular_internal_mcp_transport__Error(("Error"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Error
+  circular_internal_mcp_transport__ID(("ID"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__ID
+  circular_internal_mcp_transport__JSONRPC(("JSONRPC"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__JSONRPC
+  circular_internal_mcp_transport__Message(("Message"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Message
+  circular_internal_mcp_transport__Method(("Method"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__Method
+  circular_internal_mcp_transport__NewMockAdapter(("NewMockAdapter"))
+  circular_internal_mcp_transport -.-> circular_internal_mcp_transport__NewMockAdapter
+  circular_internal_mcp_validate__GetOperationWeight(("GetOperationWeight"))
+  circular_internal_mcp_validate -.-> circular_internal_mcp_validate__GetOperationWeight
   circular_internal_mcp_validate__ParseToolArgs(("ParseToolArgs"))
   circular_internal_mcp_validate -.-> circular_internal_mcp_validate__ParseToolArgs
   circular_internal_mcp_validate__ValidateToolArgs(("ValidateToolArgs"))
   circular_internal_mcp_validate -.-> circular_internal_mcp_validate__ValidateToolArgs
+  circular_internal_mcp_validate____string(("[]string"))
+  circular_internal_mcp_validate -.-> circular_internal_mcp_validate____string
+  circular_internal_mcp_validate__any(("any"))
+  circular_internal_mcp_validate -.-> circular_internal_mcp_validate__any
+  circular_internal_mcp_validate__contracts_OperationID(("contracts.OperationID"))
+  circular_internal_mcp_validate -.-> circular_internal_mcp_validate__contracts_OperationID
   circular_internal_mcp_validate__decodeParams(("decodeParams"))
   circular_internal_mcp_validate -.-> circular_internal_mcp_validate__decodeParams
+  circular_internal_mcp_validate__error(("error"))
+  circular_internal_mcp_validate -.-> circular_internal_mcp_validate__error
+  circular_internal_mcp_validate__field(("field"))
+  circular_internal_mcp_validate -.-> circular_internal_mcp_validate__field
   circular_internal_mcp_validate__invalidLimitError(("invalidLimitError"))
   circular_internal_mcp_validate -.-> circular_internal_mcp_validate__invalidLimitError
+  circular_internal_mcp_validate__maxCount(("maxCount"))
+  circular_internal_mcp_validate -.-> circular_internal_mcp_validate__maxCount
   circular_internal_mcp_validate__normalizeFormats(("normalizeFormats"))
   circular_internal_mcp_validate -.-> circular_internal_mcp_validate__normalizeFormats
-  circular_internal_mcp_validate__normalizeStrings(("normalizeStrings"))
-  circular_internal_mcp_validate -.-> circular_internal_mcp_validate__normalizeStrings
+  circular_internal_shared_observability__InitTracing(("InitTracing"))
+  circular_internal_shared_observability -.-> circular_internal_shared_observability__InitTracing
+  circular_internal_shared_observability__context_Context(("context.Context"))
+  circular_internal_shared_observability -.-> circular_internal_shared_observability__context_Context
+  circular_internal_shared_observability__ctx(("ctx"))
+  circular_internal_shared_observability -.-> circular_internal_shared_observability__ctx
+  circular_internal_shared_observability__error(("error"))
+  circular_internal_shared_observability -.-> circular_internal_shared_observability__error
+  circular_internal_shared_observability__func_context_Context__error(("func(context.Context) error"))
+  circular_internal_shared_observability -.-> circular_internal_shared_observability__func_context_Context__error
+  circular_internal_shared_observability__serviceName(("serviceName"))
+  circular_internal_shared_observability -.-> circular_internal_shared_observability__serviceName
+  circular_internal_shared_util__Allow(("Allow"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__Allow
+  circular_internal_shared_util__ContainsPathSeparator(("ContainsPathSeparator"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__ContainsPathSeparator
+  circular_internal_shared_util__Get(("Get"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__Get
+  circular_internal_shared_util__GetClientIP(("GetClientIP"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__GetClientIP
+  circular_internal_shared_util__GetHeapAllocMB(("GetHeapAllocMB"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__GetHeapAllocMB
   circular_internal_shared_util__HasPathPrefix(("HasPathPrefix"))
   circular_internal_shared_util -.-> circular_internal_shared_util__HasPathPrefix
+  circular_internal_shared_util__NewLimiter(("NewLimiter"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__NewLimiter
+  circular_internal_shared_util__NewLimiterRegistry(("NewLimiterRegistry"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__NewLimiterRegistry
   circular_internal_shared_util__NormalizePatternPath(("NormalizePatternPath"))
   circular_internal_shared_util -.-> circular_internal_shared_util__NormalizePatternPath
   circular_internal_shared_util__SortedStringKeys(("SortedStringKeys"))
   circular_internal_shared_util -.-> circular_internal_shared_util__SortedStringKeys
-  circular_internal_shared_util__WriteFileWithDirs(("WriteFileWithDirs"))
-  circular_internal_shared_util -.-> circular_internal_shared_util__WriteFileWithDirs
-  circular_internal_shared_util__WriteStringWithDirs(("WriteStringWithDirs"))
-  circular_internal_shared_util -.-> circular_internal_shared_util__WriteStringWithDirs
+  circular_internal_shared_util__T(("T"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__T
+  circular_internal_shared_util__Wait(("Wait"))
+  circular_internal_shared_util -.-> circular_internal_shared_util__Wait
+  circular_internal_ui_cli___config_Config(("*config.Config"))
+  circular_internal_ui_cli -.-> circular_internal_ui_cli___config_Config
+  circular_internal_ui_cli___history_Store(("*history.Store"))
+  circular_internal_ui_cli -.-> circular_internal_ui_cli___history_Store
+  circular_internal_ui_cli___history_TrendReport(("*history.TrendReport"))
+  circular_internal_ui_cli -.-> circular_internal_ui_cli___history_TrendReport
   circular_internal_ui_cli__Description(("Description"))
   circular_internal_ui_cli -.-> circular_internal_ui_cli__Description
   circular_internal_ui_cli__FilterValue(("FilterValue"))
   circular_internal_ui_cli -.-> circular_internal_ui_cli__FilterValue
   circular_internal_ui_cli__Init(("Init"))
   circular_internal_ui_cli -.-> circular_internal_ui_cli__Init
+  circular_internal_ui_cli__New(("New"))
+  circular_internal_ui_cli -.-> circular_internal_ui_cli__New
+  circular_internal_ui_cli__NewObservabilityServer(("NewObservabilityServer"))
+  circular_internal_ui_cli -.-> circular_internal_ui_cli__NewObservabilityServer
   circular_internal_ui_cli__Run(("Run"))
   circular_internal_ui_cli -.-> circular_internal_ui_cli__Run
+  circular_internal_ui_cli__Start(("Start"))
+  circular_internal_ui_cli -.-> circular_internal_ui_cli__Start
+  circular_internal_ui_cli__Stop(("Stop"))
+  circular_internal_ui_cli -.-> circular_internal_ui_cli__Stop
   circular_internal_ui_cli__Title(("Title"))
   circular_internal_ui_cli -.-> circular_internal_ui_cli__Title
-  circular_internal_ui_cli__Update(("Update"))
-  circular_internal_ui_cli -.-> circular_internal_ui_cli__Update
-  circular_internal_ui_cli__View(("View"))
-  circular_internal_ui_cli -.-> circular_internal_ui_cli__View
-  circular_internal_ui_cli__applyModeOptions(("applyModeOptions"))
-  circular_internal_ui_cli -.-> circular_internal_ui_cli__applyModeOptions
-  circular_internal_ui_cli__buildGrammarRegistry(("buildGrammarRegistry"))
-  circular_internal_ui_cli -.-> circular_internal_ui_cli__buildGrammarRegistry
-  circular_internal_ui_cli__cliOptions(("cliOptions"))
-  circular_internal_ui_cli -.-> circular_internal_ui_cli__cliOptions
-  circular_internal_ui_cli__configureLogging(("configureLogging"))
-  circular_internal_ui_cli -.-> circular_internal_ui_cli__configureLogging
-  circular_internal_ui_cli__discoverDefaultConfig(("discoverDefaultConfig"))
-  circular_internal_ui_cli -.-> circular_internal_ui_cli__discoverDefaultConfig
+  circular_internal_ui_report__Ancestry(("Ancestry"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__Ancestry
+  circular_internal_ui_report__Confidence(("Confidence"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__Confidence
+  circular_internal_ui_report__Context(("Context"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__Context
+  circular_internal_ui_report__File(("File"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__File
+  circular_internal_ui_report__GetSymbolContext(("GetSymbolContext"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__GetSymbolContext
+  circular_internal_ui_report__GetSymbolContextTagged(("GetSymbolContextTagged"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__GetSymbolContextTagged
   circular_internal_ui_report__InjectDiagram(("InjectDiagram"))
   circular_internal_ui_report -.-> circular_internal_ui_report__InjectDiagram
+  circular_internal_ui_report__Line(("Line"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__Line
   circular_internal_ui_report__NewDOTGenerator(("NewDOTGenerator"))
   circular_internal_ui_report -.-> circular_internal_ui_report__NewDOTGenerator
+  circular_internal_ui_report__NewMarkdownGenerator(("NewMarkdownGenerator"))
+  circular_internal_ui_report -.-> circular_internal_ui_report__NewMarkdownGenerator
   circular_internal_ui_report__NewMermaidGenerator(("NewMermaidGenerator"))
   circular_internal_ui_report -.-> circular_internal_ui_report__NewMermaidGenerator
   circular_internal_ui_report__NewPlantUMLGenerator(("NewPlantUMLGenerator"))
   circular_internal_ui_report -.-> circular_internal_ui_report__NewPlantUMLGenerator
-  circular_internal_ui_report__NewTSVGenerator(("NewTSVGenerator"))
-  circular_internal_ui_report -.-> circular_internal_ui_report__NewTSVGenerator
-  circular_internal_ui_report__RenderTrendJSON(("RenderTrendJSON"))
-  circular_internal_ui_report -.-> circular_internal_ui_report__RenderTrendJSON
-  circular_internal_ui_report__RenderTrendTSV(("RenderTrendTSV"))
-  circular_internal_ui_report -.-> circular_internal_ui_report__RenderTrendTSV
-  circular_internal_ui_report__ReplaceBetweenMarkers(("ReplaceBetweenMarkers"))
-  circular_internal_ui_report -.-> circular_internal_ui_report__ReplaceBetweenMarkers
-  circular_internal_ui_report_formats__DOTGenerator(("DOTGenerator"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__DOTGenerator
-  circular_internal_ui_report_formats__Generate(("Generate"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Generate
-  circular_internal_ui_report_formats__GenerateArchitecture(("GenerateArchitecture"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__GenerateArchitecture
-  circular_internal_ui_report_formats__GenerateArchitectureViolations(("GenerateArchitectureViolations"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__GenerateArchitectureViolations
-  circular_internal_ui_report_formats__GenerateComponent(("GenerateComponent"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__GenerateComponent
-  circular_internal_ui_report_formats__GenerateFlow(("GenerateFlow"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__GenerateFlow
-  circular_internal_ui_report_formats__GenerateUnusedImports(("GenerateUnusedImports"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__GenerateUnusedImports
-  circular_internal_ui_report_formats__MermaidGenerator(("MermaidGenerator"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__MermaidGenerator
-  circular_internal_ui_report_formats__NewDOTGenerator(("NewDOTGenerator"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__NewDOTGenerator
-  circular_internal_ui_report_formats__NewMermaidGenerator(("NewMermaidGenerator"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__NewMermaidGenerator
-  circular_internal_ui_report_formats__NewPlantUMLGenerator(("NewPlantUMLGenerator"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__NewPlantUMLGenerator
-  circular_internal_ui_report_formats__NewTSVGenerator(("NewTSVGenerator"))
-  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__NewTSVGenerator
+  circular_internal_ui_report_formats__ArtifactLocation(("ArtifactLocation"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__ArtifactLocation
+  circular_internal_ui_report_formats__Children(("Children"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Children
+  circular_internal_ui_report_formats__CollapsibleSections(("CollapsibleSections"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__CollapsibleSections
+  circular_internal_ui_report_formats__Complexity(("Complexity"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Complexity
+  circular_internal_ui_report_formats__Count(("Count"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Count
+  circular_internal_ui_report_formats__Cycles(("Cycles"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Cycles
+  circular_internal_ui_report_formats__DefaultConfig(("DefaultConfig"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__DefaultConfig
+  circular_internal_ui_report_formats__Definitions(("Definitions"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Definitions
+  circular_internal_ui_report_formats__Depth(("Depth"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Depth
+  circular_internal_ui_report_formats__Driver(("Driver"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Driver
+  circular_internal_ui_report_formats__Edges(("Edges"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Edges
+  circular_internal_ui_report_formats__Entry(("Entry"))
+  circular_internal_ui_report_formats -.-> circular_internal_ui_report_formats__Entry
 
   classDef moduleNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
-  class circular_cmd_circular,circular_internal_core_app,circular_internal_core_config,circular_internal_core_watcher,circular_internal_engine_graph,circular_internal_engine_parser,circular_internal_engine_parser_extractors,circular_internal_engine_parser_grammar,circular_internal_engine_parser_registry,circular_internal_engine_resolver,circular_internal_engine_resolver_drivers,circular_internal_mcp_adapters,circular_internal_mcp_contracts,circular_internal_mcp_openapi,circular_internal_mcp_registry,circular_internal_mcp_runtime,circular_internal_mcp_schema,circular_internal_mcp_tools_graph,circular_internal_mcp_tools_query,circular_internal_mcp_tools_scan,circular_internal_mcp_tools_system,circular_internal_mcp_transport,circular_internal_mcp_validate,circular_internal_shared_util,circular_internal_shared_version,circular_internal_ui_cli,circular_internal_ui_report,circular_internal_ui_report_formats moduleNode;
+  class circular_cmd_circular,circular_internal_core_app,circular_internal_core_app_helpers,circular_internal_core_config,circular_internal_core_config_helpers,circular_internal_core_errors,circular_internal_core_ports,circular_internal_core_watcher,circular_internal_data_history,circular_internal_data_query,circular_internal_engine_graph,circular_internal_engine_parser,circular_internal_engine_parser_extractors,circular_internal_engine_parser_grammar,circular_internal_engine_parser_registry,circular_internal_engine_resolver,circular_internal_engine_resolver_drivers,circular_internal_engine_secrets,circular_internal_mcp_adapters,circular_internal_mcp_contracts,circular_internal_mcp_openapi,circular_internal_mcp_registry,circular_internal_mcp_runtime,circular_internal_mcp_schema,circular_internal_mcp_tools_graph,circular_internal_mcp_tools_overlays,circular_internal_mcp_tools_query,circular_internal_mcp_tools_report,circular_internal_mcp_tools_scan,circular_internal_mcp_tools_secrets,circular_internal_mcp_tools_system,circular_internal_mcp_transport,circular_internal_mcp_validate,circular_internal_shared_observability,circular_internal_shared_util,circular_internal_shared_version,circular_internal_ui_cli,circular_internal_ui_report,circular_internal_ui_report_formats moduleNode;
   classDef symbolNode fill:#eef7ee,stroke:#2f7d32,stroke-width:1px,color:#000000;
-  class circular_cmd_circular__main,circular_internal_core_app__AnalyzeHallucinations,circular_internal_core_app__AnalyzeHallucinationsIncremental,circular_internal_core_app__AnalyzeImpact,circular_internal_core_app__AnalyzeUnusedImports,circular_internal_core_app__AnalyzeUnusedImportsIncremental,circular_internal_core_app__App,circular_internal_core_app__ArchitectureViolations,circular_internal_core_app__BuildQueryService,circular_internal_core_app__CurrentUpdate,circular_internal_core_app__FormatImpactReport,circular_internal_core_app__GenerateOutputs,circular_internal_core_app__HandleChanges,circular_internal_core_config__ActiveProject,circular_internal_core_config__Alerts,circular_internal_core_config__Architecture,circular_internal_core_config__ArchitectureLayer,circular_internal_core_config__ArchitectureRule,circular_internal_core_config__AutoManageOutputsEnabled,circular_internal_core_config__AutoSyncConfigEnabled,circular_internal_core_config__ComponentDiagramConfig,circular_internal_core_config__Config,circular_internal_core_config__ConfigFiles,circular_internal_core_config__Database,circular_internal_core_config__DetectProjectRoot,circular_internal_core_watcher__Close,circular_internal_core_watcher__NewWatcher,circular_internal_core_watcher__SetLanguageFilters,circular_internal_core_watcher__Watch,circular_internal_core_watcher__Watcher,circular_internal_core_watcher__enqueueExistingFiles,circular_internal_core_watcher__flushChanges,circular_internal_core_watcher__run,circular_internal_core_watcher__scheduleChange,circular_internal_core_watcher__shouldExcludeDir,circular_internal_core_watcher__shouldExcludeFile,circular_internal_core_watcher__watchRecursive,circular_internal_engine_graph__AddFile,circular_internal_engine_graph__AnalyzeImpact,circular_internal_engine_graph__ArchitectureLayer,circular_internal_engine_graph__ArchitectureModel,circular_internal_engine_graph__ArchitectureRule,circular_internal_engine_graph__ArchitectureViolation,circular_internal_engine_graph__ComplexityHotspot,circular_internal_engine_graph__ComputeModuleMetrics,circular_internal_engine_graph__DetectCycles,circular_internal_engine_graph__Error,circular_internal_engine_graph__FileCount,circular_internal_engine_graph__FindImportChain,circular_internal_engine_parser__Add,circular_internal_engine_parser__AppendLocalIdentifiers,circular_internal_engine_parser__BuildLanguageRegistry,circular_internal_engine_parser__ChildText,circular_internal_engine_parser__DefaultExtractorForLanguage,circular_internal_engine_parser__DefaultLanguageRegistry,circular_internal_engine_parser__Definition,circular_internal_engine_parser__Exists,circular_internal_engine_parser__Extract,circular_internal_engine_parser__ExtractRaw,circular_internal_engine_parser__ExtractionContext,circular_internal_engine_parser__Extractor,circular_internal_engine_parser_extractors__Go,circular_internal_engine_parser_extractors__Python,circular_internal_engine_parser_grammar__GrammarArtifact,circular_internal_engine_parser_grammar__GrammarManifest,circular_internal_engine_parser_grammar__LoadGrammarManifest,circular_internal_engine_parser_grammar__VerificationIssue,circular_internal_engine_parser_grammar__VerifyGrammarArtifacts,circular_internal_engine_parser_grammar__VerifyLanguageRegistryArtifacts,circular_internal_engine_parser_grammar__verifyArtifactHash,circular_internal_engine_parser_registry__BuildLanguageRegistry,circular_internal_engine_parser_registry__DefaultLanguageRegistry,circular_internal_engine_parser_registry__LanguageOverride,circular_internal_engine_parser_registry__LanguageSpec,circular_internal_engine_parser_registry__cloneLanguageRegistry,circular_internal_engine_parser_registry__normalizeExtensions,circular_internal_engine_parser_registry__normalizeFilenames,circular_internal_engine_parser_registry__sortedRegistryIDs,circular_internal_engine_parser_registry__validateLanguageRegistry,circular_internal_engine_resolver__FindUnresolved,circular_internal_engine_resolver__FindUnresolvedForPaths,circular_internal_engine_resolver__FindUnusedImports,circular_internal_engine_resolver__IsKnownNonModule,circular_internal_engine_resolver__NewGoResolver,circular_internal_engine_resolver__NewJavaResolver,circular_internal_engine_resolver__NewJavaScriptResolver,circular_internal_engine_resolver__NewPythonResolver,circular_internal_engine_resolver__NewResolver,circular_internal_engine_resolver__NewRustResolver,circular_internal_engine_resolver__Resolver,circular_internal_engine_resolver__UnresolvedReference,circular_internal_engine_resolver_drivers__FindGoMod,circular_internal_engine_resolver_drivers__GetModuleName,circular_internal_engine_resolver_drivers__GetModuleRoot,circular_internal_engine_resolver_drivers__GoResolver,circular_internal_engine_resolver_drivers__JavaResolver,circular_internal_engine_resolver_drivers__JavaScriptResolver,circular_internal_engine_resolver_drivers__ModuleBaseName,circular_internal_engine_resolver_drivers__ModulePath,circular_internal_engine_resolver_drivers__NewGoResolver,circular_internal_engine_resolver_drivers__NewJavaResolver,circular_internal_engine_resolver_drivers__NewJavaScriptResolver,circular_internal_engine_resolver_drivers__NewPythonResolver,circular_internal_mcp_adapters__Adapter,circular_internal_mcp_adapters__Cycles,circular_internal_mcp_adapters__ListModules,circular_internal_mcp_adapters__ModuleDetails,circular_internal_mcp_adapters__NewAdapter,circular_internal_mcp_adapters__ProjectKey,circular_internal_mcp_adapters__RunScan,circular_internal_mcp_adapters__SetProjectKey,circular_internal_mcp_adapters__SyncOutputs,circular_internal_mcp_adapters__Trace,circular_internal_mcp_adapters__TrendSlice,circular_internal_mcp_adapters__formatSet,circular_internal_mcp_contracts__CircularToolInput,circular_internal_mcp_contracts__DependencyEdge,circular_internal_mcp_contracts__Error,circular_internal_mcp_contracts__GraphCyclesInput,circular_internal_mcp_contracts__GraphCyclesOutput,circular_internal_mcp_contracts__ModuleDetails,circular_internal_mcp_contracts__ModuleSummary,circular_internal_mcp_contracts__OperationDescriptor,circular_internal_mcp_contracts__ProjectSummary,circular_internal_mcp_contracts__QueryModuleDetailsInput,circular_internal_mcp_contracts__QueryModuleDetailsOutput,circular_internal_mcp_contracts__QueryModulesInput,circular_internal_mcp_openapi__ApplyAllowlist,circular_internal_mcp_openapi__Convert,circular_internal_mcp_openapi__LoadSpec,circular_internal_mcp_openapi__defaultObjectSchema,circular_internal_mcp_openapi__isHTTPSource,circular_internal_mcp_openapi__isValidOperationID,circular_internal_mcp_openapi__loadSpecFromURL,circular_internal_mcp_openapi__requestSchema,circular_internal_mcp_openapi__schemaRefToMap,circular_internal_mcp_openapi__sortDescriptors,circular_internal_mcp_registry__Handler,circular_internal_mcp_registry__HandlerFor,circular_internal_mcp_registry__New,circular_internal_mcp_registry__Register,circular_internal_mcp_registry__Registry,circular_internal_mcp_registry__Tools,circular_internal_mcp_runtime__Allows,circular_internal_mcp_runtime__Build,circular_internal_mcp_runtime__BuildOperationAllowlist,circular_internal_mcp_runtime__Dependencies,circular_internal_mcp_runtime__GenerateConfig,circular_internal_mcp_runtime__GenerateProjectConfig,circular_internal_mcp_runtime__GenerateProjectScript,circular_internal_mcp_runtime__GenerateScript,circular_internal_mcp_runtime__New,circular_internal_mcp_runtime__OperationAllowlist,circular_internal_mcp_runtime__ProjectContext,circular_internal_mcp_runtime__ResolveActiveProjectContext,circular_internal_mcp_schema__BuildToolDefinitions,circular_internal_mcp_schema__ToolDefinition,circular_internal_mcp_tools_graph__HandleCycles,circular_internal_mcp_tools_query__HandleModuleDetails,circular_internal_mcp_tools_query__HandleModules,circular_internal_mcp_tools_query__HandleTrace,circular_internal_mcp_tools_query__HandleTrends,circular_internal_mcp_tools_query__limitDependencies,circular_internal_mcp_tools_query__limitStrings,circular_internal_mcp_tools_query__normalizeLimit,circular_internal_mcp_tools_query__parseSince,circular_internal_mcp_tools_scan__HandleRun,circular_internal_mcp_tools_system__HandleGenerateConfig,circular_internal_mcp_tools_system__HandleGenerateScript,circular_internal_mcp_tools_system__HandleSelectProject,circular_internal_mcp_tools_system__HandleSyncConfig,circular_internal_mcp_tools_system__HandleSyncOutputs,circular_internal_mcp_tools_system__HandleWatch,circular_internal_mcp_tools_system__Manager,circular_internal_mcp_transport__Adapter,circular_internal_mcp_transport__Handler,circular_internal_mcp_transport__NewStdio,circular_internal_mcp_transport__Start,circular_internal_mcp_transport__Stdio,circular_internal_mcp_transport__Stop,circular_internal_mcp_transport__handleRPCMessage,circular_internal_mcp_transport__mustJSONText,circular_internal_mcp_transport__normalizeToolError,circular_internal_mcp_transport__parseLegacyToolRequest,circular_internal_mcp_transport__rpcError,circular_internal_mcp_transport__rpcRequest,circular_internal_mcp_validate__ParseToolArgs,circular_internal_mcp_validate__ValidateToolArgs,circular_internal_mcp_validate__decodeParams,circular_internal_mcp_validate__invalidLimitError,circular_internal_mcp_validate__normalizeFormats,circular_internal_mcp_validate__normalizeStrings,circular_internal_shared_util__HasPathPrefix,circular_internal_shared_util__NormalizePatternPath,circular_internal_shared_util__SortedStringKeys,circular_internal_shared_util__WriteFileWithDirs,circular_internal_shared_util__WriteStringWithDirs,circular_internal_ui_cli__Description,circular_internal_ui_cli__FilterValue,circular_internal_ui_cli__Init,circular_internal_ui_cli__Run,circular_internal_ui_cli__Title,circular_internal_ui_cli__Update,circular_internal_ui_cli__View,circular_internal_ui_cli__applyModeOptions,circular_internal_ui_cli__buildGrammarRegistry,circular_internal_ui_cli__cliOptions,circular_internal_ui_cli__configureLogging,circular_internal_ui_cli__discoverDefaultConfig,circular_internal_ui_report__InjectDiagram,circular_internal_ui_report__NewDOTGenerator,circular_internal_ui_report__NewMermaidGenerator,circular_internal_ui_report__NewPlantUMLGenerator,circular_internal_ui_report__NewTSVGenerator,circular_internal_ui_report__RenderTrendJSON,circular_internal_ui_report__RenderTrendTSV,circular_internal_ui_report__ReplaceBetweenMarkers,circular_internal_ui_report_formats__DOTGenerator,circular_internal_ui_report_formats__Generate,circular_internal_ui_report_formats__GenerateArchitecture,circular_internal_ui_report_formats__GenerateArchitectureViolations,circular_internal_ui_report_formats__GenerateComponent,circular_internal_ui_report_formats__GenerateFlow,circular_internal_ui_report_formats__GenerateUnusedImports,circular_internal_ui_report_formats__MermaidGenerator,circular_internal_ui_report_formats__NewDOTGenerator,circular_internal_ui_report_formats__NewMermaidGenerator,circular_internal_ui_report_formats__NewPlantUMLGenerator,circular_internal_ui_report_formats__NewTSVGenerator symbolNode;
+  class circular_cmd_circular__main,circular_internal_core_app___App,circular_internal_core_app__AnalysisService,circular_internal_core_app__AnalyzeHallucinations,circular_internal_core_app__AnalyzeHallucinationsIncremental,circular_internal_core_app__AnalyzeImpact,circular_internal_core_app__AnalyzeProbableBridges,circular_internal_core_app__AnalyzeProbableBridgesForPaths,circular_internal_core_app__AnalyzeUnusedImports,circular_internal_core_app__AnalyzeUnusedImportsIncremental,circular_internal_core_app__ArchitectureViolations,circular_internal_core_app__BuildQueryService,circular_internal_core_app__CaptureHistoryTrend,circular_internal_core_app_helpers__ArchitectureModelFromConfig,circular_internal_core_app_helpers__CompileGlobs,circular_internal_core_app_helpers__DetectSecrets,circular_internal_core_app_helpers__DiagramMode,circular_internal_core_app_helpers__DiagramOutputPath,circular_internal_core_app_helpers__FindContainingWatchPath,circular_internal_core_app_helpers__GenerateMermaidByMode,circular_internal_core_app_helpers__GeneratePlantUMLByMode,circular_internal_core_app_helpers__LineWithinRanges,circular_internal_core_app_helpers__MaskSecretValue,circular_internal_core_app_helpers__MetricLeaders,circular_internal_core_app_helpers__PreferredInjectionMode,circular_internal_core_config___Config,circular_internal_core_config__Active,circular_internal_core_config__ActiveFile,circular_internal_core_config__ActiveProject,circular_internal_core_config__Address,circular_internal_core_config__Alerts,circular_internal_core_config__Allow,circular_internal_core_config__AllowMutations,circular_internal_core_config__ApplyEnvOverrides,circular_internal_core_config__Architecture,circular_internal_core_config__AutoManageOutputs,circular_internal_core_config__AutoManageOutputsEnabled,circular_internal_core_config_helpers__HasWildcard,circular_internal_core_config_helpers__IsPathOverlap,circular_internal_core_config_helpers__WildcardPatternsOverlap,circular_internal_core_config_helpers__a,circular_internal_core_config_helpers__pattern,circular_internal_core_config_helpers__wildcardPrefix,circular_internal_core_config_helpers__wildcardSample,circular_internal_core_errors__AddContext,circular_internal_core_errors__Code,circular_internal_core_errors__Context,circular_internal_core_errors__Err,circular_internal_core_errors__Error,circular_internal_core_errors__IsCode,circular_internal_core_errors__Message,circular_internal_core_errors__New,circular_internal_core_errors__Unwrap,circular_internal_core_errors__WithContext,circular_internal_core_errors__Wrap,circular_internal_core_errors__code,circular_internal_core_ports___parser_File,circular_internal_core_ports__Cycles,circular_internal_core_ports__Duration,circular_internal_core_ports__End,circular_internal_core_ports__FileCount,circular_internal_core_ports__FilesScanned,circular_internal_core_ports__Formats,circular_internal_core_ports__Hallucinations,circular_internal_core_ports__HistoryTrendResult,circular_internal_core_ports__Hotspots,circular_internal_core_ports__LatestCycleCount,circular_internal_core_ports__LatestModuleCount,circular_internal_core_watcher___Watcher,circular_internal_core_watcher__Close,circular_internal_core_watcher__NewWatcher,circular_internal_core_watcher__SetDebounce,circular_internal_core_watcher__SetLanguageFilters,circular_internal_core_watcher__Watch,circular_internal_core_watcher____string,circular_internal_core_watcher__callbackMu,circular_internal_core_watcher__computeHash,circular_internal_core_watcher__debounce,circular_internal_core_watcher__enqueueExistingFiles,circular_internal_core_watcher__err,circular_internal_data_history___Store,circular_internal_data_history__AvgCycles,circular_internal_data_history__AvgFanIn,circular_internal_data_history__AvgFanOut,circular_internal_data_history__AvgUnresolved,circular_internal_data_history__BuildTrendReport,circular_internal_data_history__Close,circular_internal_data_history__CommitHash,circular_internal_data_history__CommitTimestamp,circular_internal_data_history__CycleCount,circular_internal_data_history__DeltaAvgFanIn,circular_internal_data_history__DeltaAvgFanOut,circular_internal_data_query__CQLCondition,circular_internal_data_query__CQLQuery,circular_internal_data_query__Column,circular_internal_data_query__Conditions,circular_internal_data_query__Dependencies,circular_internal_data_query__DependencyCount,circular_internal_data_query__DependencyTrace,circular_internal_data_query__Depth,circular_internal_data_query__ExecuteCQL,circular_internal_data_query__ExportCount,circular_internal_data_query__ExportedSymbols,circular_internal_data_query__Field,circular_internal_engine_graph___Batch,circular_internal_engine_graph___Module,circular_internal_engine_graph___SQLiteSymbolStore,circular_internal_engine_graph___parser_File,circular_internal_engine_graph__AddFile,circular_internal_engine_graph__Allow,circular_internal_engine_graph__AnalyzeImpact,circular_internal_engine_graph__Ancestry,circular_internal_engine_graph__BatchSize,circular_internal_engine_graph__BeginBatch,circular_internal_engine_graph__Branches,circular_internal_engine_graph__BuildUniversalSymbolTable,circular_internal_engine_parser___Builder,circular_internal_engine_parser___File,circular_internal_engine_parser___GrammarLoader,circular_internal_engine_parser___Manifest,circular_internal_engine_parser___sitter_Node,circular_internal_engine_parser__AIBVersion,circular_internal_engine_parser__Add,circular_internal_engine_parser__AddArtifact,circular_internal_engine_parser__Alias,circular_internal_engine_parser__AllowedAIBVersions,circular_internal_engine_parser__Ancestry,circular_internal_engine_parser__AppendLocalIdentifiers,circular_internal_engine_parser_extractors__Go,circular_internal_engine_parser_extractors__Python,circular_internal_engine_parser_grammar___sitter_Language,circular_internal_engine_parser_grammar__AIBVersion,circular_internal_engine_parser_grammar__ActualHash,circular_internal_engine_parser_grammar__AllowedAIBVersions,circular_internal_engine_parser_grammar__ApprovedDate,circular_internal_engine_parser_grammar__ArtifactKind,circular_internal_engine_parser_grammar__ArtifactPath,circular_internal_engine_parser_grammar__Artifacts,circular_internal_engine_parser_grammar__ExpectedHash,circular_internal_engine_parser_grammar__GrammarManifest,circular_internal_engine_parser_grammar__Language,circular_internal_engine_parser_grammar__LoadDynamic,circular_internal_engine_parser_registry__BuildLanguageRegistry,circular_internal_engine_parser_registry__DefaultLanguageRegistry,circular_internal_engine_parser_registry__DefinitionNodes,circular_internal_engine_parser_registry__DynamicConfig,circular_internal_engine_parser_registry__Enabled,circular_internal_engine_parser_registry__Extensions,circular_internal_engine_parser_registry__ExtractorReady,circular_internal_engine_parser_registry__Filenames,circular_internal_engine_parser_registry__GrammarDir,circular_internal_engine_parser_registry__ImportNode,circular_internal_engine_parser_registry__IsDynamic,circular_internal_engine_parser_registry__LibraryPath,circular_internal_engine_resolver__Alias,circular_internal_engine_resolver__AmbiguousCrossLangMatch,circular_internal_engine_resolver__BridgeContext,circular_internal_engine_resolver__BridgeImportEvidence,circular_internal_engine_resolver__Bridges,circular_internal_engine_resolver__Close,circular_internal_engine_resolver__Confidence,circular_internal_engine_resolver__ConfirmedThreshold,circular_internal_engine_resolver__DiscoverBridgeConfigPaths,circular_internal_engine_resolver__ExplicitBridge,circular_internal_engine_resolver__ExplicitRuleMatch,circular_internal_engine_resolver__File,circular_internal_engine_resolver_drivers__FindGoMod,circular_internal_engine_resolver_drivers__GetModuleName,circular_internal_engine_resolver_drivers__GetModuleRoot,circular_internal_engine_resolver_drivers__ModuleBaseName,circular_internal_engine_resolver_drivers__ModulePath,circular_internal_engine_resolver_drivers__NewGoResolver,circular_internal_engine_resolver_drivers__NewJavaResolver,circular_internal_engine_resolver_drivers__NewJavaScriptResolver,circular_internal_engine_resolver_drivers__NewPythonResolver,circular_internal_engine_resolver_drivers__NewRustResolver,circular_internal_engine_resolver_drivers__ResolveImport,circular_internal_engine_resolver_drivers__ResolveModuleName,circular_internal_engine_secrets___Adapter,circular_internal_engine_secrets___Detector,circular_internal_engine_secrets__ChangedLineRanges,circular_internal_engine_secrets__Detect,circular_internal_engine_secrets__DetectInRanges,circular_internal_engine_secrets__End,circular_internal_engine_secrets__EntropyThreshold,circular_internal_engine_secrets__IsGitAvailable,circular_internal_engine_secrets__MaskValue,circular_internal_engine_secrets__MinTokenLength,circular_internal_engine_secrets__Name,circular_internal_engine_secrets__NewAdapter,circular_internal_mcp_adapters__Cycles,circular_internal_mcp_adapters__GenerateMarkdownReport,circular_internal_mcp_adapters__ListModules,circular_internal_mcp_adapters__ListSecrets,circular_internal_mcp_adapters__MapToMCPError,circular_internal_mcp_adapters__ModuleDetails,circular_internal_mcp_adapters__NewAdapter,circular_internal_mcp_adapters__ProjectKey,circular_internal_mcp_adapters__RunScan,circular_internal_mcp_adapters__ScanSecrets,circular_internal_mcp_adapters__SetProjectKey,circular_internal_mcp_adapters__SyncOutputs,circular_internal_mcp_contracts__AlreadyWatching,circular_internal_mcp_contracts__Code,circular_internal_mcp_contracts__Column,circular_internal_mcp_contracts__Confidence,circular_internal_mcp_contracts__ConfigPath,circular_internal_mcp_contracts__CycleCount,circular_internal_mcp_contracts__Cycles,circular_internal_mcp_contracts__DBNamespace,circular_internal_mcp_contracts__Dependencies,circular_internal_mcp_contracts__DependencyCount,circular_internal_mcp_contracts__Depth,circular_internal_mcp_contracts__Description,circular_internal_mcp_openapi___openapi3_T,circular_internal_mcp_openapi__ApplyAllowlist,circular_internal_mcp_openapi__Convert,circular_internal_mcp_openapi__LoadSpec,circular_internal_mcp_openapi____contracts_OperationDescriptor,circular_internal_mcp_openapi__allowlist,circular_internal_mcp_openapi__defaultObjectSchema,circular_internal_mcp_openapi__error,circular_internal_mcp_openapi__i,circular_internal_mcp_openapi__id,circular_internal_mcp_openapi__isHTTPSource,circular_internal_mcp_openapi__isValidOperationID,circular_internal_mcp_registry__Handler,circular_internal_mcp_registry__HandlerFor,circular_internal_mcp_registry__New,circular_internal_mcp_registry__Register,circular_internal_mcp_registry__Tools,circular_internal_mcp_registry__any,circular_internal_mcp_registry__bool,circular_internal_mcp_registry__ctx,circular_internal_mcp_registry__error,circular_internal_mcp_registry__handler,circular_internal_mcp_registry__handlers,circular_internal_mcp_registry__input,circular_internal_mcp_runtime___Server,circular_internal_mcp_runtime__Allows,circular_internal_mcp_runtime__Analysis,circular_internal_mcp_runtime__Build,circular_internal_mcp_runtime__BuildOperationAllowlist,circular_internal_mcp_runtime__ConfigFile,circular_internal_mcp_runtime__ConfigPath,circular_internal_mcp_runtime__DBNamespace,circular_internal_mcp_runtime__GenerateConfig,circular_internal_mcp_runtime__GenerateProjectConfig,circular_internal_mcp_runtime__GenerateProjectScript,circular_internal_mcp_runtime__GenerateScript,circular_internal_mcp_schema__BuildToolDefinitions,circular_internal_mcp_schema__Description,circular_internal_mcp_schema__InputSchema,circular_internal_mcp_schema__Name,circular_internal_mcp_schema__Version,circular_internal_mcp_tools_graph__HandleCycles,circular_internal_mcp_tools_graph__a,circular_internal_mcp_tools_graph__contracts_GraphCyclesOutput,circular_internal_mcp_tools_graph__ctx,circular_internal_mcp_tools_graph__error,circular_internal_mcp_tools_graph__in,circular_internal_mcp_tools_graph__maxItems,circular_internal_mcp_tools_overlays___Overlay,circular_internal_mcp_tools_overlays__AddOverlay,circular_internal_mcp_tools_overlays__AddOverlayOutput,circular_internal_mcp_tools_overlays__CheckOverlay,circular_internal_mcp_tools_overlays__CreatedAt,circular_internal_mcp_tools_overlays__File,circular_internal_mcp_tools_overlays__FilePath,circular_internal_mcp_tools_overlays__ID,circular_internal_mcp_tools_overlays__ListOverlays,circular_internal_mcp_tools_overlays__ListOverlaysOutput,circular_internal_mcp_tools_overlays__MarkStale,circular_internal_mcp_tools_overlays__Message,circular_internal_mcp_tools_query__HandleModuleDetails,circular_internal_mcp_tools_query__HandleModules,circular_internal_mcp_tools_query__HandleTrace,circular_internal_mcp_tools_query__HandleTrends,circular_internal_mcp_tools_query__a,circular_internal_mcp_tools_query__contracts_QueryModuleDetailsOutput,circular_internal_mcp_tools_query__contracts_QueryModulesOutput,circular_internal_mcp_tools_query__contracts_QueryTraceOutput,circular_internal_mcp_tools_query__contracts_QueryTrendsOutput,circular_internal_mcp_tools_query__ctx,circular_internal_mcp_tools_query__error,circular_internal_mcp_tools_query__in,circular_internal_mcp_tools_report__HandleGenerateMarkdown,circular_internal_mcp_tools_report__contracts_ReportGenerateMarkdownOutput,circular_internal_mcp_tools_report__ctx,circular_internal_mcp_tools_report__error,circular_internal_mcp_tools_report__in,circular_internal_mcp_tools_report__mgr,circular_internal_mcp_tools_scan__HandleRun,circular_internal_mcp_tools_scan__a,circular_internal_mcp_tools_scan__contracts_ScanRunOutput,circular_internal_mcp_tools_scan__ctx,circular_internal_mcp_tools_scan__error,circular_internal_mcp_tools_scan__in,circular_internal_mcp_tools_secrets__HandleList,circular_internal_mcp_tools_secrets__HandleScan,circular_internal_mcp_tools_secrets__a,circular_internal_mcp_tools_secrets__contracts_SecretsListOutput,circular_internal_mcp_tools_secrets__contracts_SecretsScanOutput,circular_internal_mcp_tools_secrets__ctx,circular_internal_mcp_tools_secrets__error,circular_internal_mcp_tools_secrets__in,circular_internal_mcp_tools_secrets__maxItems,circular_internal_mcp_tools_system__HandleGenerateConfig,circular_internal_mcp_tools_system__HandleGenerateScript,circular_internal_mcp_tools_system__HandleSelectProject,circular_internal_mcp_tools_system__HandleSyncConfig,circular_internal_mcp_tools_system__HandleSyncOutputs,circular_internal_mcp_tools_system__HandleWatch,circular_internal_mcp_tools_system____string,circular_internal_mcp_tools_system__allowMutations,circular_internal_mcp_tools_system__contracts_ProjectSummary,circular_internal_mcp_tools_system__contracts_SystemGenerateConfigOutput,circular_internal_mcp_tools_system__contracts_SystemGenerateScriptOutput,circular_internal_mcp_tools_system__contracts_SystemSelectProjectOutput,circular_internal_mcp_transport__Adapter,circular_internal_mcp_transport__Args,circular_internal_mcp_transport__Call,circular_internal_mcp_transport__CallJSON,circular_internal_mcp_transport__Code,circular_internal_mcp_transport__Data,circular_internal_mcp_transport__Error,circular_internal_mcp_transport__ID,circular_internal_mcp_transport__JSONRPC,circular_internal_mcp_transport__Message,circular_internal_mcp_transport__Method,circular_internal_mcp_transport__NewMockAdapter,circular_internal_mcp_validate__GetOperationWeight,circular_internal_mcp_validate__ParseToolArgs,circular_internal_mcp_validate__ValidateToolArgs,circular_internal_mcp_validate____string,circular_internal_mcp_validate__any,circular_internal_mcp_validate__contracts_OperationID,circular_internal_mcp_validate__decodeParams,circular_internal_mcp_validate__error,circular_internal_mcp_validate__field,circular_internal_mcp_validate__invalidLimitError,circular_internal_mcp_validate__maxCount,circular_internal_mcp_validate__normalizeFormats,circular_internal_shared_observability__InitTracing,circular_internal_shared_observability__context_Context,circular_internal_shared_observability__ctx,circular_internal_shared_observability__error,circular_internal_shared_observability__func_context_Context__error,circular_internal_shared_observability__serviceName,circular_internal_shared_util__Allow,circular_internal_shared_util__ContainsPathSeparator,circular_internal_shared_util__Get,circular_internal_shared_util__GetClientIP,circular_internal_shared_util__GetHeapAllocMB,circular_internal_shared_util__HasPathPrefix,circular_internal_shared_util__NewLimiter,circular_internal_shared_util__NewLimiterRegistry,circular_internal_shared_util__NormalizePatternPath,circular_internal_shared_util__SortedStringKeys,circular_internal_shared_util__T,circular_internal_shared_util__Wait,circular_internal_ui_cli___config_Config,circular_internal_ui_cli___history_Store,circular_internal_ui_cli___history_TrendReport,circular_internal_ui_cli__Description,circular_internal_ui_cli__FilterValue,circular_internal_ui_cli__Init,circular_internal_ui_cli__New,circular_internal_ui_cli__NewObservabilityServer,circular_internal_ui_cli__Run,circular_internal_ui_cli__Start,circular_internal_ui_cli__Stop,circular_internal_ui_cli__Title,circular_internal_ui_report__Ancestry,circular_internal_ui_report__Confidence,circular_internal_ui_report__Context,circular_internal_ui_report__File,circular_internal_ui_report__GetSymbolContext,circular_internal_ui_report__GetSymbolContextTagged,circular_internal_ui_report__InjectDiagram,circular_internal_ui_report__Line,circular_internal_ui_report__NewDOTGenerator,circular_internal_ui_report__NewMarkdownGenerator,circular_internal_ui_report__NewMermaidGenerator,circular_internal_ui_report__NewPlantUMLGenerator,circular_internal_ui_report_formats__ArtifactLocation,circular_internal_ui_report_formats__Children,circular_internal_ui_report_formats__CollapsibleSections,circular_internal_ui_report_formats__Complexity,circular_internal_ui_report_formats__Count,circular_internal_ui_report_formats__Cycles,circular_internal_ui_report_formats__DefaultConfig,circular_internal_ui_report_formats__Definitions,circular_internal_ui_report_formats__Depth,circular_internal_ui_report_formats__Driver,circular_internal_ui_report_formats__Edges,circular_internal_ui_report_formats__Entry symbolNode;
 
   circular_cmd_circular -->|deps:1 refs:1 sym:Run| circular_internal_ui_cli
-  circular_internal_core_app -->|deps:1 refs:8 sym:Architecture,Config,DiagramOutput| circular_internal_core_config
+  circular_internal_core_app -->|deps:1 refs:34 sym:ArchitectureModelFromConfig,CompileGlobs,DetectSecrets| circular_internal_core_app_helpers
+  circular_internal_core_app -->|deps:1 refs:2 sym:ResolvePaths| circular_internal_core_config
+  circular_internal_core_app -->|deps:1 refs:15 sym:AddContext,New,Wrap| circular_internal_core_errors
+  circular_internal_core_app -->|deps:1| circular_internal_core_ports
   circular_internal_core_app -->|deps:1 refs:1 sym:NewWatcher| circular_internal_core_watcher
-  circular_internal_core_app -->|deps:1 refs:16 sym:ArchitectureModel,ArchitectureViolation,ComplexityHotspot| circular_internal_engine_graph
-  circular_internal_core_app -->|deps:1| circular_internal_engine_parser
-  circular_internal_core_app -->|deps:1 refs:14 sym:NewGoResolver,NewPythonResolver,UnresolvedReference| circular_internal_engine_resolver
-  circular_internal_core_app -->|deps:1 refs:1 sym:WriteStringWithDirs| circular_internal_shared_util
-  circular_internal_core_app -->|deps:1| circular_internal_ui_report
+  circular_internal_core_app -->|deps:1 refs:2 sym:BuildTrendReport,ResolveGitMetadata| circular_internal_data_history
+  circular_internal_core_app -->|deps:1 refs:2 sym:NewService| circular_internal_data_query
+  circular_internal_core_app -->|deps:1 refs:5 sym:NewGraphWithCapacity,NewLRUCache,NewLayerRuleEngine| circular_internal_engine_graph
+  circular_internal_core_app -->|deps:1 refs:4 sym:BuildLanguageRegistry,NewAdapter,NewGrammarLoaderWithRegistry| circular_internal_engine_parser
+  circular_internal_core_app -->|deps:1 refs:9 sym:DiscoverBridgeConfigPaths,LoadBridgeConfig,NewGoResolver| circular_internal_engine_resolver
+  circular_internal_core_app -->|deps:1 refs:1 sym:NewAdapter| circular_internal_engine_secrets
+  circular_internal_core_app -->|deps:1| circular_internal_shared_observability
+  circular_internal_core_app -->|deps:1 refs:1 sym:GetHeapAllocMB| circular_internal_shared_util
+  circular_internal_core_app -->|deps:1| circular_internal_shared_version
+  circular_internal_core_app -->|deps:1 refs:8 sym:InjectDiagram,NewDOTGenerator,NewMarkdownGenerator| circular_internal_ui_report
+  circular_internal_core_app_helpers -->|deps:1| circular_internal_core_config
+  circular_internal_core_app_helpers -->|deps:1| circular_internal_core_ports
+  circular_internal_core_app_helpers -->|deps:1| circular_internal_engine_graph
+  circular_internal_core_app_helpers -->|deps:1| circular_internal_engine_parser
+  circular_internal_core_app_helpers -->|deps:1 refs:1 sym:ChangedLineRanges| circular_internal_engine_secrets
+  circular_internal_core_app_helpers -->|deps:1 refs:2 sym:ContainsPathSeparator,WriteStringWithDirs| circular_internal_shared_util
+  circular_internal_core_app_helpers -->|deps:1| circular_internal_ui_report
+  circular_internal_core_config -->|deps:1 refs:3 sym:HasWildcard,IsPathOverlap,WildcardPatternsOverlap| circular_internal_core_config_helpers
   circular_internal_core_config -->|deps:1| circular_internal_shared_version
-  circular_internal_engine_graph -->|deps:1 refs:13 sym:Definition,File| circular_internal_engine_parser
+  circular_internal_core_ports -->|deps:1| circular_internal_core_config
+  circular_internal_core_ports -->|deps:1| circular_internal_data_history
+  circular_internal_core_ports -->|deps:1| circular_internal_data_query
+  circular_internal_core_ports -->|deps:1| circular_internal_engine_graph
+  circular_internal_core_ports -->|deps:1| circular_internal_engine_parser
+  circular_internal_core_ports -->|deps:1| circular_internal_engine_resolver
+  circular_internal_core_watcher -->|deps:1| circular_internal_shared_observability
+  circular_internal_data_query -->|deps:1| circular_internal_data_history
+  circular_internal_data_query -->|deps:1| circular_internal_engine_graph
+  circular_internal_engine_graph -->|deps:1| circular_internal_engine_parser
+  circular_internal_engine_graph -->|deps:1| circular_internal_shared_observability
   circular_internal_engine_graph -->|deps:1 refs:7 sym:HasPathPrefix,NormalizePatternPath,SortedStringKeys| circular_internal_shared_util
-  circular_internal_engine_parser -->|deps:1 refs:3 sym:LoadGrammarManifest,VerifyGrammarArtifacts,VerifyLanguageRegistryArtifacts| circular_internal_engine_parser_grammar
+  circular_internal_engine_parser -->|deps:1 refs:6 sym:New,Wrap| circular_internal_core_errors
+  circular_internal_engine_parser -->|deps:1 refs:4 sym:LoadDynamic,LoadGrammarManifest,VerifyGrammarArtifacts| circular_internal_engine_parser_grammar
   circular_internal_engine_parser -->|deps:1 refs:2 sym:BuildLanguageRegistry,DefaultLanguageRegistry| circular_internal_engine_parser_registry
   circular_internal_engine_parser -->|deps:1 refs:3 sym:SortedStringKeys| circular_internal_shared_util
-  circular_internal_engine_parser_extractors -->|deps:1 refs:2 sym:Extractor| circular_internal_engine_parser
-  circular_internal_engine_parser_grammar -->|deps:1 refs:1 sym:LanguageSpec| circular_internal_engine_parser_registry
+  circular_internal_engine_parser_extractors -->|deps:1 refs:2 sym:NewUniversalExtractor| circular_internal_engine_parser
+  circular_internal_engine_parser_grammar -->|deps:1| circular_internal_engine_parser_registry
   circular_internal_engine_parser_registry -->|deps:1 refs:1 sym:SortedStringKeys| circular_internal_shared_util
-  circular_internal_engine_resolver -->|deps:1 refs:1 sym:Graph| circular_internal_engine_graph
-  circular_internal_engine_resolver -->|deps:1 refs:9 sym:File,Import,Reference| circular_internal_engine_parser
+  circular_internal_engine_resolver -->|deps:1 refs:1 sym:OpenSQLiteSymbolStore| circular_internal_engine_graph
+  circular_internal_engine_resolver -->|deps:1 refs:4 sym:ModuleReferenceBase| circular_internal_engine_parser
   circular_internal_engine_resolver -->|deps:1 refs:5 sym:NewGoResolver,NewJavaResolver,NewJavaScriptResolver| circular_internal_engine_resolver_drivers
-  circular_internal_mcp_adapters -->|deps:1 refs:1 sym:App| circular_internal_core_app
-  circular_internal_mcp_adapters -->|deps:1 refs:1 sym:Config| circular_internal_core_config
-  circular_internal_mcp_adapters -->|deps:1 refs:7 sym:GraphCyclesOutput,QueryModuleDetailsOutput,QueryModulesOutput| circular_internal_mcp_contracts
-  circular_internal_mcp_openapi -->|deps:1 refs:4 sym:OperationDescriptor| circular_internal_mcp_contracts
-  circular_internal_mcp_runtime -->|deps:1| circular_internal_core_app
-  circular_internal_mcp_runtime -->|deps:1 refs:6 sym:Config| circular_internal_core_config
-  circular_internal_mcp_runtime -->|deps:1 refs:1 sym:Adapter| circular_internal_mcp_adapters
-  circular_internal_mcp_runtime -->|deps:1 refs:7 sym:ProjectSummary,SystemGenerateConfigOutput,SystemGenerateScriptOutput| circular_internal_mcp_contracts
-  circular_internal_mcp_runtime -->|deps:1| circular_internal_mcp_openapi
-  circular_internal_mcp_runtime -->|deps:1 refs:1 sym:Registry| circular_internal_mcp_registry
-  circular_internal_mcp_runtime -->|deps:1| circular_internal_mcp_tools_graph
-  circular_internal_mcp_runtime -->|deps:1| circular_internal_mcp_tools_query
-  circular_internal_mcp_runtime -->|deps:1| circular_internal_mcp_tools_scan
-  circular_internal_mcp_runtime -->|deps:1| circular_internal_mcp_tools_system
-  circular_internal_mcp_runtime -->|deps:1 refs:2 sym:Adapter| circular_internal_mcp_transport
-  circular_internal_mcp_runtime -->|deps:1| circular_internal_mcp_validate
-  circular_internal_mcp_runtime -->|deps:1 refs:3 sym:WriteFileWithDirs| circular_internal_shared_util
+  circular_internal_engine_resolver -->|deps:1| circular_internal_shared_observability
+  circular_internal_engine_secrets -->|deps:1| circular_internal_core_config
+  circular_internal_engine_secrets -->|deps:1| circular_internal_core_ports
+  circular_internal_engine_secrets -->|deps:1| circular_internal_engine_parser
+  circular_internal_mcp_adapters -->|deps:1 refs:4 sym:IsCode| circular_internal_core_errors
+  circular_internal_mcp_adapters -->|deps:1| circular_internal_core_ports
+  circular_internal_mcp_adapters -->|deps:1| circular_internal_data_history
+  circular_internal_mcp_adapters -->|deps:1| circular_internal_engine_parser
+  circular_internal_mcp_adapters -->|deps:1 refs:1 sym:MaskValue| circular_internal_engine_secrets
+  circular_internal_mcp_adapters -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_adapters -->|deps:1 refs:1 sym:ContainsPathSeparator| circular_internal_shared_util
+  circular_internal_mcp_openapi -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_runtime -->|deps:1 refs:8 sym:ResolveActiveProject,ResolvePaths,ResolveRelative| circular_internal_core_config
+  circular_internal_mcp_runtime -->|deps:1| circular_internal_core_ports
+  circular_internal_mcp_runtime -->|deps:1 refs:1 sym:Open| circular_internal_data_history
+  circular_internal_mcp_runtime -->|deps:1 refs:2 sym:MapToMCPError,NewAdapter| circular_internal_mcp_adapters
+  circular_internal_mcp_runtime -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_runtime -->|deps:1 refs:3 sym:ApplyAllowlist,Convert,LoadSpec| circular_internal_mcp_openapi
+  circular_internal_mcp_runtime -->|deps:1 refs:2 sym:New| circular_internal_mcp_registry
+  circular_internal_mcp_runtime -->|deps:1 refs:1 sym:HandleCycles| circular_internal_mcp_tools_graph
+  circular_internal_mcp_runtime -->|deps:1 refs:4 sym:HandleModuleDetails,HandleModules,HandleTrace| circular_internal_mcp_tools_query
+  circular_internal_mcp_runtime -->|deps:1 refs:1 sym:HandleGenerateMarkdown| circular_internal_mcp_tools_report
+  circular_internal_mcp_runtime -->|deps:1 refs:1 sym:HandleRun| circular_internal_mcp_tools_scan
+  circular_internal_mcp_runtime -->|deps:1 refs:2 sym:HandleList,HandleScan| circular_internal_mcp_tools_secrets
+  circular_internal_mcp_runtime -->|deps:1 refs:6 sym:HandleGenerateConfig,HandleGenerateScript,HandleSelectProject| circular_internal_mcp_tools_system
+  circular_internal_mcp_runtime -->|deps:1 refs:2 sym:NewSSE,NewStdio| circular_internal_mcp_transport
+  circular_internal_mcp_runtime -->|deps:1 refs:2 sym:GetOperationWeight,ParseToolArgs| circular_internal_mcp_validate
+  circular_internal_mcp_runtime -->|deps:1| circular_internal_shared_observability
+  circular_internal_mcp_runtime -->|deps:1 refs:4 sym:NewLimiter,WriteFileWithDirs| circular_internal_shared_util
   circular_internal_mcp_schema -->|deps:1| circular_internal_mcp_contracts
-  circular_internal_mcp_tools_graph -->|deps:1 refs:1 sym:Adapter| circular_internal_mcp_adapters
-  circular_internal_mcp_tools_graph -->|deps:1 refs:2 sym:GraphCyclesInput,GraphCyclesOutput| circular_internal_mcp_contracts
-  circular_internal_mcp_tools_query -->|deps:1 refs:4 sym:Adapter| circular_internal_mcp_adapters
-  circular_internal_mcp_tools_query -->|deps:1 refs:10 sym:DependencyEdge,QueryModuleDetailsInput,QueryModuleDetailsOutput| circular_internal_mcp_contracts
-  circular_internal_mcp_tools_scan -->|deps:1 refs:1 sym:Adapter| circular_internal_mcp_adapters
-  circular_internal_mcp_tools_scan -->|deps:1 refs:2 sym:ScanRunInput,ScanRunOutput| circular_internal_mcp_contracts
-  circular_internal_mcp_tools_system -->|deps:1 refs:8 sym:SystemGenerateConfigOutput,SystemGenerateScriptOutput,SystemSelectProjectInput| circular_internal_mcp_contracts
-  circular_internal_mcp_transport -->|deps:1 refs:1 sym:ToolError| circular_internal_mcp_contracts
-  circular_internal_mcp_transport -->|deps:1| circular_internal_mcp_schema
-  circular_internal_mcp_validate -->|deps:1 refs:3 sym:ToolError| circular_internal_mcp_contracts
-  circular_internal_ui_cli -->|deps:1 refs:5 sym:App,New| circular_internal_core_app
-  circular_internal_ui_cli -->|deps:1 refs:13 sym:ActiveProject,Config,ResolvePaths| circular_internal_core_config
-  circular_internal_ui_cli -->|deps:1 refs:2 sym:ModuleMetrics| circular_internal_engine_graph
-  circular_internal_ui_cli -->|deps:1 refs:1 sym:VerifyLanguageRegistryArtifacts| circular_internal_engine_parser
+  circular_internal_mcp_tools_graph -->|deps:1| circular_internal_mcp_adapters
+  circular_internal_mcp_tools_graph -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_tools_overlays -->|deps:1| circular_internal_engine_graph
+  circular_internal_mcp_tools_query -->|deps:1| circular_internal_mcp_adapters
+  circular_internal_mcp_tools_query -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_tools_report -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_tools_scan -->|deps:1| circular_internal_mcp_adapters
+  circular_internal_mcp_tools_scan -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_tools_secrets -->|deps:1| circular_internal_mcp_adapters
+  circular_internal_mcp_tools_secrets -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_tools_system -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_transport -->|deps:1| circular_internal_core_config
+  circular_internal_mcp_transport -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_transport -->|deps:1 refs:2 sym:BuildToolDefinitions| circular_internal_mcp_schema
+  circular_internal_mcp_transport -->|deps:1 refs:5 sym:GetClientIP,NewLimiter,NewLimiterRegistry| circular_internal_shared_util
+  circular_internal_mcp_validate -->|deps:1| circular_internal_mcp_contracts
+  circular_internal_mcp_validate -->|deps:1 refs:1 sym:HasPathPrefix| circular_internal_shared_util
+  circular_internal_ui_cli -->|deps:1 refs:3 sym:FormatImpactReport,New,NewHealthService| circular_internal_core_app
+  circular_internal_ui_cli -->|deps:1 refs:10 sym:Load,LoadProjectRegistry,NewWatcher| circular_internal_core_config
+  circular_internal_ui_cli -->|deps:1| circular_internal_core_ports
+  circular_internal_ui_cli -->|deps:1 refs:1 sym:Open| circular_internal_data_history
+  circular_internal_ui_cli -->|deps:1| circular_internal_data_query
+  circular_internal_ui_cli -->|deps:1 refs:8 sym:BuildLanguageRegistry,CalculateSHA256,LoadManifest| circular_internal_engine_parser
   circular_internal_ui_cli -->|deps:1| circular_internal_engine_resolver
-  circular_internal_ui_cli -->|deps:1| circular_internal_mcp_runtime
+  circular_internal_ui_cli -->|deps:1 refs:3 sym:IsGitAvailable,NewDetector,ScanGitHistory| circular_internal_engine_secrets
+  circular_internal_ui_cli -->|deps:1 refs:3 sym:Build,GenerateProjectConfig,GenerateProjectScript| circular_internal_mcp_runtime
+  circular_internal_ui_cli -->|deps:1 refs:1 sym:InitTracing| circular_internal_shared_observability
   circular_internal_ui_cli -->|deps:1 refs:1 sym:WriteFileWithDirs| circular_internal_shared_util
   circular_internal_ui_cli -->|deps:1| circular_internal_shared_version
-  circular_internal_ui_cli -->|deps:1| circular_internal_ui_report
-  circular_internal_ui_report -->|deps:1 refs:4 sym:Graph| circular_internal_engine_graph
-  circular_internal_ui_report -->|deps:1| circular_internal_ui_report_formats
-  circular_internal_ui_report_formats -->|deps:1 refs:34 sym:ArchitectureModel,ArchitectureViolation,ComplexityHotspot| circular_internal_engine_graph
-  circular_internal_ui_report_formats -->|deps:1 refs:1 sym:File| circular_internal_engine_parser
-  circular_internal_ui_report_formats -->|deps:1 refs:1 sym:UnusedImport| circular_internal_engine_resolver
-  circular_internal_ui_report_formats -->|deps:1 refs:2 sym:HasPathPrefix| circular_internal_shared_util
+  circular_internal_ui_cli -->|deps:1 refs:2 sym:RenderTrendJSON,RenderTrendTSV| circular_internal_ui_report
+  circular_internal_ui_cli -->|deps:1 refs:1 sym:GenerateSARIF| circular_internal_ui_report_formats
+  circular_internal_ui_report -->|deps:1| circular_internal_data_history
+  circular_internal_ui_report -->|deps:1| circular_internal_engine_graph
+  circular_internal_ui_report -->|deps:1 refs:5 sym:NewDOTGenerator,NewMarkdownGenerator,NewMermaidGenerator| circular_internal_ui_report_formats
+  circular_internal_ui_report_formats -->|deps:1| circular_internal_engine_graph
+  circular_internal_ui_report_formats -->|deps:1 refs:1 sym:ModuleReferenceBase| circular_internal_engine_parser
+  circular_internal_ui_report_formats -->|deps:1| circular_internal_engine_resolver
+  circular_internal_ui_report_formats -->|deps:1 refs:1 sym:MaskValue| circular_internal_engine_secrets
+  circular_internal_ui_report_formats -->|deps:1 refs:28 sym:HasPathPrefix,NormalizePatternPath,SortedStringKeys| circular_internal_shared_util
+  circular_internal_ui_report_formats -->|deps:1| circular_internal_shared_version
 
-  linkStyle 0,1,2,3,5,6,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,25,26,27,29,34,36,38,39,40,41,42,43,44,45,47,48,49,50,51,54,57,59,60,61,62 stroke:#1f6f8b,stroke-width:2px,stroke-dasharray:4 3;
+  linkStyle 0,1,2,3,5,6,7,8,9,10,11,13,15,20,21,23,36,37,38,39,40,41,43,44,45,46,51,55,57,59,61,62,64,65,66,67,68,69,70,71,72,73,75,90,91,93,94,95,97,99,101,102,103,104,106,107,110,112,114,115 stroke:#1f6f8b,stroke-width:2px,stroke-dasharray:4 3;
 
   subgraph legend_info["Legend"]
     legend_nodes["Node: module (func/file metrics)"]

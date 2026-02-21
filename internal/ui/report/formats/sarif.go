@@ -2,6 +2,7 @@
 package formats
 
 import (
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/shared/version"
@@ -17,9 +18,10 @@ const (
 	sarifSchema  = "https://schemastore.azurewebsites.net/schemas/json/sarif-2.1.0-rtm.5.json"
 	sarifVersion = "2.1.0"
 
-	ruleIDCycle     = "CIRC001"
-	ruleIDSecret    = "CIRC002"
-	ruleIDViolation = "CIRC003"
+	ruleIDCycle         = "CIRC001"
+	ruleIDSecret        = "CIRC002"
+	ruleIDViolation     = "CIRC003"
+	ruleIDArchRuleError = "CIRC004"
 )
 
 // sarifReport is the top-level SARIF document.
@@ -92,9 +94,10 @@ func GenerateSARIF(
 	projectRoot string,
 	cycles [][]string,
 	violations []graph.ArchitectureViolation,
+	ruleViolations []ports.ArchitectureRuleViolation,
 	secrets []parser.Secret,
 ) ([]byte, error) {
-	rules := buildSARIFRules(cycles, violations, secrets)
+	rules := buildSARIFRules(cycles, violations, ruleViolations, secrets)
 	results := make([]sarifResult, 0)
 
 	// --- Cycles → CIRC001 ---
@@ -174,6 +177,38 @@ func GenerateSARIF(
 		results = append(results, result)
 	}
 
+	// --- Architecture rule violations → CIRC004 ---
+	for _, v := range ruleViolations {
+		msg := fmt.Sprintf("Architecture rule %q violated: %s", v.RuleName, v.Message)
+		if v.Type == "file_count" {
+			msg = fmt.Sprintf("Architecture rule %q violated: %s (files %d > limit %d)", v.RuleName, v.Module, v.Actual, v.Limit)
+		}
+		result := sarifResult{
+			RuleID:  ruleIDArchRuleError,
+			Level:   "warning",
+			Message: sarifMessage{Text: msg},
+		}
+		if v.File != "" {
+			uri := relativeURI(projectRoot, v.File)
+			loc := sarifLocation{
+				PhysicalLocation: sarifPhysicalLocation{
+					ArtifactLocation: sarifArtifactLocation{
+						URI:       uri,
+						URIBaseID: "%SRCROOT%",
+					},
+				},
+			}
+			if v.Line > 0 {
+				loc.PhysicalLocation.Region = &sarifRegion{
+					StartLine:   v.Line,
+					StartColumn: v.Column,
+				}
+			}
+			result.Locations = []sarifLocation{loc}
+		}
+		results = append(results, result)
+	}
+
 	report := sarifReport{
 		Schema:  sarifSchema,
 		Version: sarifVersion,
@@ -195,7 +230,7 @@ func GenerateSARIF(
 }
 
 // buildSARIFRules returns only the rules that are relevant for the given findings.
-func buildSARIFRules(cycles [][]string, violations []graph.ArchitectureViolation, secrets []parser.Secret) []sarifRule {
+func buildSARIFRules(cycles [][]string, violations []graph.ArchitectureViolation, ruleViolations []ports.ArchitectureRuleViolation, secrets []parser.Secret) []sarifRule {
 	rules := make([]sarifRule, 0, 3)
 	if len(cycles) > 0 {
 		rules = append(rules, sarifRule{
@@ -218,6 +253,14 @@ func buildSARIFRules(cycles [][]string, violations []graph.ArchitectureViolation
 			ID:               ruleIDViolation,
 			Name:             "ArchitectureViolation",
 			ShortDescription: sarifMessage{Text: "A module-layer architecture rule was violated."},
+			DefaultConfig:    sarifRuleDefaultConfig{Level: "warning"},
+		})
+	}
+	if len(ruleViolations) > 0 {
+		rules = append(rules, sarifRule{
+			ID:               ruleIDArchRuleError,
+			Name:             "ArchitectureRuleViolation",
+			ShortDescription: sarifMessage{Text: "A module architecture rule was violated."},
 			DefaultConfig:    sarifRuleDefaultConfig{Level: "warning"},
 		})
 	}

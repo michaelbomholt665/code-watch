@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"circular/internal/core/config"
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"fmt"
 	"os"
@@ -26,20 +27,63 @@ func CompileGlobs(patterns []string, label string) ([]glob.Glob, error) {
 
 func UniqueScanRoots(paths []string) []string {
 	seen := make(map[string]bool, len(paths))
-	roots := make([]string, 0, len(paths))
+	normalized := make([]string, 0, len(paths))
 	for _, p := range paths {
-		normalized := filepath.Clean(p)
-		if abs, err := filepath.Abs(normalized); err == nil {
-			normalized = filepath.Clean(abs)
-		}
-		if seen[normalized] {
+		trimmed := strings.TrimSpace(p)
+		if trimmed == "" {
 			continue
 		}
-		seen[normalized] = true
-		roots = append(roots, normalized)
+		cleaned := filepath.Clean(trimmed)
+		if abs, err := filepath.Abs(cleaned); err == nil {
+			cleaned = filepath.Clean(abs)
+		}
+		if seen[cleaned] {
+			continue
+		}
+		seen[cleaned] = true
+		normalized = append(normalized, cleaned)
+	}
+	if len(normalized) <= 1 {
+		return normalized
+	}
+	sort.Slice(normalized, func(i, j int) bool {
+		if len(normalized[i]) == len(normalized[j]) {
+			return normalized[i] < normalized[j]
+		}
+		return len(normalized[i]) < len(normalized[j])
+	})
+	roots := make([]string, 0, len(normalized))
+	for _, candidate := range normalized {
+		isChild := false
+		for _, root := range roots {
+			if isSubpath(root, candidate) {
+				isChild = true
+				break
+			}
+		}
+		if !isChild {
+			roots = append(roots, candidate)
+		}
 	}
 	sort.Strings(roots)
 	return roots
+}
+
+func isSubpath(root, candidate string) bool {
+	rel, err := filepath.Rel(root, candidate)
+	if err != nil {
+		return false
+	}
+	if rel == "." {
+		return true
+	}
+	if rel == ".." {
+		return false
+	}
+	if strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return false
+	}
+	return true
 }
 
 func FindContainingWatchPath(path string, watchPaths []string) (string, error) {
@@ -79,6 +123,15 @@ func ArchitectureModelFromConfig(arch config.Architecture) graph.ArchitectureMod
 		})
 	}
 	for _, rule := range arch.Rules {
+		kind := strings.TrimSpace(strings.ToLower(rule.Kind))
+		if kind == "" && (rule.From != "" || len(rule.Allow) > 0) {
+			kind = "layer"
+		} else if kind == "" && len(rule.Modules) > 0 {
+			kind = "package"
+		}
+		if kind != "" && kind != "layer" {
+			continue
+		}
 		model.Rules = append(model.Rules, graph.ArchitectureRule{
 			Name:  rule.Name,
 			From:  rule.From,
@@ -86,4 +139,37 @@ func ArchitectureModelFromConfig(arch config.Architecture) graph.ArchitectureMod
 		})
 	}
 	return model
+}
+
+func ArchitectureRulesFromConfig(arch config.Architecture) []ports.ArchitectureRule {
+	if len(arch.Rules) == 0 {
+		return nil
+	}
+	out := make([]ports.ArchitectureRule, 0, len(arch.Rules))
+	for _, rule := range arch.Rules {
+		kind := strings.TrimSpace(strings.ToLower(rule.Kind))
+		if kind == "" && (rule.From != "" || len(rule.Allow) > 0) {
+			kind = "layer"
+		} else if kind == "" && len(rule.Modules) > 0 {
+			kind = "package"
+		}
+		if kind != "package" {
+			continue
+		}
+		out = append(out, ports.ArchitectureRule{
+			Name:     rule.Name,
+			Kind:     ports.ArchitectureRuleKindPackage,
+			Modules:  append([]string(nil), rule.Modules...),
+			MaxFiles: rule.MaxFiles,
+			Imports: ports.ArchitectureImportRule{
+				Allow: append([]string(nil), rule.Imports.Allow...),
+				Deny:  append([]string(nil), rule.Imports.Deny...),
+			},
+			Exclude: ports.ArchitectureRuleExclude{
+				Tests: rule.Exclude.Tests,
+				Files: append([]string(nil), rule.Exclude.Files...),
+			},
+		})
+	}
+	return out
 }

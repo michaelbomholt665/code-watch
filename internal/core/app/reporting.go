@@ -47,6 +47,27 @@ func (a *App) ArchitectureViolations() []graph.ArchitectureViolation {
 	return a.archEngine.Validate(a.Graph)
 }
 
+func (a *App) ArchitectureRuleViolations() ([]ports.ArchitectureRuleViolation, ports.ArchitectureRuleSummary) {
+	if a == nil || a.archEvaluator == nil {
+		return nil, ports.ArchitectureRuleSummary{}
+	}
+	result := a.archEvaluator.Evaluate(a.Graph)
+	summary := ports.ArchitectureRuleSummary{
+		RuleCount:      len(a.archRules),
+		ModuleCount:    result.EvaluatedModules,
+		ViolationCount: len(result.Violations),
+	}
+	for _, v := range result.Violations {
+		switch v.Type {
+		case "import":
+			summary.ImportViolations++
+		case "file_count":
+			summary.FileViolations++
+		}
+	}
+	return result.Violations, summary
+}
+
 func (a *App) BuildQueryService(historyStore ports.HistoryStore, projectKey string) *query.Service {
 	return query.NewService(a.Graph, historyStore, projectKey)
 }
@@ -97,7 +118,21 @@ func (a *App) PrintSummary(
 	unusedImports []resolver.UnusedImport,
 	metrics map[string]graph.ModuleMetrics,
 	violations []graph.ArchitectureViolation,
+	ruleViolations []ports.ArchitectureRuleViolation,
+	ruleSummary ports.ArchitectureRuleSummary,
 	hotspots []graph.ComplexityHotspot,
 ) {
-	newPresentationService(a).PrintSummary(fileCount, moduleCount, duration, cycles, hallucinations, unusedImports, metrics, violations, hotspots)
+	newPresentationService(a).PrintSummary(
+		fileCount,
+		moduleCount,
+		duration,
+		cycles,
+		hallucinations,
+		unusedImports,
+		metrics,
+		violations,
+		ruleViolations,
+		ruleSummary,
+		hotspots,
+	)
 }

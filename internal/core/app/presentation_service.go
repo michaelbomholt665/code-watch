@@ -2,6 +2,7 @@ package app
 
 import (
 	"circular/internal/core/app/helpers"
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/version"
@@ -30,6 +31,7 @@ func (p *PresentationService) GenerateMarkdownReport(ctx context.Context, req Ma
 	metrics := p.app.Graph.ComputeModuleMetrics()
 	hotspots := p.app.Graph.TopComplexity(p.app.Config.Architecture.TopComplexity)
 	violations := p.app.ArchitectureViolations()
+	ruleViolations, ruleSummary := p.app.ArchitectureRuleViolations()
 	probableBridges := p.app.AnalyzeProbableBridges(ctx)
 	unresolved := p.app.AnalyzeHallucinations(ctx)
 	unused := p.app.AnalyzeUnusedImports(ctx)
@@ -55,14 +57,17 @@ func (p *PresentationService) GenerateMarkdownReport(ctx context.Context, req Ma
 		verbosity = p.app.Config.Output.Report.Verbosity
 	}
 	md, err := report.NewMarkdownGenerator().Generate(report.MarkdownReportData{
-		TotalModules:    p.app.Graph.ModuleCount(),
-		TotalFiles:      p.app.Graph.FileCount(),
-		Cycles:          cycles,
-		ProbableBridges: probableBridges,
-		Unresolved:      unresolved,
-		UnusedImports:   unused,
-		Violations:      violations,
-		Hotspots:        hotspots,
+		TotalModules:      p.app.Graph.ModuleCount(),
+		TotalFiles:        p.app.Graph.FileCount(),
+		Cycles:            cycles,
+		ProbableBridges:   probableBridges,
+		Unresolved:        unresolved,
+		UnusedImports:     unused,
+		Violations:        violations,
+		ArchitectureRules: append([]ports.ArchitectureRule(nil), p.app.archRules...),
+		RuleViolations:    ruleViolations,
+		RuleSummary:       ruleSummary,
+		Hotspots:          hotspots,
 	}, report.MarkdownReportOptions{
 		ProjectName:         filepath.Base(root),
 		ProjectRoot:         root,
@@ -89,7 +94,15 @@ func (p *PresentationService) GenerateMarkdownReport(ctx context.Context, req Ma
 		outPath = filepath.Join(root, outPath)
 	}
 
-	result := MarkdownReportResult{Markdown: md, Path: outPath}
+	result := MarkdownReportResult{
+		Markdown: md,
+		Path:     outPath,
+		RuleGuide: ports.ArchitectureRuleGuide{
+			Summary:    ruleSummary,
+			Rules:      append([]ports.ArchitectureRule(nil), p.app.archRules...),
+			Violations: append([]ports.ArchitectureRuleViolation(nil), ruleViolations...),
+		},
+	}
 	if req.WriteFile || outPath != "" {
 		if outPath == "" {
 			return MarkdownReportResult{}, fmt.Errorf("output path is required when write_file=true")
@@ -110,6 +123,8 @@ func (p *PresentationService) PrintSummary(
 	unusedImports []resolver.UnusedImport,
 	metrics map[string]graph.ModuleMetrics,
 	violations []graph.ArchitectureViolation,
+	ruleViolations []ports.ArchitectureRuleViolation,
+	ruleSummary ports.ArchitectureRuleSummary,
 	hotspots []graph.ComplexityHotspot,
 ) {
 	if !p.app.Config.Alerts.Terminal {
@@ -190,6 +205,30 @@ func (p *PresentationService) PrintSummary(
 		}
 	} else if p.app.Config.Architecture.Enabled {
 		fmt.Println("✅ No architecture violations found.")
+	}
+
+	if ruleSummary.RuleCount > 0 {
+		if len(ruleViolations) > 0 {
+			fmt.Printf("📐 FOUND %d ARCHITECTURE RULE VIOLATIONS (%d rules across %d modules):\n",
+				len(ruleViolations), ruleSummary.RuleCount, ruleSummary.ModuleCount)
+			for _, v := range ruleViolations {
+				target := v.Target
+				if target == "" {
+					target = "-"
+				}
+				location := v.File
+				if v.Line > 0 {
+					location = fmt.Sprintf("%s:%d", v.File, v.Line)
+				}
+				if v.Type == "file_count" {
+					fmt.Printf("   %s [%s] %s (limit=%d actual=%d)\n", v.RuleName, v.Module, v.Message, v.Limit, v.Actual)
+					continue
+				}
+				fmt.Printf("   %s [%s -> %s] %s (%s)\n", v.RuleName, v.Module, target, v.Message, location)
+			}
+		} else {
+			fmt.Printf("✅ No architecture rule violations found (%d rules across %d modules).\n", ruleSummary.RuleCount, ruleSummary.ModuleCount)
+		}
 	}
 
 	if len(hotspots) > 0 {

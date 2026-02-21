@@ -8,14 +8,21 @@ left to right direction
 
 component "circular/cmd/circular\n(step:0)" as circular_cmd_circular #E9F5EC
 component "circular/internal/core/app\n(step:2)" as circular_internal_core_app
+component "circular/internal/core/app/helpers\n(step:3)" as circular_internal_core_app_helpers
 component "circular/internal/core/config\n(step:2)" as circular_internal_core_config
+component "circular/internal/core/config/helpers\n(step:3)" as circular_internal_core_config_helpers
+component "circular/internal/core/errors\n(step:3)" as circular_internal_core_errors
+component "circular/internal/core/ports\n(step:2)" as circular_internal_core_ports
 component "circular/internal/core/watcher\n(step:3)" as circular_internal_core_watcher
-component "circular/internal/engine/graph\n(step:2)" as circular_internal_engine_graph
+component "circular/internal/data/history\n(step:2)" as circular_internal_data_history
+component "circular/internal/data/query\n(step:2)" as circular_internal_data_query
+component "circular/internal/engine/graph\n(step:3)" as circular_internal_engine_graph
 component "circular/internal/engine/parser\n(step:2)" as circular_internal_engine_parser
 component "circular/internal/engine/parser/grammar\n(step:3)" as circular_internal_engine_parser_grammar
 component "circular/internal/engine/parser/registry\n(step:3)" as circular_internal_engine_parser_registry
 component "circular/internal/engine/resolver\n(step:2)" as circular_internal_engine_resolver
 component "circular/internal/engine/resolver/drivers\n(step:3)" as circular_internal_engine_resolver_drivers
+component "circular/internal/engine/secrets\n(step:2)" as circular_internal_engine_secrets
 component "circular/internal/mcp/adapters\n(step:3)" as circular_internal_mcp_adapters
 component "circular/internal/mcp/contracts\n(step:3)" as circular_internal_mcp_contracts
 component "circular/internal/mcp/openapi\n(step:3)" as circular_internal_mcp_openapi
@@ -24,27 +31,57 @@ component "circular/internal/mcp/runtime\n(step:2)" as circular_internal_mcp_run
 component "circular/internal/mcp/schema\n(step:4)" as circular_internal_mcp_schema
 component "circular/internal/mcp/tools/graph\n(step:3)" as circular_internal_mcp_tools_graph
 component "circular/internal/mcp/tools/query\n(step:3)" as circular_internal_mcp_tools_query
+component "circular/internal/mcp/tools/report\n(step:3)" as circular_internal_mcp_tools_report
 component "circular/internal/mcp/tools/scan\n(step:3)" as circular_internal_mcp_tools_scan
+component "circular/internal/mcp/tools/secrets\n(step:3)" as circular_internal_mcp_tools_secrets
 component "circular/internal/mcp/tools/system\n(step:3)" as circular_internal_mcp_tools_system
 component "circular/internal/mcp/transport\n(step:3)" as circular_internal_mcp_transport
 component "circular/internal/mcp/validate\n(step:3)" as circular_internal_mcp_validate
+component "circular/internal/shared/observability\n(step:2)" as circular_internal_shared_observability
 component "circular/internal/shared/util\n(step:2)" as circular_internal_shared_util
 component "circular/internal/shared/version\n(step:2)" as circular_internal_shared_version
 component "circular/internal/ui/cli\n(step:1)" as circular_internal_ui_cli
 component "circular/internal/ui/report\n(step:2)" as circular_internal_ui_report
-component "circular/internal/ui/report/formats\n(step:3)" as circular_internal_ui_report_formats
+component "circular/internal/ui/report/formats\n(step:2)" as circular_internal_ui_report_formats
 
 circular_cmd_circular --> circular_internal_ui_cli
+circular_internal_core_app --> circular_internal_core_app_helpers
 circular_internal_core_app --> circular_internal_core_config
+circular_internal_core_app --> circular_internal_core_errors
+circular_internal_core_app --> circular_internal_core_ports
 circular_internal_core_app --> circular_internal_core_watcher
+circular_internal_core_app --> circular_internal_data_history
+circular_internal_core_app --> circular_internal_data_query
 circular_internal_core_app --> circular_internal_engine_graph
 circular_internal_core_app --> circular_internal_engine_parser
 circular_internal_core_app --> circular_internal_engine_resolver
+circular_internal_core_app --> circular_internal_engine_secrets
+circular_internal_core_app --> circular_internal_shared_observability
 circular_internal_core_app --> circular_internal_shared_util
+circular_internal_core_app --> circular_internal_shared_version
 circular_internal_core_app --> circular_internal_ui_report
+circular_internal_core_app_helpers --> circular_internal_core_config
+circular_internal_core_app_helpers --> circular_internal_core_ports
+circular_internal_core_app_helpers --> circular_internal_engine_graph
+circular_internal_core_app_helpers --> circular_internal_engine_parser
+circular_internal_core_app_helpers --> circular_internal_engine_secrets
+circular_internal_core_app_helpers --> circular_internal_shared_util
+circular_internal_core_app_helpers --> circular_internal_ui_report
+circular_internal_core_config --> circular_internal_core_config_helpers
 circular_internal_core_config --> circular_internal_shared_version
+circular_internal_core_ports --> circular_internal_core_config
+circular_internal_core_ports --> circular_internal_data_history
+circular_internal_core_ports --> circular_internal_data_query
+circular_internal_core_ports --> circular_internal_engine_graph
+circular_internal_core_ports --> circular_internal_engine_parser
+circular_internal_core_ports --> circular_internal_engine_resolver
+circular_internal_core_watcher --> circular_internal_shared_observability
+circular_internal_data_query --> circular_internal_data_history
+circular_internal_data_query --> circular_internal_engine_graph
 circular_internal_engine_graph --> circular_internal_engine_parser
+circular_internal_engine_graph --> circular_internal_shared_observability
 circular_internal_engine_graph --> circular_internal_shared_util
+circular_internal_engine_parser --> circular_internal_core_errors
 circular_internal_engine_parser --> circular_internal_engine_parser_grammar
 circular_internal_engine_parser --> circular_internal_engine_parser_registry
 circular_internal_engine_parser --> circular_internal_shared_util
@@ -53,49 +90,75 @@ circular_internal_engine_parser_registry --> circular_internal_shared_util
 circular_internal_engine_resolver --> circular_internal_engine_graph
 circular_internal_engine_resolver --> circular_internal_engine_parser
 circular_internal_engine_resolver --> circular_internal_engine_resolver_drivers
-circular_internal_mcp_adapters --> circular_internal_core_app
-circular_internal_mcp_adapters --> circular_internal_core_config
+circular_internal_engine_resolver --> circular_internal_shared_observability
+circular_internal_engine_secrets --> circular_internal_core_config
+circular_internal_engine_secrets --> circular_internal_core_ports
+circular_internal_engine_secrets --> circular_internal_engine_parser
+circular_internal_mcp_adapters --> circular_internal_core_errors
+circular_internal_mcp_adapters --> circular_internal_core_ports
+circular_internal_mcp_adapters --> circular_internal_data_history
+circular_internal_mcp_adapters --> circular_internal_engine_parser
+circular_internal_mcp_adapters --> circular_internal_engine_secrets
 circular_internal_mcp_adapters --> circular_internal_mcp_contracts
+circular_internal_mcp_adapters --> circular_internal_shared_util
 circular_internal_mcp_openapi --> circular_internal_mcp_contracts
-circular_internal_mcp_runtime --> circular_internal_core_app
 circular_internal_mcp_runtime --> circular_internal_core_config
+circular_internal_mcp_runtime --> circular_internal_core_ports
+circular_internal_mcp_runtime --> circular_internal_data_history
 circular_internal_mcp_runtime --> circular_internal_mcp_adapters
 circular_internal_mcp_runtime --> circular_internal_mcp_contracts
 circular_internal_mcp_runtime --> circular_internal_mcp_openapi
 circular_internal_mcp_runtime --> circular_internal_mcp_registry
 circular_internal_mcp_runtime --> circular_internal_mcp_tools_graph
 circular_internal_mcp_runtime --> circular_internal_mcp_tools_query
+circular_internal_mcp_runtime --> circular_internal_mcp_tools_report
 circular_internal_mcp_runtime --> circular_internal_mcp_tools_scan
+circular_internal_mcp_runtime --> circular_internal_mcp_tools_secrets
 circular_internal_mcp_runtime --> circular_internal_mcp_tools_system
 circular_internal_mcp_runtime --> circular_internal_mcp_transport
 circular_internal_mcp_runtime --> circular_internal_mcp_validate
+circular_internal_mcp_runtime --> circular_internal_shared_observability
 circular_internal_mcp_runtime --> circular_internal_shared_util
 circular_internal_mcp_schema --> circular_internal_mcp_contracts
 circular_internal_mcp_tools_graph --> circular_internal_mcp_adapters
 circular_internal_mcp_tools_graph --> circular_internal_mcp_contracts
 circular_internal_mcp_tools_query --> circular_internal_mcp_adapters
 circular_internal_mcp_tools_query --> circular_internal_mcp_contracts
+circular_internal_mcp_tools_report --> circular_internal_mcp_contracts
 circular_internal_mcp_tools_scan --> circular_internal_mcp_adapters
 circular_internal_mcp_tools_scan --> circular_internal_mcp_contracts
+circular_internal_mcp_tools_secrets --> circular_internal_mcp_adapters
+circular_internal_mcp_tools_secrets --> circular_internal_mcp_contracts
 circular_internal_mcp_tools_system --> circular_internal_mcp_contracts
+circular_internal_mcp_transport --> circular_internal_core_config
 circular_internal_mcp_transport --> circular_internal_mcp_contracts
 circular_internal_mcp_transport --> circular_internal_mcp_schema
+circular_internal_mcp_transport --> circular_internal_shared_util
 circular_internal_mcp_validate --> circular_internal_mcp_contracts
+circular_internal_mcp_validate --> circular_internal_shared_util
 circular_internal_ui_cli --> circular_internal_core_app
 circular_internal_ui_cli --> circular_internal_core_config
-circular_internal_ui_cli --> circular_internal_engine_graph
+circular_internal_ui_cli --> circular_internal_core_ports
+circular_internal_ui_cli --> circular_internal_data_history
+circular_internal_ui_cli --> circular_internal_data_query
 circular_internal_ui_cli --> circular_internal_engine_parser
 circular_internal_ui_cli --> circular_internal_engine_resolver
+circular_internal_ui_cli --> circular_internal_engine_secrets
 circular_internal_ui_cli --> circular_internal_mcp_runtime
+circular_internal_ui_cli --> circular_internal_shared_observability
 circular_internal_ui_cli --> circular_internal_shared_util
 circular_internal_ui_cli --> circular_internal_shared_version
 circular_internal_ui_cli --> circular_internal_ui_report
+circular_internal_ui_cli --> circular_internal_ui_report_formats
+circular_internal_ui_report --> circular_internal_data_history
 circular_internal_ui_report --> circular_internal_engine_graph
 circular_internal_ui_report --> circular_internal_ui_report_formats
 circular_internal_ui_report_formats --> circular_internal_engine_graph
 circular_internal_ui_report_formats --> circular_internal_engine_parser
 circular_internal_ui_report_formats --> circular_internal_engine_resolver
+circular_internal_ui_report_formats --> circular_internal_engine_secrets
 circular_internal_ui_report_formats --> circular_internal_shared_util
+circular_internal_ui_report_formats --> circular_internal_shared_version
 
 legend right
 |= Item |= Meaning |

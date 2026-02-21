@@ -33,12 +33,12 @@ type Performance struct {
 }
 
 type Observability struct {
-	Enabled           bool   `toml:"enabled"`
-	Port              int    `toml:"port"`
-	OTLPEndpoint      string `toml:"otlp_endpoint"`
-	ServiceName       string `toml:"service_name"`
-	EnableTracing     bool   `toml:"enable_tracing"`
-	EnableMetrics     bool   `toml:"enable_metrics"`
+	Enabled       bool   `toml:"enabled"`
+	Port          int    `toml:"port"`
+	OTLPEndpoint  string `toml:"otlp_endpoint"`
+	ServiceName   string `toml:"service_name"`
+	EnableTracing bool   `toml:"enable_tracing"`
+	EnableMetrics bool   `toml:"enable_metrics"`
 }
 
 type Caches struct {
@@ -212,9 +212,24 @@ type ArchitectureLayer struct {
 }
 
 type ArchitectureRule struct {
-	Name  string   `toml:"name"`
-	From  string   `toml:"from"`
+	Name     string                  `toml:"name"`
+	Kind     string                  `toml:"kind"`
+	From     string                  `toml:"from"`
+	Allow    []string                `toml:"allow"`
+	Modules  []string                `toml:"modules"`
+	MaxFiles int                     `toml:"max_files"`
+	Imports  ArchitectureImportRule  `toml:"imports"`
+	Exclude  ArchitectureRuleExclude `toml:"exclude"`
+}
+
+type ArchitectureImportRule struct {
 	Allow []string `toml:"allow"`
+	Deny  []string `toml:"deny"`
+}
+
+type ArchitectureRuleExclude struct {
+	Tests bool     `toml:"tests"`
+	Files []string `toml:"files"`
 }
 
 type Secrets struct {

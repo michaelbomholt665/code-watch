@@ -2,6 +2,7 @@
 package report
 
 import (
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
@@ -186,6 +187,37 @@ func TestTSVGenerator_GenerateArchitectureViolations(t *testing.T) {
 	}
 	if !strings.Contains(lines[1], "architecture_violation\tapi-to-core-only\tinternal/core\tcore\tinternal/api\tapi\tinternal/core/service.go\t12\t4") {
 		t.Fatalf("Unexpected architecture TSV row: %s", lines[1])
+	}
+}
+
+func TestTSVGenerator_GenerateArchitectureRuleViolations(t *testing.T) {
+	g := graph.NewGraph()
+	gen := NewTSVGenerator(g)
+
+	tsv, err := gen.GenerateArchitectureRuleViolations([]ports.ArchitectureRuleViolation{
+		{
+			RuleName: "api-size",
+			RuleKind: ports.ArchitectureRuleKindPackage,
+			Module:   "internal/api",
+			Type:     "file_count",
+			Message:  "module exceeds file-count limit",
+			Limit:    10,
+			Actual:   12,
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(tsv), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("Expected 2 lines in architecture rule TSV, got %d", len(lines))
+	}
+	if !strings.Contains(lines[0], "Type\tRule\tModule\tViolation\tTarget\tDetail\tFile\tLine\tColumn\tLimit\tActual") {
+		t.Fatalf("Unexpected architecture rule TSV header: %s", lines[0])
+	}
+	if !strings.Contains(lines[1], "architecture_rule_violation\tapi-size\tinternal/api\tfile_count\t-") {
+		t.Fatalf("Unexpected architecture rule TSV row: %s", lines[1])
 	}
 }
 

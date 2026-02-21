@@ -12,7 +12,7 @@ Mermaid and PlantUML support four output views:
 
 Implemented overlays:
 - cycle highlighting
-- architecture-violation highlighting
+- architecture-violation highlighting (layer + package rules)
 - optional architecture-layer grouping when `[architecture].enabled=true`
 
 Roadmap source:
@@ -75,6 +75,22 @@ Row prefix is always:
 architecture_violation
 ```
 
+## Appended Architecture-Rule Violation Block
+
+Appended only when findings exist, separated by a blank line.
+
+Header:
+
+```text
+Type\tRule\tModule\tViolation\tTarget\tDetail\tFile\tLine\tColumn\tLimit\tActual
+```
+
+Row prefix is always:
+
+```text
+architecture_rule_violation
+```
+
 ## Appended Secret-Finding Block
 
 Appended only when findings exist, separated by a blank line.
@@ -112,13 +128,14 @@ Via CLI flag (overrides config):
 
 ### SARIF Structure
 
-The report follows the SARIF v2.1.0 schema and contains a single `run` with three rule classes:
+The report follows the SARIF v2.1.0 schema and contains a single `run` with four rule classes:
 
 | Rule ID | Name | Severity | Triggers on |
 | :--- | :--- | :--- | :--- |
 | `CIRC001` | `CircularDependency` | `error` | Circular import cycle detected |
 | `CIRC002` | `PotentialSecret` | `warning` / `error` | Secret or high-entropy token found |
 | `CIRC003` | `ArchitectureViolation` | `warning` | Layer-rule violation |
+| `CIRC004` | `ArchitectureRuleViolation` | `warning` | Package-rule violation |
 
 Severity mapping for `CIRC002`:
 - `critical`, `high` → SARIF `error`

@@ -342,6 +342,10 @@ Result:
 - `markdown` (`string`)
 - `path` (`string`, optional)
 - `written` (`bool`)
+- `rule_guide` (`object`, optional)
+  - `summary` (counts for rules/modules/violations)
+  - `rules` (configured package rules)
+  - `violations` (rule violations with file/line info)
 
 Notes:
 - Markdown report generation is delegated through `AnalysisService.GenerateMarkdownReport(...)`.

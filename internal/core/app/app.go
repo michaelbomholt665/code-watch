@@ -6,6 +6,7 @@ import (
 	"circular/internal/core/errors"
 	"circular/internal/core/ports"
 	"circular/internal/core/watcher"
+	"circular/internal/engine/architecture"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
@@ -31,9 +32,10 @@ type MarkdownReportRequest struct {
 }
 
 type MarkdownReportResult struct {
-	Markdown string
-	Path     string
-	Written  bool
+	Markdown  string
+	Path      string
+	Written   bool
+	RuleGuide ports.ArchitectureRuleGuide
 }
 
 type App struct {
@@ -44,6 +46,8 @@ type App struct {
 	secretScanner ports.SecretScanner
 	symbolStore   *graph.SQLiteSymbolStore
 	archEngine    *graph.LayerRuleEngine
+	archRules     []ports.ArchitectureRule
+	archEvaluator *architecture.RuleEvaluator
 	goModCache    map[string]goModuleCacheEntry
 	IncludeTests  bool
 
@@ -97,6 +101,10 @@ func (a *App) UpdateConfig(ctx context.Context, cfg *config.Config) error {
 	if a.activeWatcher != nil {
 		a.activeWatcher.SetDebounce(cfg.Watch.Debounce)
 	}
+
+	a.archEngine = graph.NewLayerRuleEngine(helpers.ArchitectureModelFromConfig(cfg.Architecture))
+	a.archRules = helpers.ArchitectureRulesFromConfig(cfg.Architecture)
+	a.archEvaluator = architecture.NewRuleEvaluator(a.archRules)
 
 	// Update secret exclude patterns if they changed
 	if cfg.Secrets.Enabled {
@@ -179,12 +187,15 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 		}
 	}
 
+	archRules := helpers.ArchitectureRulesFromConfig(cfg.Architecture)
 	app := &App{
 		Config:             cfg,
 		codeParser:         deps.CodeParser,
 		Graph:              graph.NewGraphWithCapacity(cfg.Caches.Files),
 		secretScanner:      secretScanner,
 		archEngine:         graph.NewLayerRuleEngine(helpers.ArchitectureModelFromConfig(cfg.Architecture)),
+		archRules:          archRules,
+		archEvaluator:      architecture.NewRuleEvaluator(archRules),
 		goModCache:         make(map[string]goModuleCacheEntry),
 		unresolvedByFile:   make(map[string][]resolver.UnresolvedReference),
 		unusedByFile:       make(map[string][]resolver.UnusedImport),

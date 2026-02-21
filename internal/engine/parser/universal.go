@@ -40,6 +40,7 @@ type TaggedSymbol struct {
 	RawName    string
 	Tag        UsageTag
 	Confidence float64
+	NodeKind   string
 	// Ancestry is the chain of ancestor node kinds leading to this node,
 	// e.g. "source_file->function_declaration->block->call_expression".
 	Ancestry string
@@ -362,10 +363,30 @@ func walkUniversal(node *sitter.Node, source []byte, file *File, ancestry []stri
 				RawName:    rawName,
 				Tag:        tag,
 				Confidence: confidence,
+				NodeKind:   kind,
 				Ancestry:   ancestryPath,
 				Location:   loc,
 			}
-			applyTaggedSymbol(file, tagged)
+			if tag == TagSymDef {
+				defKind := definitionKindFromNodeKind(kind)
+				definition := Definition{
+					Name:     tagged.Name,
+					FullName: tagged.Name,
+					Kind:     defKind,
+					Location: tagged.Location,
+					Scope:    tagged.Ancestry,
+				}
+				if defKind == KindFunction || defKind == KindMethod {
+					branches, params, nesting, locCount := computeFunctionComplexity(node, source)
+					definition.BranchCount = branches
+					definition.ParameterCount = params
+					definition.NestingDepth = nesting
+					definition.LOC = locCount
+				}
+				file.Definitions = append(file.Definitions, definition)
+			} else {
+				applyTaggedSymbol(file, tagged)
+			}
 		}
 	}
 
@@ -481,4 +502,236 @@ func applyTaggedSymbol(file *File, t TaggedSymbol) {
 			Context:  string(t.Tag) + "|" + t.Ancestry,
 		})
 	}
+}
+
+var functionNodeKinds = map[string]struct{}{
+	"function_declaration": {},
+	"function_definition":  {},
+	"function_item":        {},
+	"function_signature":   {},
+	"function_statement":   {},
+}
+
+var methodNodeKinds = map[string]struct{}{
+	"method_declaration":      {},
+	"method_definition":       {},
+	"method":                  {},
+	"method_spec":             {},
+	"method_signature":        {},
+	"constructor_declaration": {},
+}
+
+var classNodeKinds = map[string]struct{}{
+	"class_declaration": {},
+	"class_definition":  {},
+	"class_specifier":   {},
+}
+
+var interfaceNodeKinds = map[string]struct{}{
+	"interface_declaration": {},
+	"interface_definition":  {},
+	"trait_item":            {},
+}
+
+var typeNodeKinds = map[string]struct{}{
+	"type_declaration":   {},
+	"type_definition":    {},
+	"type_spec":          {},
+	"struct_item":        {},
+	"struct_declaration": {},
+	"enum_item":          {},
+	"enum_declaration":   {},
+	"impl_item":          {},
+}
+
+var variableNodeKinds = map[string]struct{}{
+	"variable_declaration": {},
+	"const_declaration":    {},
+	"const_item":           {},
+	"let_declaration":      {},
+	"var_declaration":      {},
+}
+
+func definitionKindFromNodeKind(kind string) DefinitionKind {
+	if _, ok := methodNodeKinds[kind]; ok {
+		return KindMethod
+	}
+	if _, ok := functionNodeKinds[kind]; ok {
+		return KindFunction
+	}
+	if _, ok := classNodeKinds[kind]; ok {
+		return KindClass
+	}
+	if _, ok := interfaceNodeKinds[kind]; ok {
+		return KindInterface
+	}
+	if _, ok := typeNodeKinds[kind]; ok {
+		return KindType
+	}
+	if _, ok := variableNodeKinds[kind]; ok {
+		return KindVariable
+	}
+	return KindFunction
+}
+
+var branchNodeKinds = map[string]struct{}{
+	"if_statement":           {},
+	"if_expression":          {},
+	"elif_clause":            {},
+	"for_statement":          {},
+	"for_in_statement":       {},
+	"for_each_statement":     {},
+	"while_statement":        {},
+	"do_statement":           {},
+	"switch_statement":       {},
+	"case_clause":            {},
+	"match_expression":       {},
+	"conditional_expression": {},
+	"ternary_expression":     {},
+	"try_statement":          {},
+	"catch_clause":           {},
+	"select_statement":       {},
+	"guard_statement":        {},
+	"loop_expression":        {},
+}
+
+var nestingNodeKinds = map[string]struct{}{
+	"block":              {},
+	"statement_block":    {},
+	"compound_statement": {},
+	"case_clause":        {},
+	"catch_clause":       {},
+	"else_clause":        {},
+	"elif_clause":        {},
+	"if_statement":       {},
+	"for_statement":      {},
+	"while_statement":    {},
+	"do_statement":       {},
+	"switch_statement":   {},
+	"match_expression":   {},
+	"try_statement":      {},
+	"select_statement":   {},
+}
+
+func computeFunctionComplexity(node *sitter.Node, source []byte) (int, int, int, int) {
+	if node == nil {
+		return 0, 0, 0, 0
+	}
+	locCount := locFromNode(node, source)
+	paramCount := countFunctionParams(node)
+	branches, nesting := countBranchesAndNesting(node)
+	return branches, paramCount, nesting, locCount
+}
+
+func locFromNode(node *sitter.Node, source []byte) int {
+	if node == nil {
+		return 0
+	}
+	start := int(node.StartPosition().Row)
+	end := int(node.EndPosition().Row)
+	if end < start {
+		return 0
+	}
+	return end - start + 1
+}
+
+func countFunctionParams(node *sitter.Node) int {
+	if node == nil {
+		return 0
+	}
+	paramNode := node.ChildByFieldName("parameters")
+	if paramNode == nil {
+		paramNode = node.ChildByFieldName("parameter_list")
+	}
+	if paramNode == nil {
+		paramNode = node.ChildByFieldName("formal_parameters")
+	}
+	if paramNode == nil {
+		return 0
+	}
+	count := 0
+	var walk func(*sitter.Node)
+	walk = func(n *sitter.Node) {
+		if n == nil {
+			return
+		}
+		switch n.Kind() {
+		case "parameter_declaration":
+			count += countParamDeclIdentifiers(n)
+			return
+		case "required_parameter", "optional_parameter", "rest_parameter", "variadic_parameter", "formal_parameter", "parameter", "lambda_parameter", "typed_parameter":
+			count++
+			return
+		}
+		for i := uint(0); i < n.ChildCount(); i++ {
+			walk(n.Child(i))
+		}
+	}
+	walk(paramNode)
+
+	if count == 0 {
+		for i := uint(0); i < paramNode.ChildCount(); i++ {
+			ch := paramNode.Child(i)
+			if ch == nil {
+				continue
+			}
+			switch ch.Kind() {
+			case "identifier", "field_identifier", "property_identifier":
+				count++
+			}
+		}
+	}
+	return count
+}
+
+func countParamDeclIdentifiers(node *sitter.Node) int {
+	if node == nil {
+		return 0
+	}
+	count := 0
+	for i := uint(0); i < node.ChildCount(); i++ {
+		ch := node.Child(i)
+		if ch == nil {
+			continue
+		}
+		switch ch.Kind() {
+		case "identifier", "variadic_parameter":
+			count++
+		}
+	}
+	return count
+}
+
+func countBranchesAndNesting(node *sitter.Node) (int, int) {
+	branches := 0
+	maxDepth := 0
+	var walk func(*sitter.Node, int)
+	walk = func(n *sitter.Node, depth int) {
+		if n == nil {
+			return
+		}
+		kind := n.Kind()
+		if n != node {
+			if _, ok := functionNodeKinds[kind]; ok {
+				return
+			}
+			if _, ok := methodNodeKinds[kind]; ok {
+				return
+			}
+		}
+		if _, ok := branchNodeKinds[kind]; ok {
+			branches++
+		}
+		if _, ok := nestingNodeKinds[kind]; ok {
+			depth++
+			if depth > maxDepth {
+				maxDepth = depth
+			}
+		}
+		for i := uint(0); i < n.ChildCount(); i++ {
+			walk(n.Child(i), depth)
+		}
+	}
+	walk(node, 0)
+	return branches, maxDepth
 }

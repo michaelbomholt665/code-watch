@@ -222,9 +222,57 @@ type ReportGenerateMarkdownInput struct {
 }
 
 type ReportGenerateMarkdownOutput struct {
-	Markdown string `json:"markdown"`
-	Path     string `json:"path,omitempty"`
-	Written  bool   `json:"written"`
+	Markdown  string                 `json:"markdown"`
+	Path      string                 `json:"path,omitempty"`
+	Written   bool                   `json:"written"`
+	RuleGuide *ArchitectureRuleGuide `json:"rule_guide,omitempty"`
+}
+
+type ArchitectureRuleGuide struct {
+	Summary    ArchitectureRuleSummary     `json:"summary"`
+	Rules      []ArchitectureRule          `json:"rules,omitempty"`
+	Violations []ArchitectureRuleViolation `json:"violations,omitempty"`
+}
+
+type ArchitectureRuleSummary struct {
+	RuleCount        int `json:"rule_count"`
+	ModuleCount      int `json:"module_count"`
+	ViolationCount   int `json:"violation_count"`
+	ImportViolations int `json:"import_violations"`
+	FileViolations   int `json:"file_violations"`
+}
+
+type ArchitectureRule struct {
+	Name     string                  `json:"name"`
+	Kind     string                  `json:"kind"`
+	Modules  []string                `json:"modules,omitempty"`
+	MaxFiles int                     `json:"max_files,omitempty"`
+	Imports  ArchitectureImportRule  `json:"imports,omitempty"`
+	Exclude  ArchitectureRuleExclude `json:"exclude,omitempty"`
+}
+
+type ArchitectureImportRule struct {
+	Allow []string `json:"allow,omitempty"`
+	Deny  []string `json:"deny,omitempty"`
+}
+
+type ArchitectureRuleExclude struct {
+	Tests bool     `json:"tests,omitempty"`
+	Files []string `json:"files,omitempty"`
+}
+
+type ArchitectureRuleViolation struct {
+	RuleName string `json:"rule_name"`
+	RuleKind string `json:"rule_kind,omitempty"`
+	Module   string `json:"module"`
+	Target   string `json:"target,omitempty"`
+	Type     string `json:"type"`
+	Message  string `json:"message,omitempty"`
+	File     string `json:"file,omitempty"`
+	Line     int    `json:"line,omitempty"`
+	Column   int    `json:"column,omitempty"`
+	Limit    int    `json:"limit,omitempty"`
+	Actual   int    `json:"actual,omitempty"`
 }
 
 type ToolError struct {

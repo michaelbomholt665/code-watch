@@ -144,6 +144,54 @@ func Sum(base int, extra ...int) int {
 	}
 }
 
+func TestGoExtraction_ComplexityMetrics(t *testing.T) {
+	p := newDefaultParser(t)
+
+	code := `
+package main
+
+func Sum(a, b int) int {
+	if a > b {
+		return a
+	}
+	for i := 0; i < b; i++ {
+		a += i
+	}
+	return a
+}
+`
+	file, err := p.ParseFile("main.go", []byte(code))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var sumDef *Definition
+	for i := range file.Definitions {
+		if file.Definitions[i].Name == "Sum" {
+			sumDef = &file.Definitions[i]
+			break
+		}
+	}
+	if sumDef == nil {
+		t.Fatal("Sum function not found")
+	}
+	if sumDef.Kind != KindFunction {
+		t.Fatalf("expected KindFunction, got %v", sumDef.Kind)
+	}
+	if sumDef.ParameterCount != 2 {
+		t.Fatalf("expected 2 parameters, got %d", sumDef.ParameterCount)
+	}
+	if sumDef.BranchCount < 2 {
+		t.Fatalf("expected at least 2 branches, got %d", sumDef.BranchCount)
+	}
+	if sumDef.NestingDepth < 1 {
+		t.Fatalf("expected nesting depth >= 1, got %d", sumDef.NestingDepth)
+	}
+	if sumDef.LOC < 3 {
+		t.Fatalf("expected LOC >= 3, got %d", sumDef.LOC)
+	}
+}
+
 func TestProfileExtractor_MetadataParityAndBridgeContexts(t *testing.T) {
 	trueVal := true
 	registry, err := BuildLanguageRegistry(map[string]LanguageOverride{

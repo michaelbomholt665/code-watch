@@ -2,6 +2,7 @@
 package formats
 
 import (
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"encoding/json"
@@ -10,7 +11,7 @@ import (
 )
 
 func TestGenerateSARIF_EmptyResults(t *testing.T) {
-	data, err := GenerateSARIF("", nil, nil, nil)
+	data, err := GenerateSARIF("", nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("GenerateSARIF returned error: %v", err)
 	}
@@ -34,7 +35,7 @@ func TestGenerateSARIF_EmptyResults(t *testing.T) {
 
 func TestGenerateSARIF_SingleCycle(t *testing.T) {
 	cycles := [][]string{{"a", "b", "a"}}
-	data, err := GenerateSARIF("/project", cycles, nil, nil)
+	data, err := GenerateSARIF("/project", cycles, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -78,7 +79,7 @@ func TestGenerateSARIF_SecretUsesRelativeURI(t *testing.T) {
 			},
 		},
 	}
-	data, err := GenerateSARIF("/project", nil, nil, secrets)
+	data, err := GenerateSARIF("/project", nil, nil, nil, secrets)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -132,7 +133,7 @@ func TestGenerateSARIF_ArchViolation(t *testing.T) {
 			Line:       10,
 		},
 	}
-	data, err := GenerateSARIF("/project", nil, violations, nil)
+	data, err := GenerateSARIF("/project", nil, violations, nil, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -148,6 +149,36 @@ func TestGenerateSARIF_ArchViolation(t *testing.T) {
 	}
 	if results[0].RuleID != ruleIDViolation {
 		t.Errorf("ruleId = %q, want %q", results[0].RuleID, ruleIDViolation)
+	}
+}
+
+func TestGenerateSARIF_ArchitectureRuleViolation(t *testing.T) {
+	violations := []ports.ArchitectureRuleViolation{
+		{
+			RuleName: "api-size",
+			Module:   "internal/api",
+			Type:     "file_count",
+			Message:  "module exceeds file-count limit",
+			Limit:    5,
+			Actual:   7,
+		},
+	}
+	data, err := GenerateSARIF("/project", nil, nil, violations, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var report sarifReport
+	if err := json.Unmarshal(data, &report); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+
+	results := report.Runs[0].Results
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	if results[0].RuleID != ruleIDArchRuleError {
+		t.Errorf("ruleId = %q, want %q", results[0].RuleID, ruleIDArchRuleError)
 	}
 }
 

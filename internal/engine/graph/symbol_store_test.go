@@ -142,3 +142,44 @@ func TestSQLiteSymbolStore_UpsertDeleteAndPrune(t *testing.T) {
 		t.Fatalf("expected two.go rows pruned, got %d", len(got))
 	}
 }
+
+func TestSQLiteSymbolStore_PruneToPaths_RemovesFileBlobs(t *testing.T) {
+	store, err := OpenSQLiteSymbolStore(filepath.Join(t.TempDir(), "symbols.db"), "proj-a")
+	if err != nil {
+		t.Fatalf("open sqlite symbol store: %v", err)
+	}
+	defer store.Close()
+
+	if err := store.UpsertFile(&parser.File{
+		Path:     "one.go",
+		Language: "go",
+		Module:   "mod/one",
+		Definitions: []parser.Definition{
+			{Name: "One", FullName: "mod/one.One", Kind: parser.KindFunction, Exported: true},
+		},
+	}); err != nil {
+		t.Fatalf("upsert one.go: %v", err)
+	}
+	if err := store.UpsertFile(&parser.File{
+		Path:     "two.go",
+		Language: "go",
+		Module:   "mod/two",
+		Definitions: []parser.Definition{
+			{Name: "Two", FullName: "mod/two.Two", Kind: parser.KindFunction, Exported: true},
+		},
+	}); err != nil {
+		t.Fatalf("upsert two.go: %v", err)
+	}
+
+	if err := store.PruneToPaths([]string{"one.go"}); err != nil {
+		t.Fatalf("prune to one.go: %v", err)
+	}
+
+	var count int
+	if err := store.DB().QueryRow(`SELECT count(*) FROM file_blobs WHERE project_key = ?`, "proj-a").Scan(&count); err != nil {
+		t.Fatalf("count file blobs: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("expected 1 file blob after prune, got %d", count)
+	}
+}

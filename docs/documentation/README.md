@@ -10,6 +10,7 @@ This folder contains implementation-level documentation for `circular`.
 - `output.md`: DOT/TSV/Mermaid/PlantUML/Markdown report schemas and ordering guarantees
 - `advanced.md`: historical snapshots/trend workflows plus advanced-architecture refinement status (persistent symbols, explicit bridges, CQL)
 - `architecture.md`: scan/update pipeline, data model, and subsystem boundaries
+- `architecture-rules.md`: package-level architecture rule configuration and outputs
 - `packages.md`: package-level ownership and key entrypoints
 - `mcp.md`: MCP POC tool protocol, operations, and examples
 - `limitations.md`: known behavior constraints and tradeoffs

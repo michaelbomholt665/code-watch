@@ -6,11 +6,11 @@ skinparam nodesep 80
 skinparam ranksep 100
 left to right direction
 
-rectangle "api" as api
-rectangle "ui" as ui
+rectangle "cmd" as cmd
 rectangle "core" as core
 rectangle "engine" as engine
 rectangle "data" as data
+rectangle "shared" as shared
 
 
 legend right

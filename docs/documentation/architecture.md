@@ -45,7 +45,7 @@ Main responsibilities:
 - secret detection (pattern + entropy/context heuristics)
 - module metrics
 - complexity hotspots
-- architecture rule violations
+- architecture layer and package rule violations
 - impact analysis
 - emit DOT/TSV/Mermaid/PlantUML/Markdown outputs
 - publish update payloads for UI mode

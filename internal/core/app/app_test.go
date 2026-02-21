@@ -4,6 +4,7 @@ package app
 import (
 	"circular/internal/core/app/helpers"
 	"circular/internal/core/config"
+	"circular/internal/core/ports"
 	"circular/internal/data/history"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
@@ -56,7 +57,7 @@ func TestApp(t *testing.T) {
 	}
 
 	// Test GenerateOutputs
-	err = app.GenerateOutputs(context.Background(), nil, nil, nil, nil, nil, nil)
+	err = app.GenerateOutputs(context.Background(), nil, nil, nil, nil, nil, nil, ports.ArchitectureRuleSummary{}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +111,7 @@ func TestApp_GenerateOutputs_IncludesUnusedImportRows(t *testing.T) {
 		t.Fatal("expected at least one unused import")
 	}
 
-	if err := app.GenerateOutputs(ctx, nil, nil, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(ctx, nil, nil, unused, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -160,7 +161,7 @@ func TestApp_GenerateOutputs_IncludesProbableBridgeRows(t *testing.T) {
 		},
 	})
 
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -250,7 +251,7 @@ func TestApp_GenerateOutputs_IncludesSecretRows(t *testing.T) {
 	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -323,7 +324,7 @@ func TestApp_GenerateOutputs_MermaidPlantUMLAndMarkdownInjection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -387,7 +388,7 @@ func TestApp_GenerateOutputs_WritesMarkdownReport(t *testing.T) {
 	cycles := app.Graph.DetectCycles()
 	unresolved := app.AnalyzeHallucinations(ctx)
 	unused := app.AnalyzeUnusedImports(ctx)
-	if err := app.GenerateOutputs(ctx, cycles, unresolved, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(ctx, cycles, unresolved, unused, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -499,7 +500,7 @@ func TestApp_GenerateOutputs_DiagramPathsUseDetectedRootAndDiagramsDir(t *testin
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -574,7 +575,7 @@ func TestApp_GenerateOutputs_ArchitectureDiagramMode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -627,7 +628,7 @@ func TestApp_GenerateOutputs_ComponentAndFlowDiagramModes(t *testing.T) {
 	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	componentOut, err := os.ReadFile(cfg.Output.Mermaid)
@@ -645,7 +646,7 @@ func TestApp_GenerateOutputs_ComponentAndFlowDiagramModes(t *testing.T) {
 			MaxDepth:    4,
 		},
 	}
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	flowOut, err := os.ReadFile(cfg.Output.Mermaid)
@@ -754,7 +755,7 @@ func TestApp_GenerateOutputs_MultipleDiagramModesCreateSuffixedFiles(t *testing.
 	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -785,6 +786,22 @@ func TestUniqueScanRoots_DeduplicatesRelativeAndAbsolute(t *testing.T) {
 	roots := helpers.UniqueScanRoots([]string{".", tmpDir, "./"})
 	if len(roots) != 1 {
 		t.Fatalf("expected 1 unique root, got %d (%v)", len(roots), roots)
+	}
+}
+
+func TestUniqueScanRoots_DeduplicatesSubdirectories(t *testing.T) {
+	tmpDir := t.TempDir()
+	subDir := filepath.Join(tmpDir, "internal")
+	if err := os.MkdirAll(subDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	roots := helpers.UniqueScanRoots([]string{tmpDir, subDir})
+	if len(roots) != 1 {
+		t.Fatalf("expected 1 unique root, got %d (%v)", len(roots), roots)
+	}
+	if roots[0] != tmpDir {
+		t.Fatalf("expected root %q, got %q", tmpDir, roots[0])
 	}
 }
 

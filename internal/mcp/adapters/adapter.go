@@ -305,11 +305,73 @@ func (a *Adapter) GenerateMarkdownReport(ctx context.Context, in contracts.Repor
 	if err != nil {
 		return contracts.ReportGenerateMarkdownOutput{}, err
 	}
+	var guide *contracts.ArchitectureRuleGuide
+	if result.RuleGuide.Summary.RuleCount > 0 || len(result.RuleGuide.Rules) > 0 || len(result.RuleGuide.Violations) > 0 {
+		guide = &contracts.ArchitectureRuleGuide{
+			Summary: contracts.ArchitectureRuleSummary{
+				RuleCount:        result.RuleGuide.Summary.RuleCount,
+				ModuleCount:      result.RuleGuide.Summary.ModuleCount,
+				ViolationCount:   result.RuleGuide.Summary.ViolationCount,
+				ImportViolations: result.RuleGuide.Summary.ImportViolations,
+				FileViolations:   result.RuleGuide.Summary.FileViolations,
+			},
+			Rules:      mapArchitectureRules(result.RuleGuide.Rules),
+			Violations: mapArchitectureRuleViolations(result.RuleGuide.Violations),
+		}
+	}
 	return contracts.ReportGenerateMarkdownOutput{
-		Markdown: result.Markdown,
-		Path:     result.Path,
-		Written:  result.Written,
+		Markdown:  result.Markdown,
+		Path:      result.Path,
+		Written:   result.Written,
+		RuleGuide: guide,
 	}, nil
+}
+
+func mapArchitectureRules(in []ports.ArchitectureRule) []contracts.ArchitectureRule {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]contracts.ArchitectureRule, 0, len(in))
+	for _, rule := range in {
+		out = append(out, contracts.ArchitectureRule{
+			Name:     rule.Name,
+			Kind:     string(rule.Kind),
+			Modules:  append([]string(nil), rule.Modules...),
+			MaxFiles: rule.MaxFiles,
+			Imports: contracts.ArchitectureImportRule{
+				Allow: append([]string(nil), rule.Imports.Allow...),
+				Deny:  append([]string(nil), rule.Imports.Deny...),
+			},
+			Exclude: contracts.ArchitectureRuleExclude{
+				Tests: rule.Exclude.Tests,
+				Files: append([]string(nil), rule.Exclude.Files...),
+			},
+		})
+	}
+	return out
+}
+
+func mapArchitectureRuleViolations(in []ports.ArchitectureRuleViolation) []contracts.ArchitectureRuleViolation {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]contracts.ArchitectureRuleViolation, 0, len(in))
+	for _, v := range in {
+		out = append(out, contracts.ArchitectureRuleViolation{
+			RuleName: v.RuleName,
+			RuleKind: string(v.RuleKind),
+			Module:   v.Module,
+			Target:   v.Target,
+			Type:     v.Type,
+			Message:  v.Message,
+			File:     v.File,
+			Line:     v.Line,
+			Column:   v.Column,
+			Limit:    v.Limit,
+			Actual:   v.Actual,
+		})
+	}
+	return out
 }
 
 func (a *Adapter) queryService() ports.QueryService {

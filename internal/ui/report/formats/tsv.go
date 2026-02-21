@@ -2,6 +2,7 @@
 package formats
 
 import (
+	"circular/internal/core/ports"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
@@ -68,6 +69,36 @@ func (t *TSVGenerator) GenerateArchitectureViolations(rows []graph.ArchitectureV
 			row.File,
 			row.Line,
 			row.Column,
+		))
+	}
+
+	return buf.String(), nil
+}
+
+func (t *TSVGenerator) GenerateArchitectureRuleViolations(rows []ports.ArchitectureRuleViolation) (string, error) {
+	var buf strings.Builder
+
+	buf.WriteString("Type\tRule\tModule\tViolation\tTarget\tDetail\tFile\tLine\tColumn\tLimit\tActual\n")
+	for _, row := range rows {
+		detail := row.Message
+		if row.Type == "file_count" {
+			detail = fmt.Sprintf("files %d > limit %d", row.Actual, row.Limit)
+		}
+		target := row.Target
+		if target == "" {
+			target = "-"
+		}
+		buf.WriteString(fmt.Sprintf("architecture_rule_violation\t%s\t%s\t%s\t%s\t%s\t%s\t%d\t%d\t%d\t%d\n",
+			row.RuleName,
+			row.Module,
+			row.Type,
+			target,
+			detail,
+			row.File,
+			row.Line,
+			row.Column,
+			row.Limit,
+			row.Actual,
 		))
 	}
 
