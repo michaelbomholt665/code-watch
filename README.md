@@ -7,6 +7,7 @@ It scans source files, builds a module import graph, then reports:
 - unresolved symbol references ("hallucinations")
 - unused imports
 - potential hardcoded secrets
+- cross-platform compatibility (Windows/Linux/macOS)
 - dependency depth/fan-in/fan-out metrics
 - architecture layer-rule violations
 - change impact (direct + transitive importers)

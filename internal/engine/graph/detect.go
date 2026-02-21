@@ -11,42 +11,90 @@ func (g *Graph) DetectCycles() [][]string {
 	visited := make(map[string]bool)
 	onStack := make(map[string]bool)
 
-	for modName := range g.modules {
-		if !visited[modName] {
-			g.findCycles(modName, visited, onStack, []string{}, &cycles)
+	// To keep detection deterministic, sort modules
+	moduleNames := make([]string, 0, len(g.modules))
+	for name := range g.modules {
+		moduleNames = append(moduleNames, name)
+	}
+	sort.Strings(moduleNames)
+
+	for _, startMod := range moduleNames {
+		if visited[startMod] {
+			continue
+		}
+
+		type frame struct {
+			mod       string
+			neighbors []string
+			nextIdx   int
+		}
+
+		stack := []*frame{
+			{
+				mod:       startMod,
+				neighbors: g.getSortedNeighbors(startMod),
+				nextIdx:   0,
+			},
+		}
+		visited[startMod] = true
+		onStack[startMod] = true
+		path := []string{startMod}
+
+		for len(stack) > 0 {
+			top := stack[len(stack)-1]
+
+			if top.nextIdx < len(top.neighbors) {
+				next := top.neighbors[top.nextIdx]
+				top.nextIdx++
+
+				if onStack[next] {
+					// Found a cycle
+					cycleStart := -1
+					for i, m := range path {
+						if m == next {
+							cycleStart = i
+							break
+						}
+					}
+					if cycleStart != -1 {
+						cycle := make([]string, len(path)-cycleStart)
+						copy(cycle, path[cycleStart:])
+						cycles = append(cycles, cycle)
+					}
+				} else if !visited[next] {
+					visited[next] = true
+					onStack[next] = true
+					path = append(path, next)
+					stack = append(stack, &frame{
+						mod:       next,
+						neighbors: g.getSortedNeighbors(next),
+						nextIdx:   0,
+					})
+				}
+			} else {
+				// Finished with this node
+				onStack[top.mod] = false
+				path = path[:len(path)-1]
+				stack = stack[:len(stack)-1]
+			}
 		}
 	}
 
 	return cycles
 }
 
-func (g *Graph) findCycles(curr string, visited, onStack map[string]bool, path []string, cycles *[][]string) {
-	visited[curr] = true
-	onStack[curr] = true
-	path = append(path, curr)
-
-	for next := range g.imports[curr] {
-		if onStack[next] {
-			// Found a cycle
-			cycleStart := -1
-			for i, mod := range path {
-				if mod == next {
-					cycleStart = i
-					break
-				}
-			}
-			if cycleStart != -1 {
-				cycle := make([]string, len(path)-cycleStart)
-				copy(cycle, path[cycleStart:])
-				*cycles = append(*cycles, cycle)
-			}
-		} else if !visited[next] {
-			g.findCycles(next, visited, onStack, path, cycles)
+func (g *Graph) getSortedNeighbors(mod string) []string {
+	neighbors := make([]string, 0, len(g.imports[mod]))
+	for next := range g.imports[mod] {
+		// Only consider neighbors that are in the internal module set
+		if _, ok := g.modules[next]; ok {
+			neighbors = append(neighbors, next)
 		}
 	}
-
-	onStack[curr] = false
+	sort.Strings(neighbors)
+	return neighbors
 }
+
 
 func (g *Graph) FindImportChain(from, to string) ([]string, bool) {
 	g.mu.RLock()

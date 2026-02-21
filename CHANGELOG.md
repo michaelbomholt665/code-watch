@@ -203,6 +203,8 @@ All notable changes to this project will be documented in this file.
 - `secrets:` Entropy checks are now limited to a high-risk extension set (`.env`, `.json`, `.key`, `.pem`, `.p12`, `.pfx`, `.crt`, `.cer`, `.yaml`, `.yml`, `.toml`, `.ini`, `.conf`, `.properties`).
 
 ### Fixed
+- `parser:` Fixed compilation on Windows by wrapping dynamic loading logic in build tags (dynamic loading is currently not supported on Windows).
+- `graph:` Refactored cycle detection to use an iterative DFS approach with an explicit stack, preventing stack overflow on large/messy graphs.
 - Improved Go unused import detection accuracy:
   - Fixed false positives for side-effect imports (`_ "pkg"`) and dot imports (`. "pkg"`) by correctly capturing `blank_identifier` and `dot` node kinds in the Go extractor.
   - Enhanced reference extraction to recursively walk all type-bearing nodes (struct fields, interface methods, function signatures, variable types) in the Go extractor.

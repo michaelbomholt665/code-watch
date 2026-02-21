@@ -51,6 +51,7 @@
 ## Cross-Platform Status
 
 - path-prefix comparisons and diagram output path detection are separator-agnostic (`/` and `\`)
+- dynamic grammar loading (`dlopen`) is currently not supported on Windows; the project compiles on Windows with build-tag stubs that return a "not supported" error at runtime
 - broader cross-platform work remains in progress (`docs/plans/cross-platform-compatibility-plan.md`), including grammar artifact parity and multi-OS watcher/CI verification
 
 ## Output Ordering
