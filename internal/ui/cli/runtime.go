@@ -22,6 +22,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func Run(args []string) int {
@@ -46,8 +48,15 @@ func Run(args []string) int {
 
 	cfg, cfgPath, err := loadConfig(opts.configPath, cwd)
 	if err != nil {
-		slog.Error("failed to load config", "error", err)
+		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#F87171")).Bold(true)
+		fmt.Fprintf(os.Stderr, "%s %v\n", errorStyle.Render("Error:"), err)
 		return 1
+	}
+
+	if opts.check {
+		successStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#10B981")).Bold(true)
+		fmt.Printf("%s Configuration is valid (%s)\n", successStyle.Render("OK"), cfgPath)
+		return 0
 	}
 
 	paths, err := config.ResolvePaths(cfg, cwd)
@@ -132,7 +141,11 @@ func Run(args []string) int {
 
 		if cfg.Observability.EnableMetrics {
 			addr := fmt.Sprintf(":%d", cfg.Observability.Port)
-			obsServer := NewObservabilityServer(addr, coreapp.NewHealthService(analysis.(*coreapp.App)))
+			var appInstance *coreapp.App
+			if unwrapper, ok := analysis.(interface{ Unwrap() *coreapp.App }); ok {
+				appInstance = unwrapper.Unwrap()
+			}
+			obsServer := NewObservabilityServer(addr, coreapp.NewHealthService(appInstance))
 			if err := obsServer.Start(context.Background()); err != nil {
 				slog.Warn("failed to start observability server", "error", err)
 			} else {
@@ -218,6 +231,19 @@ func Run(args []string) int {
 
 	if opts.once {
 		return 0
+	}
+
+	// Start configuration hot-reload watcher
+	configWatcher := config.NewWatcher(cfgPath, func(newCfg *config.Config) {
+		slog.Info("Hot-reloading configuration", "path", cfgPath)
+		if err := analysis.UpdateConfig(context.Background(), newCfg); err != nil {
+			slog.Error("failed to update analysis config", "error", err)
+		}
+	})
+	if err := configWatcher.Start(context.Background()); err != nil {
+		slog.Warn("failed to start config watcher", "error", err)
+	} else {
+		defer configWatcher.Stop()
 	}
 
 	watch := analysis.WatchService()
@@ -689,6 +715,19 @@ func runMCPModeIfEnabledWithFactory(opts cliOptions, cfg *config.Config, configP
 	})
 	if err != nil {
 		return fmt.Errorf("build MCP runtime: %w", err)
+	}
+
+	// Start configuration hot-reload watcher
+	configWatcher := config.NewWatcher(configPath, func(newCfg *config.Config) {
+		slog.Info("Hot-reloading configuration (MCP)", "path", configPath)
+		if err := analysis.UpdateConfig(context.Background(), newCfg); err != nil {
+			slog.Error("failed to update analysis config", "error", err)
+		}
+	})
+	if err := configWatcher.Start(context.Background()); err != nil {
+		slog.Warn("failed to start config watcher", "error", err)
+	} else {
+		defer configWatcher.Stop()
 	}
 
 	project := server.ProjectContext()

@@ -1,13 +1,13 @@
 package graph
 
 import (
+	"circular/internal/engine/parser"
 	"fmt"
 	"testing"
-	"circular/internal/engine/parser"
 )
 
 func BenchmarkAddFile(b *testing.B) {
-	g := NewGraph(1000)
+	g := NewGraphWithCapacity(1000)
 	files := make([]*parser.File, 100)
 	for i := 0; i < 100; i++ {
 		files[i] = &parser.File{
@@ -30,7 +30,7 @@ func BenchmarkAddFile(b *testing.B) {
 }
 
 func BenchmarkDetectCycles(b *testing.B) {
-	g := NewGraph(1000)
+	g := NewGraphWithCapacity(1000)
 	// Create a large graph with a cycle
 	for i := 0; i < 500; i++ {
 		g.AddFile(&parser.File{
@@ -44,6 +44,6 @@ func BenchmarkDetectCycles(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = g.DetectCycles(100)
+		_ = g.DetectCycles()
 	}
 }

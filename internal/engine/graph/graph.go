@@ -79,6 +79,12 @@ func (g *Graph) SetLoader(loader FileLoader) {
 	g.loader = loader
 }
 
+func (g *Graph) UpdateCapacity(capacity int) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.fileCache.SetCapacity(capacity)
+}
+
 func (g *Graph) AddFile(file *parser.File) {
 	g.mu.Lock()
 	defer g.mu.Unlock()

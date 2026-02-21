@@ -3,11 +3,11 @@ package cli
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 
 	"circular/internal/core/app"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 

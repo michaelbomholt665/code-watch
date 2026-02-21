@@ -28,6 +28,7 @@ type cliOptions struct {
 	includeTests   bool
 	verifyGrammars bool
 	reportMarkdown bool
+	check          bool
 	sarif          string
 	scanHistory    int
 	verbose        bool
@@ -58,6 +59,7 @@ func parseOptions(args []string) (cliOptions, error) {
 	fs.BoolVar(&opts.includeTests, "include-tests", false, "Include test files in analysis (Go: _test.go, Python: test_*.py)")
 	fs.BoolVar(&opts.verifyGrammars, "verify-grammars", false, "Verify grammar artifacts against grammars/manifest.toml and exit")
 	fs.BoolVar(&opts.reportMarkdown, "report-md", false, "Generate markdown analysis report output (uses output.markdown or analysis-report.md)")
+	fs.BoolVar(&opts.check, "check", false, "Validate configuration and exit")
 	fs.BoolVar(&opts.verbose, "verbose", false, "Enable verbose logging")
 	fs.BoolVar(&opts.version, "version", false, "Print version and exit")
 	fs.StringVar(&opts.sarif, "sarif", "", "Write SARIF v2.1.0 report to this path (for GitHub Code Scanning)")

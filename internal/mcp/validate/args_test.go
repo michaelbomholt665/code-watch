@@ -3,6 +3,7 @@ package validate
 import (
 	"circular/internal/mcp/contracts"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -14,7 +15,7 @@ func TestParseToolArgs_ScanRun(t *testing.T) {
 		},
 	}
 
-	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -39,7 +40,7 @@ func TestParseToolArgs_SecretsScan(t *testing.T) {
 		},
 	}
 
-	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -64,7 +65,7 @@ func TestParseToolArgs_SecretsList_InvalidLimit(t *testing.T) {
 		},
 	}
 
-	_, _, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	_, _, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -72,7 +73,7 @@ func TestParseToolArgs_SecretsList_InvalidLimit(t *testing.T) {
 
 func TestParseToolArgs_InvalidOperation(t *testing.T) {
 	raw := map[string]any{"operation": "nope"}
-	_, _, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	_, _, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -83,7 +84,7 @@ func TestValidateToolArgs_ModuleDetails(t *testing.T) {
 		"operation": string(contracts.OperationQueryDetails),
 		"params":    map[string]any{"module": "mod"},
 	}
-	input, err := ValidateToolArgs(contracts.ToolNameCircular, raw)
+	input, err := ValidateToolArgs(contracts.ToolNameCircular, raw, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -101,7 +102,7 @@ func TestParseToolArgs_GraphSyncDiagrams(t *testing.T) {
 		},
 	}
 
-	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -122,7 +123,7 @@ func TestParseToolArgs_LegacySystemSyncOutputsAlias(t *testing.T) {
 	raw := map[string]any{
 		"operation": string(contracts.OperationSystemSyncOut),
 	}
-	op, _, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	op, _, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -136,7 +137,7 @@ func TestParseToolArgs_SystemGenerateScript(t *testing.T) {
 		"operation": string(contracts.OperationSystemGenScript),
 	}
 
-	op, _, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	op, _, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -155,7 +156,7 @@ func TestParseToolArgs_ReportGenerateMarkdown(t *testing.T) {
 		},
 	}
 
-	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw)
+	op, input, err := ParseToolArgs(contracts.ToolNameCircular, raw, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -168,5 +169,22 @@ func TestParseToolArgs_ReportGenerateMarkdown(t *testing.T) {
 	}
 	if !got.WriteFile || got.Path != "docs/reports/analysis.md" || got.Verbosity != "detailed" {
 		t.Fatalf("unexpected parsed input: %+v", got)
+	}
+}
+
+func TestParseToolArgs_PathTraversal(t *testing.T) {
+	raw := map[string]any{
+		"operation": "scan.run",
+		"params": map[string]any{
+			"paths": []any{"../../etc/passwd"},
+		},
+	}
+
+	_, _, err := ParseToolArgs(contracts.ToolNameCircular, raw, "/home/user/project")
+	if err == nil {
+		t.Fatal("expected error for path traversal")
+	}
+	if !strings.Contains(err.Error(), "escapes project root") {
+		t.Fatalf("expected path traversal error message, got: %v", err)
 	}
 }

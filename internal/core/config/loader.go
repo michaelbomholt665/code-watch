@@ -2,6 +2,7 @@ package config
 
 import (
 	"circular/internal/shared/version"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -20,39 +21,25 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 
+	// Apply migration from old versions
+	migrate(&cfg)
+
+	// Apply defaults first to ensure we have a base
 	applyDefaults(&cfg)
+
+	// Normalize projects and MCP
 	normalizeProjects(&cfg)
 	normalizeMCP(&cfg)
 
-	if err := validateVersion(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateProjects(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateDatabase(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateMCP(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateArchitecture(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateOutput(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateLanguages(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateDynamicGrammars(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateSecrets(&cfg); err != nil {
-		return nil, err
-	}
-	if err := validateResolver(&cfg); err != nil {
-		return nil, err
+	// Apply environment variable overrides after defaults but before validation
+	ApplyEnvOverrides(&cfg)
+
+	if errs := Validate(&cfg); len(errs) > 0 {
+		var messages []string
+		for _, e := range errs {
+			messages = append(messages, e.Error())
+		}
+		return nil, fmt.Errorf("configuration validation failed:\n  - %s", strings.Join(messages, "\n  - "))
 	}
 
 	return &cfg, nil
@@ -64,9 +51,27 @@ func DefaultConfig() *Config {
 	return cfg
 }
 
-func applyDefaults(cfg *Config) {
+func migrate(cfg *Config) {
 	if cfg.Version == 0 {
 		cfg.Version = 1
+	}
+
+	// In a real implementation, we could use toml.MetaData to find unknown keys
+	// and suggest their replacements here.
+
+	if cfg.Version == 1 {
+		// Version 1 -> 2 migration logic
+		// Example: In v1, caches might have been implicit or different.
+		// If needed, move fields here.
+
+		// For now, we just bump the version and let applyDefaults handle missing fields.
+		cfg.Version = 2
+	}
+}
+
+func applyDefaults(cfg *Config) {
+	if cfg.Version == 0 {
+		cfg.Version = 2
 	}
 
 	if strings.TrimSpace(cfg.Paths.ConfigDir) == "" {
@@ -139,6 +144,28 @@ func applyDefaults(cfg *Config) {
 		enabled := true
 		cfg.MCP.AutoSyncConfig = &enabled
 	}
+
+	// MCP Rate Limiting defaults
+	if cfg.MCP.RateLimit.RequestsPerMinute == 0 {
+		cfg.MCP.RateLimit.RequestsPerMinute = 60
+	}
+	if cfg.MCP.RateLimit.Burst == 0 {
+		cfg.MCP.RateLimit.Burst = 10
+	}
+	if cfg.MCP.RateLimit.SSERequestsPerMinute == 0 {
+		cfg.MCP.RateLimit.SSERequestsPerMinute = 30
+	}
+	if cfg.MCP.RateLimit.SSEConnectionsPerMinute == 0 {
+		cfg.MCP.RateLimit.SSEConnectionsPerMinute = 5
+	}
+	if cfg.MCP.RateLimit.Weights == nil {
+		cfg.MCP.RateLimit.Weights = map[string]int{
+			"scan.run":     5,
+			"secrets.scan": 3,
+			"graph.cycles": 1,
+		}
+	}
+
 	// Default debounce if not set.
 	if cfg.Watch.Debounce == 0 {
 		cfg.Watch.Debounce = 500 * time.Millisecond

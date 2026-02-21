@@ -3,6 +3,7 @@ package config
 import (
 	"circular/internal/core/config/helpers"
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -412,4 +413,78 @@ func validateDynamicGrammars(cfg *Config) error {
 		}
 	}
 	return nil
+}
+
+func Validate(cfg *Config) []error {
+	var errs []error
+
+	if err := validateVersion(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateProjects(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateDatabase(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateMCP(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateArchitecture(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateOutput(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateLanguages(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateDynamicGrammars(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateSecrets(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateResolver(cfg); err != nil {
+		errs = append(errs, err)
+	}
+
+	// Semantic / Cross-field validation
+	errs = append(errs, validateConfigDependencies(cfg)...)
+
+	// Path verification
+	errs = append(errs, validatePaths(cfg)...)
+
+	return errs
+}
+
+func validateConfigDependencies(cfg *Config) []error {
+	var errs []error
+
+	// MCP Dependencies
+	if cfg.MCP.Enabled && cfg.MCP.Transport == "http" {
+		if cfg.MCP.Address == "" {
+			errs = append(errs, fmt.Errorf("mcp.address is required when mcp.transport is 'http'"))
+		}
+	}
+
+	// Secrets Dependencies
+	if cfg.Secrets.Enabled && len(cfg.Secrets.Patterns) == 0 && cfg.Secrets.EntropyThreshold == 0 {
+		errs = append(errs, fmt.Errorf("secrets scanning enabled but no patterns or entropy threshold defined"))
+	}
+
+	return errs
+}
+
+func validatePaths(cfg *Config) []error {
+	var errs []error
+
+	// Verify crucial paths if set
+	if cfg.GrammarsPath != "" {
+		if _, err := os.Stat(cfg.GrammarsPath); os.IsNotExist(err) {
+			errs = append(errs, fmt.Errorf("grammars_path %q does not exist", cfg.GrammarsPath))
+		}
+	}
+
+	return errs
 }

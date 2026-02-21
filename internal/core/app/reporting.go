@@ -39,7 +39,7 @@ func (a *App) TraceImportChain(from, to string) (string, error) {
 	return strings.TrimRight(b.String(), "\n"), nil
 }
 
-func (a *App) AnalyzeImpact(path string) (graph.ImpactReport, error) {
+func (a *App) AnalyzeImpact(ctx context.Context, path string) (graph.ImpactReport, error) {
 	return a.Graph.AnalyzeImpact(path)
 }
 

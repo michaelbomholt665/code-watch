@@ -58,6 +58,18 @@ allow_mutations = false
 auto_manage_outputs = true
 auto_sync_config = true
 
+[mcp.rate_limit]
+enabled = false
+requests_per_minute = 60
+burst = 10
+sse_requests_per_minute = 30
+sse_connections_per_minute = 5
+
+[mcp.rate_limit.weights]
+"scan.run" = 5
+"secrets.scan" = 3
+"graph.cycles" = 1
+
 [languages]
 # Optional per-language overrides.
 # Defaults: go=true, python=true, others=false.
@@ -155,6 +167,37 @@ enabled = false
 top_complexity = 5
 ```
 
+## Dynamic Configuration
+
+Circular supports environment variable overrides and automatic hot-reloading of configuration files.
+
+### Environment Variable Overrides
+
+Any configuration setting can be overridden using environment variables following the pattern `CIRCULAR_[SECTION]_[KEY]`. Section and key names are uppercase.
+
+Examples:
+- `CIRCULAR_OBSERVABILITY_PORT=9090`
+- `CIRCULAR_WATCH_DEBOUNCE=2s`
+- `CIRCULAR_DB_ENABLED=true`
+- `CIRCULAR_MCP_TRANSPORT=http`
+- `CIRCULAR_MCP_ADDRESS=0.0.0.0:8080`
+- `CIRCULAR_CACHES_FILES=2000`
+
+Environment variables always take precedence over TOML values. When an override is applied, a log message is emitted.
+
+### Configuration Hot-Reload
+
+When running in a long-lived mode (default watch mode, `--ui`, or MCP mode), Circular monitors the active configuration file for changes. When the file is saved, the configuration is reloaded automatically without restarting the application.
+
+Hot-reloadable settings include:
+- **Caches**: LRU capacities are updated on the fly (eviction happens on the next access if capacity decreased).
+- **Watcher**: The debounce interval is updated for future events.
+- **Exclusion Rules**: Updated directory/file filters are applied to the next scan or file change.
+- **Observability**: Metrics and health server settings.
+- **Secrets**: Regex patterns and thresholds are re-compiled and applied to future detections.
+
+Settings that require deep re-initialization (like `db.path` or `paths.*`) currently require a restart to apply changes.
+
 ## Field Semantics
 
 - `version` (`int`)
@@ -221,6 +264,18 @@ top_complexity = 5
 - when `true`, MCP startup ensures project-local bootstrap artifacts exist:
 - `circular.toml` generated from `data/config/circular.example.toml` if missing
 - `circular-mcp` helper script generated if missing
+- `mcp.rate_limit.enabled` (`bool`)
+- enables rate limiting for MCP operations
+- `mcp.rate_limit.requests_per_minute` (`int`)
+- global requests per minute limit (default `60`)
+- `mcp.rate_limit.burst` (`int`)
+- allowed burst size for rate limiting (default `10`)
+- `mcp.rate_limit.sse_requests_per_minute` (`int`)
+- per-IP requests per minute for SSE transport (default `30`)
+- `mcp.rate_limit.sse_connections_per_minute` (`int`)
+- per-IP connections per minute for SSE transport (default `5`)
+- `mcp.rate_limit.weights` (`map[string]int`)
+- operation-specific weights/costs (default: `scan.run=5`, `secrets.scan=3`, `graph.cycles=1`)
 - `grammars_path` (`string`)
 - normalized to absolute path at runtime relative to resolved project root
 - `grammar_verification.enabled` (`bool`, default `true`)
@@ -357,6 +412,8 @@ Config load fails when:
 - resolver bridge scoring thresholds are invalid (`probable_threshold > confirmed_threshold` or non-positive values)
 - MCP OpenAPI spec path and URL are both set
 - MCP response/timeout limits exceed bounds
+- MCP rate limit parameters are invalid
+- grammars_path does not exist
 - output markdown targets are malformed
 - `output.report.verbosity` is not `summary|standard|detailed`
 - `output.diagrams.flow_config.max_depth < 1`

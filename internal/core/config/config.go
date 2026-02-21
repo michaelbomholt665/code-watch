@@ -102,6 +102,16 @@ type MCP struct {
 	AllowMutations     bool          `toml:"allow_mutations"`
 	AutoManageOutputs  *bool         `toml:"auto_manage_outputs"`
 	AutoSyncConfig     *bool         `toml:"auto_sync_config"`
+	RateLimit          MCPRateLimit  `toml:"rate_limit"`
+}
+
+type MCPRateLimit struct {
+	Enabled                 bool           `toml:"enabled"`
+	RequestsPerMinute       int            `toml:"requests_per_minute"`
+	Burst                   int            `toml:"burst"`
+	SSERequestsPerMinute    int            `toml:"sse_requests_per_minute"`
+	SSEConnectionsPerMinute int            `toml:"sse_connections_per_minute"`
+	Weights                 map[string]int `toml:"weights"`
 }
 
 type GrammarVerification struct {

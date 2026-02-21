@@ -2,8 +2,10 @@ package validate
 
 import (
 	"circular/internal/mcp/contracts"
+	"circular/internal/shared/util"
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 )
 
@@ -21,12 +23,12 @@ var allowedReportVerbosity = map[string]bool{
 	"detailed": true,
 }
 
-func ValidateToolArgs(tool string, raw map[string]any) (any, error) {
-	_, input, err := ParseToolArgs(tool, raw)
+func ValidateToolArgs(tool string, raw map[string]any, projectRoot string) (any, error) {
+	_, input, err := ParseToolArgs(tool, raw, projectRoot)
 	return input, err
 }
 
-func ParseToolArgs(tool string, raw map[string]any) (contracts.OperationID, any, error) {
+func ParseToolArgs(tool string, raw map[string]any, projectRoot string) (contracts.OperationID, any, error) {
 	if strings.TrimSpace(tool) == "" {
 		return "", nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: "tool name is required"}
 	}
@@ -61,14 +63,22 @@ func ParseToolArgs(tool string, raw map[string]any) (contracts.OperationID, any,
 		if err := decodeParams(params, &input); err != nil {
 			return "", nil, err
 		}
-		input.Paths = normalizeStrings(input.Paths, maxPathCount)
+		var err error
+		input.Paths, err = sanitizePaths(input.Paths, projectRoot)
+		if err != nil {
+			return "", nil, err
+		}
 		return operation, input, nil
 	case contracts.OperationSecretsScan:
 		var input contracts.SecretsScanInput
 		if err := decodeParams(params, &input); err != nil {
 			return "", nil, err
 		}
-		input.Paths = normalizeStrings(input.Paths, maxPathCount)
+		var err error
+		input.Paths, err = sanitizePaths(input.Paths, projectRoot)
+		if err != nil {
+			return "", nil, err
+		}
 		return operation, input, nil
 	case contracts.OperationSecretsList:
 		var input contracts.SecretsListInput
@@ -203,6 +213,45 @@ func ParseToolArgs(tool string, raw map[string]any) (contracts.OperationID, any,
 	default:
 		return "", nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: fmt.Sprintf("unsupported operation: %s", operation)}
 	}
+}
+
+func GetOperationWeight(operation contracts.OperationID, weights map[string]int) int {
+	if weights == nil {
+		return 1
+	}
+	if w, ok := weights[string(operation)]; ok {
+		return w
+	}
+	return 1
+}
+
+func sanitizePaths(paths []string, root string) ([]string, error) {
+	if root == "" {
+		return normalizeStrings(paths, maxPathCount), nil
+	}
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return nil, contracts.ToolError{Code: contracts.ErrorInternal, Message: "failed to resolve project root"}
+	}
+
+	normalized := normalizeStrings(paths, maxPathCount)
+	sanitized := make([]string, 0, len(normalized))
+	for _, p := range normalized {
+		absPath := p
+		if !filepath.IsAbs(p) {
+			absPath = filepath.Join(absRoot, p)
+		}
+		cleanPath := filepath.Clean(absPath)
+
+		if !util.HasPathPrefix(cleanPath, absRoot) {
+			return nil, contracts.ToolError{
+				Code:    contracts.ErrorInvalidArgument,
+				Message: fmt.Sprintf("path %q escapes project root %q", p, root),
+			}
+		}
+		sanitized = append(sanitized, cleanPath)
+	}
+	return sanitized, nil
 }
 
 func decodeParams(params map[string]any, out any) error {

@@ -5,10 +5,12 @@ import (
 	"circular/internal/core/config"
 	"circular/internal/core/errors"
 	"circular/internal/core/ports"
+	"circular/internal/core/watcher"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
 	secretengine "circular/internal/engine/secrets"
+	"context"
 	"sync"
 
 	"github.com/gobwas/glob"
@@ -36,6 +38,7 @@ type MarkdownReportResult struct {
 
 type App struct {
 	Config        *config.Config
+	configMu      sync.RWMutex
 	codeParser    ports.CodeParser
 	Graph         *graph.Graph
 	secretScanner ports.SecretScanner
@@ -58,12 +61,57 @@ type App struct {
 	unusedByFile map[string][]resolver.UnusedImport
 	unusedMu     sync.RWMutex
 
-	fileContents  *graph.LRUCache[string, []byte]
+	fileContents *graph.LRUCache[string, []byte]
+
+	activeWatcher *watcher.Watcher
 }
 
 type Dependencies struct {
 	CodeParser    ports.CodeParser
 	SecretScanner ports.SecretScanner
+}
+
+func (a *App) GetConfig() *config.Config {
+	a.configMu.RLock()
+	defer a.configMu.RUnlock()
+	return a.Config
+}
+
+func (a *App) UpdateConfig(ctx context.Context, cfg *config.Config) error {
+	a.configMu.Lock()
+	defer a.configMu.Unlock()
+
+	// Update components that support hot-reload via Reloadable interface
+	if r, ok := a.secretScanner.(ports.Reloadable); ok {
+		_ = r.Reload(cfg)
+	}
+
+	// Manual updates for components not implementing Reloadable or needing specific handling
+	if a.Graph != nil {
+		a.Graph.UpdateCapacity(cfg.Caches.Files)
+	}
+	if a.fileContents != nil {
+		a.fileContents.SetCapacity(cfg.Caches.FileContents)
+	}
+
+	if a.activeWatcher != nil {
+		a.activeWatcher.SetDebounce(cfg.Watch.Debounce)
+	}
+
+	// Update secret exclude patterns if they changed
+	if cfg.Secrets.Enabled {
+		secretExcludeDirs, err := helpers.CompileGlobs(cfg.Secrets.Exclude.Dirs, "secret exclude dir")
+		if err == nil {
+			a.secretExcludeDirs = secretExcludeDirs
+		}
+		secretExcludeFiles, err := helpers.CompileGlobs(cfg.Secrets.Exclude.Files, "secret exclude file")
+		if err == nil {
+			a.secretExcludeFiles = secretExcludeFiles
+		}
+	}
+
+	a.Config = cfg
+	return nil
 }
 
 func New(cfg *config.Config) (*App, error) {

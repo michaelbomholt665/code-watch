@@ -1,6 +1,7 @@
 package secrets
 
 import (
+	"circular/internal/core/config"
 	"circular/internal/core/ports"
 	"circular/internal/engine/parser"
 )
@@ -37,5 +38,23 @@ func (a *Adapter) DetectInRanges(filePath string, content []byte, ranges []ports
 	return a.detector.DetectInRanges(filePath, content, lineRanges)
 }
 
+func (a *Adapter) Reload(cfg *config.Config) error {
+	secretPatterns := make([]PatternConfig, 0, len(cfg.Secrets.Patterns))
+	for _, p := range cfg.Secrets.Patterns {
+		secretPatterns = append(secretPatterns, PatternConfig{
+			Name:     p.Name,
+			Regex:    p.Regex,
+			Severity: p.Severity,
+		})
+	}
+
+	return a.detector.Reload(Config{
+		EntropyThreshold: cfg.Secrets.EntropyThreshold,
+		MinTokenLength:   cfg.Secrets.MinTokenLength,
+		Patterns:         secretPatterns,
+	})
+}
+
 var _ ports.SecretScanner = (*Adapter)(nil)
 var _ ports.IncrementalSecretScanner = (*Adapter)(nil)
+var _ ports.Reloadable = (*Adapter)(nil)

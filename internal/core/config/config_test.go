@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+func TestMain(m *testing.M) {
+	// Create dummy grammars dir to pass validation for all tests
+	if err := os.MkdirAll("./grammars", 0o755); err != nil {
+		panic(err)
+	}
+	code := m.Run()
+	os.RemoveAll("./grammars")
+	os.Exit(code)
+}
+
 func TestLoad(t *testing.T) {
 	content := `
 grammars_path = "./grammars"
@@ -659,8 +669,8 @@ watch_paths = ["./src"]
 	if err != nil {
 		t.Fatalf("load v1 config: %v", err)
 	}
-	if cfg.Version != 1 {
-		t.Fatalf("expected default version=1, got %d", cfg.Version)
+	if cfg.Version != 2 {
+		t.Fatalf("expected migrated version=2, got %d", cfg.Version)
 	}
 	if cfg.Paths.ConfigDir != "data/config" {
 		t.Fatalf("expected default config dir data/config, got %q", cfg.Paths.ConfigDir)

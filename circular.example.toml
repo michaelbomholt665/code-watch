@@ -2,7 +2,25 @@
 # Deprecated location: prefer data/config/circular.example.toml and
 # use --config ./data/config/circular.toml (or keep default discovery).
 
+# Configuration Versioning & Environment Overrides
+# -----------------------------------------------
+# Circular supports versioned configuration schemas (currently version 2).
+# All settings can be overridden using environment variables following the 
+# pattern: CIRCULAR_[SECTION]_[KEY].
+# Examples:
+#   CIRCULAR_OBSERVABILITY_PORT=9090
+#   CIRCULAR_WATCH_DEBOUNCE=2s
+#   CIRCULAR_DB_ENABLED=true
+#   CIRCULAR_MCP_TRANSPORT=http
+#   CIRCULAR_MCP_ADDRESS=0.0.0.0:8080
+
 version = 2
+
+grammars_path = "./grammars"
+watch_paths = ["./src"]
+
+[grammar_verification]
+enabled = true
 
 [paths]
 project_root = ""
@@ -38,8 +56,6 @@ mode = "embedded"
 transport = "stdio"
 address = "127.0.0.1:8765"
 config_path = "circular.toml"
-# openapi_spec_path = "openapi.yaml"
-# openapi_spec_url = "https://example.com/openapi.yaml"
 server_name = "circular"
 server_version = "1.0.0"
 exposed_tool_name = ""
@@ -50,39 +66,116 @@ allow_mutations = false
 auto_manage_outputs = true
 auto_sync_config = true
 
-grammars_path = "./grammars"
-[grammar_verification]
-enabled = true
-
 [languages]
 # Optional per-language rollout overrides.
-# Go and Python are enabled by default.
+# Defaults: go=true, python=true, all others=false.
+
+# [languages.css]
+# enabled = false
+# extensions = [".css"]
+
+# [languages.go]
+# enabled = true
+# extensions = [".go"]
+
+# [languages.gomod]
+# enabled = false
+# filenames = ["go.mod"]
+
+# [languages.gosum]
+# enabled = false
+# filenames = ["go.sum"]
+
+# [languages.html]
+# enabled = false
+# extensions = [".html", ".htm"]
 
 # [languages.javascript]
-# enabled = true
+# enabled = false
 # extensions = [".js", ".cjs", ".mjs"]
 
-watch_paths = ["./src"]
+# [languages.java]
+# enabled = false
+# extensions = [".java"]
+
+# [languages.python]
+# enabled = true
+# extensions = [".py"]
+
+# [languages.rust]
+# enabled = false
+# extensions = [".rs"]
+
+# [languages.tsx]
+# enabled = false
+# extensions = [".tsx"]
+
+# [languages.typescript]
+# enabled = false
+# extensions = [".ts"]
 
 [exclude]
 dirs = [".git", "node_modules", "vendor", "__pycache__"]
 files = ["*.tmp", "*.log"]
-symbols = ["self", "ctx", "p", "log", "toml", "sitter", "tea", "fsnotify"]
+# Add entries here to suppress known-safe, project-specific unresolved references.
+# This is intended for per-project configs (for example MCP server deployments).
+# Prefer module/package names and stable aliases; keep list minimal.
+symbols = [
+  "self",
+  "ctx",
+  "p",
+  "log",
+  "toml",
+  "sitter",
+  "tea",
+  "fsnotify",
+  "query",
+  "history",
+  "statusStyle",
+  "cycleStyle",
+  "tree_sitter",
+  "tree_sitter_css",
+  "tree_sitter_go",
+  "tree_sitter_html",
+  "tree_sitter_java",
+  "tree_sitter_javascript",
+  "tree_sitter_python",
+  "tree_sitter_rust",
+  "tree_sitter_typescript",
+]
+# Add entries here to suppress noisy unused-import detections for known-safe imports.
+# Use fully-qualified module paths or common stdlib packages. Keep list minimal.
+imports = [
+  "fmt",
+  "sort",
+  "strings",
+  "os",
+  "os/exec",
+  "time",
+  "sync",
+  "context",
+  "path",
+  "path/filepath",
+  "unicode",
+  "errors",
+  "io",
+  "io/fs",
+  "embed",
+  "encoding/json",
+  "circular/internal/engine/resolver",
+  "circular/internal/shared/util",
+  "circular/internal/data/query",
+  "circular/internal/ui/report",
+  "circular/internal/ui/report/formats",
+  "github.com/charmbracelet/bubbles/list",
+  "github.com/charmbracelet/bubbletea",
+  "github.com/charmbracelet/lipgloss",
+  "github.com/tree-sitter/go-tree-sitter",
+  "github.com/gobwas/glob",
+]
 
 [watch]
 debounce = "1s"
-
-[caches]
-files = 1000
-file_contents = 1000
-
-[observability]
-enabled = false
-port = 9090
-enable_metrics = true
-enable_tracing = false
-otlp_endpoint = "localhost:4317"
-service_name = "circular"
 
 [secrets]
 enabled = false
@@ -97,6 +190,38 @@ severity = "medium"
 [secrets.exclude]
 dirs = []
 files = []
+
+[resolver.bridge_scoring]
+confirmed_threshold = 8
+probable_threshold = 5
+weight_explicit_rule_match = 10
+weight_bridge_context = 4
+weight_bridge_import_evidence = 3
+weight_unique_cross_language_match = 2
+weight_ambiguous_cross_language_match = -2
+weight_local_or_module_conflict = -4
+weight_stdlib_conflict = -3
+
+[caches]
+# LRU cache capacity for parsed files. 
+# Increasing this improves analysis speed but uses more memory.
+files = 1000
+# LRU cache capacity for raw file contents.
+file_contents = 1000
+
+[observability]
+# Set to true to enable the observability HTTP server (metrics and health).
+enabled = false
+# HTTP port for the metrics and health endpoints.
+port = 9090
+# Enable Prometheus metrics export.
+enable_metrics = true
+# Enable OpenTelemetry tracing.
+enable_tracing = false
+# OTLP collector endpoint (gRPC).
+otlp_endpoint = "localhost:4317"
+# Service name for traces and metrics.
+service_name = "circular"
 
 [output]
 dot = "graph.dot"
@@ -160,7 +285,7 @@ paths = ["internal/api", "cmd"]
 
 [[architecture.layers]]
 name = "core"
-paths = ["internal/core", "internal/graph", "internal/parser", "internal/resolver"]
+paths = ["internal/core", "internal/engine/graph", "internal/engine/parser", "internal/engine/resolver"]
 
 [[architecture.rules]]
 name = "api-to-core-only"

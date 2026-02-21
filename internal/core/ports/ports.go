@@ -1,6 +1,7 @@
 package ports
 
 import (
+	"circular/internal/core/config"
 	"circular/internal/data/history"
 	"circular/internal/data/query"
 	"circular/internal/engine/graph"
@@ -123,6 +124,11 @@ type WatchService interface {
 	Subscribe(ctx context.Context, handler func(WatchUpdate)) error
 }
 
+// Reloadable is an interface for components that can be updated with a new configuration.
+type Reloadable interface {
+	Reload(cfg *config.Config) error
+}
+
 // AnalysisService defines the first driving-port surface over scan/query use cases.
 type AnalysisService interface {
 	RunScan(ctx context.Context, req ScanRequest) (ScanResult, error)
@@ -137,6 +143,7 @@ type AnalysisService interface {
 	PrintSummary(ctx context.Context, req SummaryPrintRequest) error
 	SyncOutputs(ctx context.Context, req SyncOutputsRequest) (SyncOutputsResult, error)
 	GenerateMarkdownReport(ctx context.Context, req MarkdownReportRequest) (MarkdownReportResult, error)
+	UpdateConfig(ctx context.Context, cfg *config.Config) error
 }
 
 // HistoryTrendRequest captures inputs needed to save a snapshot and compute trends.

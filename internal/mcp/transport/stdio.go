@@ -2,8 +2,10 @@ package transport
 
 import (
 	"bufio"
+	"circular/internal/core/config"
 	"circular/internal/mcp/contracts"
 	"circular/internal/mcp/schema"
+	"circular/internal/shared/util"
 	"context"
 	"encoding/json"
 	"errors"
@@ -21,12 +23,20 @@ type Adapter interface {
 }
 
 type Stdio struct {
+	cfg     config.MCPRateLimit
+	limiter *util.Limiter
+
 	mu      sync.Mutex
 	running bool
 }
 
-func NewStdio() (Adapter, error) {
-	return &Stdio{}, nil
+func NewStdio(cfg config.MCPRateLimit) (Adapter, error) {
+	s := &Stdio{cfg: cfg}
+	if cfg.Enabled {
+		rate := float64(cfg.RequestsPerMinute) / 60.0
+		s.limiter = util.NewLimiter(rate, cfg.Burst)
+	}
+	return s, nil
 }
 
 func (s *Stdio) Start(ctx context.Context, handler Handler) error {
@@ -115,6 +125,32 @@ func (s *Stdio) serve(ctx context.Context, handler Handler) error {
 			}
 			return err
 		}
+
+		if s.cfg.Enabled && s.limiter != nil {
+			if !s.limiter.Allow(1) {
+				// For stdio, we can't easily return 429, but we can return an error response
+				// However, if we don't know the ID yet, it's hard.
+				// For now, we'll just log and continue, or we can send a generic error if possible.
+				// Better to try to parse ID if possible.
+				reqID, _ := raw["id"]
+				resp := rpcResponse{
+					JSONRPC: "2.0",
+					ID:      reqID,
+					Error: &rpcError{
+						Code:    -32005, // Rate limit exceeded (JSON-RPC reserved range)
+						Message: "Rate limit exceeded",
+					},
+				}
+				if err := encoder.Encode(resp); err != nil {
+					return err
+				}
+				if err := writer.Flush(); err != nil {
+					return err
+				}
+				continue
+			}
+		}
+
 		handled, err := s.handleRPCMessage(ctx, handler, raw, encoder, writer)
 		if err != nil {
 			return err

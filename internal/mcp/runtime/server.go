@@ -15,6 +15,7 @@ import (
 	"circular/internal/mcp/transport"
 	"circular/internal/mcp/validate"
 	"circular/internal/shared/observability"
+	"circular/internal/shared/util"
 	"context"
 	"fmt"
 	"log/slog"
@@ -45,6 +46,8 @@ type Server struct {
 	history   historyStore
 	allowlist OperationAllowlist
 	toolName  string
+
+	opLimiter *util.Limiter
 
 	mu        sync.Mutex
 	running   bool
@@ -89,7 +92,7 @@ func New(cfg *config.Config, deps Dependencies, reg *registry.Registry, adapter 
 		toolName = contracts.ToolNameCircular
 	}
 
-	return &Server{
+	s := &Server{
 		cfg:       cfg,
 		deps:      deps,
 		project:   project,
@@ -100,7 +103,14 @@ func New(cfg *config.Config, deps Dependencies, reg *registry.Registry, adapter 
 		history:   history,
 		allowlist: allowlist,
 		toolName:  toolName,
-	}, nil
+	}
+
+	if cfg.MCP.RateLimit.Enabled {
+		rate := float64(cfg.MCP.RateLimit.RequestsPerMinute) / 60.0
+		s.opLimiter = util.NewLimiter(rate, cfg.MCP.RateLimit.Burst)
+	}
+
+	return s, nil
 }
 
 func (s *Server) ProjectContext() ProjectContext {
@@ -308,10 +318,25 @@ func (s *Server) handleToolCall(ctx context.Context, tool string, raw map[string
 }
 
 func (s *Server) dispatchOperation(ctx context.Context, raw map[string]any) (any, error) {
-	operation, input, err := validate.ParseToolArgs(contracts.ToolNameCircular, raw)
+	s.projectMu.RLock()
+	projectRoot := s.project.Root
+	s.projectMu.RUnlock()
+
+	operation, input, err := validate.ParseToolArgs(contracts.ToolNameCircular, raw, projectRoot)
 	if err != nil {
 		return nil, err
 	}
+
+	if s.cfg.MCP.RateLimit.Enabled && s.opLimiter != nil {
+		weight := validate.GetOperationWeight(operation, s.cfg.MCP.RateLimit.Weights)
+		if !s.opLimiter.Allow(weight) {
+			return nil, contracts.ToolError{
+				Code:    contracts.ErrorInternal, // Or a custom code
+				Message: fmt.Sprintf("operation rate limit exceeded (cost: %d)", weight),
+			}
+		}
+	}
+
 	if !s.allowlist.Allows(operation) {
 		return nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: fmt.Sprintf("operation not allowlisted: %s", operation)}
 	}

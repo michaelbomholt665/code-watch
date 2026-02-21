@@ -137,6 +137,22 @@ func (c *LRUCache[K, V]) Clear() {
 	c.items = make(map[K]*list.Element, c.capacity)
 }
 
+// SetCapacity updates the maximum capacity of the cache.
+// If the new capacity is smaller than the current size, LRU items are evicted.
+func (c *LRUCache[K, V]) SetCapacity(capacity int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if capacity <= 0 {
+		capacity = 1
+	}
+	c.capacity = capacity
+
+	for c.order.Len() > c.capacity {
+		c.evictLeastRecentLocked()
+	}
+}
+
 // evictLeastRecentLocked removes the back (least-recently-used) element.
 // Caller must hold c.mu.
 func (c *LRUCache[K, V]) evictLeastRecentLocked() {

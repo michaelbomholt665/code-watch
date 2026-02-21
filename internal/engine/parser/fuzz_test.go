@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"context"
 	"testing"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"

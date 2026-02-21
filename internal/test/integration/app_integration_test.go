@@ -8,6 +8,7 @@ import (
 
 	"circular/internal/core/app"
 	"circular/internal/core/config"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -62,7 +63,7 @@ func TestFullPipelineIntegration(t *testing.T) {
 	// Verify Graph State
 	modules := appInstance.Graph.Modules()
 	assert.NotEmpty(t, modules)
-	
+
 	// Verify that we can find our modules
 	foundMain := false
 	foundPkg1 := false

@@ -33,6 +33,9 @@ circular [flags] [path]
 - `--report-md`
 - forces markdown report generation during output emission
 - uses configured `output.markdown` path, or defaults to `analysis-report.md` at output root when unset
+- `--check`
+- validate configuration file(s) and exit
+- returns successful status (0) and OK message if valid, or non-zero status and error details if invalid
 - `--verify-grammars`
 - verifies enabled-language grammar artifacts against `grammars/manifest.toml` and exits
 - language enablement is controlled by `[languages.<id>]` in config (defaults keep only `go`/`python` enabled)

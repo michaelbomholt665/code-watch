@@ -24,11 +24,30 @@ This MCP server supports multiple transport protocols for flexibility in differe
 - Mode: Asynchronous full-duplex communication over HTTP.
 - Best for: Remote connections or integration with clients that prefer HTTP.
 
+**Configuration:**
+Set `mcp.transport = "sse"` and `mcp.address = "0.0.0.0:8080"` in your configuration file.
+
 **SSE Flow:**
 1. Client connects to `GET /sse` to establish an event stream.
-2. Server responds with a `session_id`.
+2. Server responds with a `session_id` in an `endpoint` event.
+   - Example: `event: endpoint\ndata: /message?session_id=XYZ`
 3. Client sends JSON-RPC requests via `POST /message?session_id=XYZ`.
-4. Server sends responses as events through the established SSE stream.
+   - Server returns `202 Accepted` immediately.
+4. Server sends responses as `message` events through the established SSE stream.
+   - Example: `event: message\ndata: {"jsonrpc":"2.0","id":"1","result":...}`
+
+**CORS Support:**
+The SSE transport includes built-in CORS support (`Access-Control-Allow-Origin: *`), allowing direct connection from web-based MCP clients.
+
+### Rate Limiting
+
+The MCP server includes built-in rate limiting to protect against resource exhaustion.
+
+- **Stdio Transport:** Global request-per-minute limit applied to the process.
+- **SSE Transport:** Per-IP limits for both connections and requests.
+- **Weighted Operations:** Different operations can have different "costs" (e.g., `scan.run` is more expensive than `graph.cycles`).
+
+Configure rate limiting in the `[mcp.rate_limit]` section of `circular.toml`. See [Configuration Reference](configuration.md) for details.
 
 ## Protocol Envelopes
 

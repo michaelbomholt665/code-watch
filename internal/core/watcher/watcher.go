@@ -111,6 +111,12 @@ func (w *Watcher) SetLanguageFilters(extensions, filenames, testSuffixes []strin
 	}
 }
 
+func (w *Watcher) SetDebounce(debounce time.Duration) {
+	w.pendingMu.Lock()
+	defer w.pendingMu.Unlock()
+	w.debounce = debounce
+}
+
 func (w *Watcher) Watch(paths []string) error {
 	for _, path := range paths {
 		if err := w.watchRecursive(path); err != nil {

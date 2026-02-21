@@ -17,5 +17,6 @@ func (a *App) StartWatcher() error {
 		a.codeParser.SupportedFilenames(),
 		a.codeParser.SupportedTestFileSuffixes(),
 	)
+	a.activeWatcher = w
 	return w.Watch(a.Config.WatchPaths)
 }

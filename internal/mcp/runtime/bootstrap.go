@@ -64,10 +64,18 @@ func Build(cfg *config.Config, deps AppDeps) (*Server, error) {
 
 func buildTransport(cfg *config.Config) (transport.Adapter, error) {
 	transportName := strings.ToLower(strings.TrimSpace(cfg.MCP.Transport))
-	if transportName == "" || transportName == "stdio" {
-		return transport.NewStdio()
+	switch transportName {
+	case "", "stdio":
+		return transport.NewStdio(cfg.MCP.RateLimit)
+	case "sse", "http":
+		addr := cfg.MCP.Address
+		if addr == "" {
+			addr = "127.0.0.1:8765"
+		}
+		return transport.NewSSE(addr, cfg.MCP.RateLimit)
+	default:
+		return nil, fmt.Errorf("unsupported MCP transport: %s", transportName)
 	}
-	return nil, fmt.Errorf("unsupported MCP transport: %s", transportName)
 }
 
 func loadOpenAPIOperations(cfg *config.Config) error {

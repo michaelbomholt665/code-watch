@@ -1,4 +1,17 @@
 # data/config/circular.example.toml
+
+# Configuration Versioning & Environment Overrides
+# -----------------------------------------------
+# Circular supports versioned configuration schemas (currently version 2).
+# All settings can be overridden using environment variables following the 
+# pattern: CIRCULAR_[SECTION]_[KEY].
+# Examples:
+#   CIRCULAR_OBSERVABILITY_PORT=9090
+#   CIRCULAR_WATCH_DEBOUNCE=2s
+#   CIRCULAR_DB_ENABLED=true
+#   CIRCULAR_MCP_TRANSPORT=http
+#   CIRCULAR_MCP_ADDRESS=0.0.0.0:8080
+
 version = 2
 
 grammars_path = "./grammars"

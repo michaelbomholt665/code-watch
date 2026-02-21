@@ -29,6 +29,10 @@ func NewAnalysisService(app *App) ports.AnalysisService {
 	return &analysisService{app: app}
 }
 
+func (s *analysisService) Unwrap() *App {
+	return s.app
+}
+
 func (a *App) AnalysisService() ports.AnalysisService {
 	return NewAnalysisService(a)
 }
@@ -93,7 +97,7 @@ func (s *analysisService) AnalyzeImpact(ctx context.Context, path string) (graph
 	if s.app == nil {
 		return graph.ImpactReport{}, fmt.Errorf("app is required")
 	}
-	return s.app.AnalyzeImpact(path)
+	return s.app.AnalyzeImpact(ctx, path)
 }
 
 func (s *analysisService) DetectCycles(ctx context.Context, limit int) ([][]string, int, error) {
@@ -398,6 +402,16 @@ func (s *analysisService) GenerateMarkdownReport(ctx context.Context, req ports.
 		Path:     result.Path,
 		Written:  result.Written,
 	}, nil
+}
+
+func (s *analysisService) UpdateConfig(ctx context.Context, cfg *config.Config) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if s.app == nil {
+		return fmt.Errorf("app is required")
+	}
+	return s.app.UpdateConfig(ctx, cfg)
 }
 
 type watchService struct {

@@ -101,6 +101,34 @@ func (d *Detector) DetectInRanges(filePath string, content []byte, ranges []Line
 	return d.detectWithRanges(filePath, content, ranges)
 }
 
+func (d *Detector) Reload(cfg Config) error {
+	if cfg.EntropyThreshold <= 0 {
+		cfg.EntropyThreshold = 4.0
+	}
+	if cfg.MinTokenLength <= 0 {
+		cfg.MinTokenLength = 20
+	}
+
+	builtIn := []PatternConfig{
+		{Name: "aws-access-key-id", Severity: "high", Regex: `\bAKIA[0-9A-Z]{16}\b`},
+		{Name: "github-pat", Severity: "high", Regex: `\bghp_[A-Za-z0-9]{36}\b`},
+		{Name: "github-fine-grained-pat", Severity: "high", Regex: `\bgithub_pat_[A-Za-z0-9_]{82}\b`},
+		{Name: "stripe-live-secret", Severity: "high", Regex: `\bsk_live_[A-Za-z0-9]{16,}\b`},
+		{Name: "slack-token", Severity: "high", Regex: `\bxox[baprs]-[A-Za-z0-9-]{10,}\b`},
+		{Name: "private-key-block", Severity: "critical", Regex: `-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----`},
+	}
+
+	patterns, err := compilePatterns(append(builtIn, cfg.Patterns...))
+	if err != nil {
+		return err
+	}
+
+	d.entropyThreshold = cfg.EntropyThreshold
+	d.minTokenLength = cfg.MinTokenLength
+	d.patterns = patterns
+	return nil
+}
+
 func (d *Detector) detectWithRanges(filePath string, content []byte, ranges []LineRange) []parser.Secret {
 	if len(content) == 0 {
 		return nil

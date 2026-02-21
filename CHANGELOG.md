@@ -16,7 +16,25 @@ All notable changes to this project will be documented in this file.
 - `test:` Added **Parser Fuzzing** for Go and Python targeting the `UniversalExtractor`.
 - `test:` Added **Performance Benchmarks** for graph operations (`AddFile`, `DetectCycles`).
 - `test:` Added **MCP End-to-End Tests** with a mocked transport layer.
-- `mcp:` Added **SSE Transport Plan** (`docs/plans/2026-02-21-mcp-sse-transport.md`) to support HTTP-based client connections.
+- `mcp:` Added **SSE Transport** support (`internal/mcp/transport/sse.go`).
+  - Clients can now connect via HTTP Server-Sent Events.
+  - Supports standard MCP session initialization and message routing.
+- `mcp:` Added **Rate Limiting** support for stdio and SSE transports.
+  - Global request-per-minute limits for stdio.
+  - Per-IP connection and request limits for SSE.
+  - Operation-level weighted throttling (e.g., `scan.run` costs more than `graph.cycles`).
+- `config:` Added **Exhaustive Validation** with aggregated error reporting.
+  - Checks for cross-field consistency, path existence (`grammars_path`), and type bounds.
+- `config:` Added **MCP Input Guard** with path sanitization.
+  - Prevents directory traversal in MCP tool arguments by validating against project root.
+- `cli:` Added `--check` flag for dry-run configuration validation.
+- `cli:` Implemented **Error Colorization** using `lipgloss` for configuration validation failures.
+- `config:` Added **Environment Variable Overrides** support (`internal/core/config/env.go`).
+  - Supports `CIRCULAR_[SECTION]_[KEY]` pattern (e.g., `CIRCULAR_MCP_TRANSPORT=http`).
+- `config:` Added **Configuration Hot-Reload** (`internal/core/config/watcher.go`).
+  - Automatically reloads configuration changes during watch and MCP modes without restart.
+  - Dynamically updates cache capacities, secret patterns, and watcher debounce.
+- `config:` Implemented **Schema Migration** (v1 -> v2) in the loader.
 - `config:` Added `[observability]` TOML section to control metrics, tracing, and server port.
 
 ### Changed

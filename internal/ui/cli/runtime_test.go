@@ -14,6 +14,16 @@ import (
 	"time"
 )
 
+func TestMain(m *testing.M) {
+	// Create dummy grammars dir to pass validation for all tests
+	if err := os.MkdirAll("./grammars", 0o755); err != nil {
+		panic(err)
+	}
+	code := m.Run()
+	os.RemoveAll("./grammars")
+	os.Exit(code)
+}
+
 func TestApplyModeOptions_RejectsTraceAndImpact(t *testing.T) {
 	opts := &cliOptions{trace: true, impact: "pkg", args: []string{"a", "b"}}
 	cfg := &config.Config{}
