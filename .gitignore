@@ -35,3 +35,4 @@ circular.toml
 .gemini/
 .skills/
 .agents/
+integration.test
