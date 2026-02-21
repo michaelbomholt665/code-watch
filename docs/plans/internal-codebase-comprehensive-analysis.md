@@ -33,9 +33,11 @@ Comparing with [`internal-codebase-analysis-report.md`](internal-codebase-analys
 
 ### ✅ NEW: LRU Cache Infrastructure
 
-- [`lru.go`](internal/engine/graph/lru.go:1) (2,947 chars) - Generic thread-safe LRU cache
+- [`lru.go`](internal/engine/graph/lru.go:1) (3,445 chars) - Generic thread-safe LRU cache
 - [`lru_test.go`](internal/engine/graph/lru_test.go:1) (4,452 chars) - Comprehensive tests
-- **Status:** Implemented but NOT YET integrated into Graph/App
+- **Status:** ✅ **FULLY INTEGRATED** - Used in:
+  - [`Graph.fileCache`](internal/engine/graph/graph.go:18) - Caches parsed `*parser.File` objects
+  - [`App.fileContents`](internal/core/app/app.go:61) - Caches file content `[]byte`
 
 ### ✅ NEW: SQLite Symbol Store
 
@@ -417,10 +419,11 @@ The [`LRUCache[K, V]`](internal/engine/graph/lru.go:18) is a complete, thread-sa
 - [`Clear()`](internal/engine/graph/lru.go:108) - reset cache
 - Comprehensive test coverage in [`lru_test.go`](internal/engine/graph/lru_test.go:1)
 
-**⚠️ Critical Gap:** The LRU cache is **implemented but NOT integrated** into the Graph or App. All files are still kept in memory without any eviction strategy. The cache exists as infrastructure but is unused.
+**✅ INTEGRATED:** The LRU cache is now actively used:
+- [`Graph.fileCache`](internal/engine/graph/graph.go:18) - `*LRUCache[string, *parser.File]` for parsed files
+- [`App.fileContents`](internal/core/app/app.go:61) - `*graph.LRUCache[string, []byte]` for file contents
 
 **Improvements Needed:**
-- **LRU Not Integrated:** [`LRUCache`](internal/engine/graph/lru.go:18) is implemented but NOT used - all files kept in memory without eviction
 - **No Graph Persistence:** Rebuilds on restart (symbol store helps but not complete)
 - **Cycle Detection:** Reports all cycles without prioritization
 - **Missing Algorithms:** No centrality measures, community detection, or impact scoring
@@ -751,16 +754,16 @@ type Server struct {
 ### Error Handling
 
 **Current State:**
-- Errors often logged but not propagated
-- No structured error types
-- Missing error context in many places
-- Inconsistent error wrapping
+- ✅ Domain error types defined in [`internal/core/errors/errors.go`](internal/core/errors/errors.go:1)
+- ✅ Error codes: `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT`, `INTERNAL_ERROR`, `NOT_SUPPORTED`, `PERMISSION_DENIED`
+- ✅ [`DomainError`](internal/core/errors/errors.go:19) struct with `Code`, `Message`, `Err` wrapping
+- ✅ Helper functions: [`New()`](internal/core/errors/errors.go:36), [`Wrap()`](internal/core/errors/errors.go:40), [`IsCode()`](internal/core/errors/errors.go:45)
+- ✅ Active usage in [`app.go`](internal/core/app/app.go:71), [`parser.go`](internal/engine/parser/parser.go:70)
 
-**Recommendations:**
-- Define domain error types in `internal/core/errors/`
-- Use sentinel errors and error wrapping consistently
-- Add error codes for MCP responses
-- Implement error context with source location
+**Remaining Improvements:**
+- Expand error code coverage for more granular error handling
+- Add error context with source location for debugging
+- Map domain errors to MCP error codes consistently
 
 ### Concurrency
 
@@ -802,10 +805,10 @@ type Server struct {
    - [`mermaid.go`](internal/ui/report/formats/mermaid.go:1) (24,679 chars) → Split into components
    - [`symbol_store.go`](internal/engine/graph/symbol_store.go:1) (19,188 chars) → Split schema/operations
 
-2. **Add Domain Error Types**
-   - Define errors in `internal/core/errors/`
-   - Use sentinel errors and error wrapping
-   - Map to MCP error codes
+2. ~~**Add Domain Error Types**~~ ✅ **COMPLETED**
+   - ✅ Defined in [`internal/core/errors/errors.go`](internal/core/errors/errors.go:1)
+   - ✅ Error codes: `NOT_FOUND`, `VALIDATION_ERROR`, `CONFLICT`, `INTERNAL_ERROR`, `NOT_SUPPORTED`, `PERMISSION_DENIED`
+   - ✅ Used in `app.go`, `parser.go`, and other files
 
 3. **Improve Test Coverage**
    - Add integration tests
@@ -814,9 +817,10 @@ type Server struct {
 
 ### Medium Priority
 
-4. **Memory Optimization**
-   - **Integrate existing LRU cache** - [`LRUCache`](internal/engine/graph/lru.go:18) is implemented with tests but NOT used in Graph or App
-   - Add graph pruning for unused modules
+4. ~~**Memory Optimization**~~ ✅ **COMPLETED**
+   - ✅ LRU cache integrated in [`Graph.fileCache`](internal/engine/graph/graph.go:18)
+   - ✅ LRU cache integrated in [`App.fileContents`](internal/core/app/app.go:61)
+   - Consider graph pruning for unused modules
    - Consider streaming for large codebases
 
 5. **Enhanced Observability**

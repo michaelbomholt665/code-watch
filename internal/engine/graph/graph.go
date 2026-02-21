@@ -22,7 +22,6 @@ type Graph struct {
 
 	loader FileLoader
 
-
 	// Relationships
 	imports    map[string]map[string]*ImportEdge // from -> to -> edge
 	importedBy map[string]map[string]bool        // to -> from

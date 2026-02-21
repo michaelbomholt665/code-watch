@@ -72,6 +72,10 @@ symbols = ["self", "ctx", "p", "log", "toml", "sitter", "tea", "fsnotify"]
 [watch]
 debounce = "1s"
 
+[caches]
+files = 1000
+file_contents = 1000
+
 [secrets]
 enabled = false
 entropy_threshold = 4.0

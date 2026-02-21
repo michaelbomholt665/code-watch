@@ -187,6 +187,13 @@ weight_ambiguous_cross_language_match = -2
 weight_local_or_module_conflict = -4
 weight_stdlib_conflict = -3
 
+[caches]
+# LRU cache capacity for parsed files. 
+# Increasing this improves analysis speed but uses more memory.
+files = 1000
+# LRU cache capacity for raw file contents.
+file_contents = 1000
+
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"
