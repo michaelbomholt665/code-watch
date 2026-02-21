@@ -4,6 +4,7 @@ package resolver
 import (
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -130,7 +131,7 @@ func TestResolver_FindUnresolved(t *testing.T) {
 	})
 
 	res := NewResolver(g, nil, nil)
-	unresolved := res.FindUnresolved()
+	unresolved := res.FindUnresolved(context.Background())
 
 	if len(unresolved) != 1 {
 		t.Fatalf("Expected 1 unresolved reference, got %d", len(unresolved))
@@ -157,7 +158,7 @@ func TestResolver_LocalSymbols(t *testing.T) {
 	})
 
 	res := NewResolver(g, []string{"log"}, nil)
-	unresolved := res.FindUnresolved()
+	unresolved := res.FindUnresolved(context.Background())
 
 	// Should only have 1 unresolved: missing.Call
 	// p.Register and ctx.Done should be ignored as local symbols
@@ -196,7 +197,7 @@ func TestResolver_LocalSymbolsWithIndexAccess(t *testing.T) {
 	})
 
 	res := NewResolver(g, nil, nil)
-	unresolved := res.FindUnresolved()
+	unresolved := res.FindUnresolved(context.Background())
 
 	if len(unresolved) != 0 {
 		t.Fatalf("expected no unresolved references, got %d", len(unresolved))
@@ -225,7 +226,7 @@ func TestResolver_FindUnresolvedForPaths(t *testing.T) {
 	})
 
 	r := NewResolver(g, nil, nil)
-	unresolved := r.FindUnresolvedForPaths([]string{"a.go"})
+	unresolved := r.FindUnresolvedForPaths(context.Background(), []string{"a.go"})
 
 	if len(unresolved) != 1 {
 		t.Fatalf("Expected 1 unresolved reference, got %d", len(unresolved))
@@ -255,10 +256,10 @@ func TestResolver_NewResolverWithSQLite_ResolvesUsingPersistedSymbols(t *testing
 	})
 
 	dbPath := filepath.Join(t.TempDir(), "symbols.db")
-	r := NewResolverWithSQLite(g, nil, nil, dbPath, "project-a")
-	defer r.Close()
+	res := NewResolverWithSQLite(g, nil, nil, dbPath, "project-a")
+	defer res.Close()
 
-	unresolved := r.FindUnresolved()
+	unresolved := res.FindUnresolved(context.Background())
 	if len(unresolved) != 0 {
 		t.Fatalf("expected no unresolved references, got %d", len(unresolved))
 	}
@@ -295,7 +296,7 @@ func TestResolver_FindUnusedImports(t *testing.T) {
 	})
 
 	r := NewResolver(g, nil, nil)
-	unused := r.FindUnusedImports([]string{"sample.py", "sample.go"})
+	unused := r.FindUnusedImports(context.Background(), []string{"sample.py", "sample.go"})
 	if len(unused) != 1 {
 		t.Fatalf("Expected 1 unused import finding, got %d", len(unused))
 	}
@@ -325,7 +326,7 @@ func TestResolver_FindUnusedImports_ExcludeImports(t *testing.T) {
 	})
 
 	r := NewResolver(g, nil, []string{"fmt"})
-	unused := r.FindUnusedImports([]string{"sample.go"})
+	unused := r.FindUnusedImports(context.Background(), []string{"sample.go"})
 	if len(unused) != 0 {
 		t.Fatalf("expected excluded import to be ignored, got %d findings", len(unused))
 	}
@@ -347,7 +348,7 @@ func TestResolver_CrossLanguageBridgeContexts(t *testing.T) {
 	})
 
 	res := NewResolver(g, nil, nil)
-	unresolved := res.FindUnresolved()
+	unresolved := res.FindUnresolved(context.Background())
 
 	if len(unresolved) != 1 {
 		t.Fatalf("Expected 1 unresolved reference, got %d", len(unresolved))
@@ -375,12 +376,12 @@ func TestResolver_ProbableBridgeBucket(t *testing.T) {
 		Weights:            defaultBridgeScoreWeights(),
 	})
 
-	unresolved := res.FindUnresolvedForPaths([]string{"main.py"})
+	unresolved := res.FindUnresolvedForPaths(context.Background(), []string{"main.py"})
 	if len(unresolved) != 0 {
 		t.Fatalf("expected no unresolved references for probable bridge call, got %+v", unresolved)
 	}
 
-	probable := res.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	probable := res.FindProbableBridgeReferencesForPaths(context.Background(), []string{"main.py"})
 	if len(probable) != 1 {
 		t.Fatalf("expected 1 probable bridge reference, got %d", len(probable))
 	}
@@ -406,12 +407,12 @@ func TestResolver_ProbableBridgeConflictDropsToUnresolved(t *testing.T) {
 
 	res := NewResolver(g, nil, nil)
 
-	probable := res.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	probable := res.FindProbableBridgeReferencesForPaths(context.Background(), []string{"main.py"})
 	if len(probable) != 0 {
 		t.Fatalf("expected no probable bridge references when local symbol conflicts, got %+v", probable)
 	}
 
-	unresolved := res.FindUnresolvedForPaths([]string{"main.py"})
+	unresolved := res.FindUnresolvedForPaths(context.Background(), []string{"main.py"})
 	if len(unresolved) != 1 {
 		t.Fatalf("expected 1 unresolved reference, got %d", len(unresolved))
 	}
@@ -437,11 +438,11 @@ func TestResolver_BridgeThresholdConfigControlsClassification(t *testing.T) {
 		ProbableThreshold:  5,
 		Weights:            defaultBridgeScoreWeights(),
 	})
-	highUnresolved := highThreshold.FindUnresolvedForPaths([]string{"main.py"})
+	highUnresolved := highThreshold.FindUnresolvedForPaths(context.Background(), []string{"main.py"})
 	if len(highUnresolved) != 0 {
 		t.Fatalf("expected no unresolved references with probable bridge, got %+v", highUnresolved)
 	}
-	highProbable := highThreshold.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	highProbable := highThreshold.FindProbableBridgeReferencesForPaths(context.Background(), []string{"main.py"})
 	if len(highProbable) != 1 {
 		t.Fatalf("expected one probable bridge with higher threshold, got %d", len(highProbable))
 	}
@@ -451,11 +452,11 @@ func TestResolver_BridgeThresholdConfigControlsClassification(t *testing.T) {
 		ProbableThreshold:  3,
 		Weights:            defaultBridgeScoreWeights(),
 	})
-	lowUnresolved := lowThreshold.FindUnresolvedForPaths([]string{"main.py"})
+	lowUnresolved := lowThreshold.FindUnresolvedForPaths(context.Background(), []string{"main.py"})
 	if len(lowUnresolved) != 0 {
 		t.Fatalf("expected no unresolved references with low threshold, got %+v", lowUnresolved)
 	}
-	lowProbable := lowThreshold.FindProbableBridgeReferencesForPaths([]string{"main.py"})
+	lowProbable := lowThreshold.FindProbableBridgeReferencesForPaths(context.Background(), []string{"main.py"})
 	if len(lowProbable) != 0 {
 		t.Fatalf("expected confirmed bridge to skip probable bucket, got %+v", lowProbable)
 	}
@@ -522,7 +523,7 @@ func TestResolver_FindUnusedImportsUnsupportedLanguage(t *testing.T) {
 	})
 
 	r := NewResolver(g, nil, nil)
-	unused := r.FindUnusedImports([]string{"page.html"})
+	unused := r.FindUnusedImports(context.Background(), []string{"page.html"})
 	if len(unused) != 0 {
 		t.Fatalf("expected no unused import findings for unsupported language, got %d", len(unused))
 	}
@@ -542,7 +543,7 @@ func TestResolver_StdlibIsLanguageScoped(t *testing.T) {
 	})
 
 	r := NewResolver(g, nil, nil)
-	unresolved := r.FindUnresolvedForPaths([]string{"main.js"})
+	unresolved := r.FindUnresolvedForPaths(context.Background(), []string{"main.js"})
 	if len(unresolved) != 1 {
 		t.Fatalf("expected exactly one unresolved reference, got %d", len(unresolved))
 	}
@@ -583,7 +584,7 @@ func TestResolver_ProbabilisticCrossLanguageServiceResolution(t *testing.T) {
 	})
 
 	r := NewResolver(g, nil, nil)
-	unresolved := r.FindUnresolvedForPaths([]string{"client.go"})
+	unresolved := r.FindUnresolvedForPaths(context.Background(), []string{"client.go"})
 	if len(unresolved) != 0 {
 		t.Fatalf("expected GreeterClient to resolve via service symbol table, got %+v", unresolved)
 	}
@@ -618,7 +619,7 @@ func TestResolver_ProbabilisticMatchAmbiguousStaysUnresolved(t *testing.T) {
 	})
 
 	r := NewResolver(g, nil, nil)
-	unresolved := r.FindUnresolvedForPaths([]string{"main.ts"})
+	unresolved := r.FindUnresolvedForPaths(context.Background(), []string{"main.ts"})
 	if len(unresolved) != 1 {
 		t.Fatalf("expected ambiguous probabilistic match to stay unresolved, got %d", len(unresolved))
 	}
@@ -674,7 +675,7 @@ func TestResolver_ExplicitBridgeMappingResolvesReference(t *testing.T) {
 			References:   []string{"circular_mcp.server.*"},
 		},
 	})
-	unresolved := r.FindUnresolvedForPaths([]string{"runtime.go"})
+	unresolved := r.FindUnresolvedForPaths(context.Background(), []string{"runtime.go"})
 	if len(unresolved) != 0 {
 		t.Fatalf("expected explicit bridge to resolve reference, got %+v", unresolved)
 	}

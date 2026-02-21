@@ -3,6 +3,7 @@ package resolver
 import (
 	"circular/internal/engine/parser"
 	"circular/internal/engine/graph"
+	"context"
 	"testing"
 )
 
@@ -59,7 +60,7 @@ func TestFindUnusedImports_Repro(t *testing.T) {
 			g := graph.NewGraph()
 			g.AddFile(tc.file)
 			r := NewResolver(g, nil, nil)
-			unused := r.FindUnusedImports([]string{tc.file.Path})
+			unused := r.FindUnusedImports(context.Background(), []string{tc.file.Path})
 			if len(unused) != tc.expected {
 				t.Errorf("Expected %d unused imports, got %d", tc.expected, len(unused))
 				for _, u := range unused {

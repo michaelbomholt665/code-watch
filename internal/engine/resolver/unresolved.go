@@ -2,7 +2,11 @@ package resolver
 
 import (
 	"circular/internal/engine/parser"
+	"circular/internal/shared/observability"
+	"context"
 	"strings"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // resolveQualifiedReference checks if a reference matches an imported or local module symbol.
@@ -80,31 +84,40 @@ func (r *Resolver) resolveQualifiedReference(file *parser.File, ref parser.Refer
 	return false
 }
 
-func (r *Resolver) FindUnresolved() []UnresolvedReference {
+func (r *Resolver) FindUnresolved(ctx context.Context) []UnresolvedReference {
+	ctx, span := observability.Tracer.Start(ctx, "Resolver.FindUnresolved")
+	defer span.End()
+
 	var unresolved []UnresolvedReference
 
 	files := r.graph.GetAllFiles()
 
 	for _, file := range files {
-		unresolved = append(unresolved, r.findUnresolvedInFile(file)...)
+		unresolved = append(unresolved, r.findUnresolvedInFile(ctx, file)...)
 	}
 
 	return unresolved
 }
 
-func (r *Resolver) FindProbableBridgeReferences() []ProbableBridgeReference {
+func (r *Resolver) FindProbableBridgeReferences(ctx context.Context) []ProbableBridgeReference {
+	ctx, span := observability.Tracer.Start(ctx, "Resolver.FindProbableBridgeReferences")
+	defer span.End()
+
 	var probable []ProbableBridgeReference
 
 	files := r.graph.GetAllFiles()
 
 	for _, file := range files {
-		probable = append(probable, r.findProbableBridgeReferencesInFile(file)...)
+		probable = append(probable, r.findProbableBridgeReferencesInFile(ctx, file)...)
 	}
 
 	return probable
 }
 
-func (r *Resolver) FindUnresolvedForPaths(paths []string) []UnresolvedReference {
+func (r *Resolver) FindUnresolvedForPaths(ctx context.Context, paths []string) []UnresolvedReference {
+	ctx, span := observability.Tracer.Start(ctx, "Resolver.FindUnresolvedForPaths", trace.WithAttributes())
+	defer span.End()
+
 	var unresolved []UnresolvedReference
 	seen := make(map[string]bool, len(paths))
 
@@ -118,13 +131,16 @@ func (r *Resolver) FindUnresolvedForPaths(paths []string) []UnresolvedReference 
 		if !ok {
 			continue
 		}
-		unresolved = append(unresolved, r.findUnresolvedInFile(file)...)
+		unresolved = append(unresolved, r.findUnresolvedInFile(ctx, file)...)
 	}
 
 	return unresolved
 }
 
-func (r *Resolver) FindProbableBridgeReferencesForPaths(paths []string) []ProbableBridgeReference {
+func (r *Resolver) FindProbableBridgeReferencesForPaths(ctx context.Context, paths []string) []ProbableBridgeReference {
+	ctx, span := observability.Tracer.Start(ctx, "Resolver.FindProbableBridgeReferencesForPaths")
+	defer span.End()
+
 	var probable []ProbableBridgeReference
 	seen := make(map[string]bool, len(paths))
 
@@ -138,16 +154,16 @@ func (r *Resolver) FindProbableBridgeReferencesForPaths(paths []string) []Probab
 		if !ok {
 			continue
 		}
-		probable = append(probable, r.findProbableBridgeReferencesInFile(file)...)
+		probable = append(probable, r.findProbableBridgeReferencesInFile(ctx, file)...)
 	}
 
 	return probable
 }
 
-func (r *Resolver) findUnresolvedInFile(file *parser.File) []UnresolvedReference {
+func (r *Resolver) findUnresolvedInFile(ctx context.Context, file *parser.File) []UnresolvedReference {
 	var unresolved []UnresolvedReference
 	for _, ref := range file.References {
-		result := r.resolveReferenceResult(file, ref)
+		result := r.resolveReferenceResult(ctx, file, ref)
 		if result.status != referenceUnresolved {
 			continue
 		}
@@ -161,10 +177,10 @@ func (r *Resolver) findUnresolvedInFile(file *parser.File) []UnresolvedReference
 	return unresolved
 }
 
-func (r *Resolver) findProbableBridgeReferencesInFile(file *parser.File) []ProbableBridgeReference {
+func (r *Resolver) findProbableBridgeReferencesInFile(ctx context.Context, file *parser.File) []ProbableBridgeReference {
 	var probable []ProbableBridgeReference
 	for _, ref := range file.References {
-		result := r.resolveReferenceResult(file, ref)
+		result := r.resolveReferenceResult(ctx, file, ref)
 		if result.status != referenceProbableBridge {
 			continue
 		}

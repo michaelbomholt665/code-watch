@@ -125,6 +125,7 @@ func TestCLIAndMCPParity_SummaryAndOutputs(t *testing.T) {
 type stubCodeParser struct{}
 
 func (stubCodeParser) ParseFile(_ string, _ []byte) (*parser.File, error) { return nil, nil }
+func (stubCodeParser) GetLanguage(_ string) string                        { return "go" }
 func (stubCodeParser) IsSupportedPath(_ string) bool                      { return true }
 func (stubCodeParser) IsTestFile(_ string) bool                           { return false }
 func (stubCodeParser) SupportedExtensions() []string                      { return []string{".go"} }

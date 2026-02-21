@@ -194,6 +194,20 @@ files = 1000
 # LRU cache capacity for raw file contents.
 file_contents = 1000
 
+[observability]
+# Set to true to enable the observability HTTP server (metrics and health).
+enabled = false
+# HTTP port for the metrics and health endpoints.
+port = 9090
+# Enable Prometheus metrics export.
+enable_metrics = true
+# Enable OpenTelemetry tracing.
+enable_tracing = false
+# OTLP collector endpoint (gRPC).
+otlp_endpoint = "localhost:4317"
+# Service name for traces and metrics.
+service_name = "circular"
+
 [output]
 dot = "graph.dot"
 tsv = "dependencies.tsv"

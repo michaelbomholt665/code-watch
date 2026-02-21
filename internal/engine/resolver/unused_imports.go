@@ -2,10 +2,15 @@ package resolver
 
 import (
 	"circular/internal/engine/parser"
+	"circular/internal/shared/observability"
+	"context"
 	"strings"
 )
 
-func (r *Resolver) FindUnusedImports(paths []string) []UnusedImport {
+func (r *Resolver) FindUnusedImports(ctx context.Context, paths []string) []UnusedImport {
+	_, span := observability.Tracer.Start(ctx, "Resolver.FindUnusedImports")
+	defer span.End()
+
 	seen := make(map[string]bool, len(paths))
 	unused := make([]UnusedImport, 0)
 

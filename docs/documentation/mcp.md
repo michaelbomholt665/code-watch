@@ -8,13 +8,41 @@ When `mcp.auto_manage_outputs=true`, startup output synchronization also routes 
 CLI MCP-mode bootstrap now resolves analysis dependencies via an interface-first runtime factory (`internal/ui/cli/runtime_factory.go`) before handing control to `internal/mcp/runtime`.
 Parity coverage in `internal/mcp/adapters/adapter_test.go` asserts summary/output contract equivalence between CLI-facing `AnalysisService` calls and MCP adapter calls for the same fixture graph.
 
-## Transport Protocol
+## Transport Protocols
 
-- Transport: stdio
+This MCP server supports multiple transport protocols for flexibility in different environments.
+
+### 1. Stdio (Default)
+
+- Transport: `stdio`
 - Encoding: JSON (one object per line)
-- One request -> one response
+- Best for: Local agent integration where the server is spawned as a child process.
 
-### Request Envelope
+### 2. SSE (Server-Sent Events)
+
+- Transport: `http` / `sse`
+- Mode: Asynchronous full-duplex communication over HTTP.
+- Best for: Remote connections or integration with clients that prefer HTTP.
+
+**SSE Flow:**
+1. Client connects to `GET /sse` to establish an event stream.
+2. Server responds with a `session_id`.
+3. Client sends JSON-RPC requests via `POST /message?session_id=XYZ`.
+4. Server sends responses as events through the established SSE stream.
+
+## Protocol Envelopes
+
+Regardless of transport, Circular supports two envelope formats:
+
+### 1. JSON-RPC 2.0 (Recommended)
+
+Follows the standard MCP JSON-RPC 2.0 specification.
+
+### 2. Circular Legacy Envelope (Stdio only)
+
+Used for simple line-based integration.
+
+### Request Envelope (Legacy)
 
 ```json
 {"id":"1","tool":"circular","args":{"operation":"scan.run","params":{"paths":["./internal","./cmd"]}}}

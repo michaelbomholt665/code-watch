@@ -58,6 +58,12 @@ func Load(path string) (*Config, error) {
 	return &cfg, nil
 }
 
+func DefaultConfig() *Config {
+	cfg := &Config{}
+	applyDefaults(cfg)
+	return cfg
+}
+
 func applyDefaults(cfg *Config) {
 	if cfg.Version == 0 {
 		cfg.Version = 1
@@ -210,6 +216,13 @@ func applyDefaults(cfg *Config) {
 	}
 	if cfg.Caches.FileContents <= 0 {
 		cfg.Caches.FileContents = 1000
+	}
+
+	if cfg.Observability.Port == 0 {
+		cfg.Observability.Port = 9090
+	}
+	if cfg.Observability.ServiceName == "" {
+		cfg.Observability.ServiceName = "circular"
 	}
 }
 

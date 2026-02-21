@@ -18,6 +18,10 @@ func (s stubCodeParser) ParseFile(path string, content []byte) (*parser.File, er
 	return &file, nil
 }
 
+func (s stubCodeParser) GetLanguage(path string) string {
+	return "stub"
+}
+
 func (s stubCodeParser) IsSupportedPath(filePath string) bool {
 	return filepath.Ext(filePath) == ".stub"
 }

@@ -24,6 +24,16 @@ type Config struct {
 	Secrets             Secrets             `toml:"secrets"`
 	Resolver            ResolverSettings    `toml:"resolver"`
 	Caches              Caches              `toml:"caches"`
+	Observability       Observability       `toml:"observability"`
+}
+
+type Observability struct {
+	Enabled           bool   `toml:"enabled"`
+	Port              int    `toml:"port"`
+	OTLPEndpoint      string `toml:"otlp_endpoint"`
+	ServiceName       string `toml:"service_name"`
+	EnableTracing     bool   `toml:"enable_tracing"`
+	EnableMetrics     bool   `toml:"enable_metrics"`
 }
 
 type Caches struct {

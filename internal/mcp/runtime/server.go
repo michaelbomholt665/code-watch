@@ -14,11 +14,15 @@ import (
 	"circular/internal/mcp/tools/system"
 	"circular/internal/mcp/transport"
 	"circular/internal/mcp/validate"
+	"circular/internal/shared/observability"
 	"context"
 	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Dependencies struct {
@@ -272,6 +276,11 @@ func (s *Server) registerDefaultTool() error {
 }
 
 func (s *Server) handleToolCall(ctx context.Context, tool string, raw map[string]any) (any, error) {
+	ctx, span := observability.Tracer.Start(ctx, "Server.handleToolCall", trace.WithAttributes(
+		attribute.String("mcp.tool", tool),
+	))
+	defer span.End()
+
 	if strings.TrimSpace(tool) == "" {
 		return nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: "tool is required"}
 	}

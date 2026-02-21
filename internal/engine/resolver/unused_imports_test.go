@@ -3,6 +3,7 @@ package resolver
 import (
 	"circular/internal/engine/parser"
 	"circular/internal/engine/graph"
+	"context"
 	"testing"
 )
 
@@ -60,7 +61,7 @@ func TestFindUnusedImports_InternalPackages(t *testing.T) {
 	g.AddFile(file)
 	
 	r := NewResolver(g, nil, nil)
-	unused := r.FindUnusedImports([]string{"main.go"})
+	unused := r.FindUnusedImports(context.Background(), []string{"main.go"})
 	
 	if len(unused) > 0 {
 		for _, u := range unused {

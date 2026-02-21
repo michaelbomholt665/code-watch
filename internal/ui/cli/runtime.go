@@ -8,6 +8,7 @@ import (
 	"circular/internal/engine/parser"
 	"circular/internal/engine/secrets"
 	mcpruntime "circular/internal/mcp/runtime"
+	"circular/internal/shared/observability"
 	"circular/internal/shared/util"
 	"circular/internal/ui/report"
 	"circular/internal/ui/report/formats"
@@ -117,6 +118,27 @@ func Run(args []string) int {
 	if err != nil {
 		slog.Error("failed to initialize app", "error", err)
 		return 1
+	}
+
+	if cfg.Observability.Enabled {
+		if cfg.Observability.EnableTracing && cfg.Observability.OTLPEndpoint != "" {
+			shutdown, err := observability.InitTracing(context.Background(), cfg.Observability.ServiceName, cfg.Observability.OTLPEndpoint)
+			if err != nil {
+				slog.Warn("failed to initialize tracing", "error", err)
+			} else if shutdown != nil {
+				defer func() { _ = shutdown(context.Background()) }()
+			}
+		}
+
+		if cfg.Observability.EnableMetrics {
+			addr := fmt.Sprintf(":%d", cfg.Observability.Port)
+			obsServer := NewObservabilityServer(addr, coreapp.NewHealthService(analysis.(*coreapp.App)))
+			if err := obsServer.Start(context.Background()); err != nil {
+				slog.Warn("failed to start observability server", "error", err)
+			} else {
+				defer func() { _ = obsServer.Stop(context.Background()) }()
+			}
+		}
 	}
 
 	if _, err := analysis.RunScan(context.Background(), ports.ScanRequest{}); err != nil {

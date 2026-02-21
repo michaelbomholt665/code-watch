@@ -13,6 +13,10 @@ func (a *Adapter) ParseFile(path string, content []byte) (*File, error) {
 	return a.parser.ParseFile(path, content)
 }
 
+func (a *Adapter) GetLanguage(path string) string {
+	return a.parser.GetLanguage(path)
+}
+
 func (a *Adapter) IsSupportedPath(filePath string) bool {
 	return a.parser.IsSupportedPath(filePath)
 }

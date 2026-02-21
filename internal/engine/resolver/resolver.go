@@ -4,8 +4,13 @@ package resolver
 import (
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
+	"circular/internal/shared/observability"
+	"context"
 	"io"
 	"strings"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type BridgeResolutionConfig struct {
@@ -123,12 +128,18 @@ func (r *Resolver) Close() error {
 	return r.closer.Close()
 }
 
-func (r *Resolver) resolveReference(file *parser.File, ref parser.Reference) bool {
-	result := r.resolveReferenceResult(file, ref)
+func (r *Resolver) resolveReference(ctx context.Context, file *parser.File, ref parser.Reference) bool {
+	result := r.resolveReferenceResult(ctx, file, ref)
 	return result.status == referenceResolved
 }
 
-func (r *Resolver) resolveReferenceResult(file *parser.File, ref parser.Reference) resolutionResult {
+func (r *Resolver) resolveReferenceResult(ctx context.Context, file *parser.File, ref parser.Reference) resolutionResult {
+	_, span := observability.Tracer.Start(ctx, "Resolver.resolveReferenceResult", trace.WithAttributes(
+		attribute.String("symbol", ref.Name),
+		attribute.String("file", file.Path),
+	))
+	defer span.End()
+
 	// 0. Check local symbols (vars, params, etc)
 	if r.isLocalSymbol(file, ref.Name) {
 		return resolutionResult{status: referenceResolved}

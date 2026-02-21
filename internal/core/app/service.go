@@ -8,12 +8,15 @@ import (
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
+	"circular/internal/shared/observability"
 	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 type analysisService struct {
@@ -31,6 +34,9 @@ func (a *App) AnalysisService() ports.AnalysisService {
 }
 
 func (s *analysisService) RunScan(ctx context.Context, req ports.ScanRequest) (ports.ScanResult, error) {
+	ctx, span := observability.Tracer.Start(ctx, "analysisService.RunScan", trace.WithAttributes())
+	defer span.End()
+
 	if err := ctx.Err(); err != nil {
 		return ports.ScanResult{}, err
 	}
@@ -57,7 +63,7 @@ func (s *analysisService) RunScan(ctx context.Context, req ports.ScanRequest) (p
 			}
 		}
 	} else {
-		if err := s.app.InitialScan(); err != nil {
+		if err := s.app.InitialScan(ctx); err != nil {
 			return ports.ScanResult{}, err
 		}
 		filesScanned = s.app.Graph.FileCount()
@@ -154,8 +160,8 @@ func (s *analysisService) CaptureHistoryTrend(ctx context.Context, historyStore 
 
 	metrics := s.app.Graph.ComputeModuleMetrics()
 	cycles := s.app.Graph.DetectCycles()
-	unresolved := s.app.AnalyzeHallucinations()
-	unused := s.app.AnalyzeUnusedImports()
+	unresolved := s.app.AnalyzeHallucinations(ctx)
+	unused := s.app.AnalyzeUnusedImports(ctx)
 	violations := make([]graph.ArchitectureViolation, 0)
 	if s.app.archEngine != nil {
 		violations = s.app.ArchitectureViolations()
@@ -246,8 +252,8 @@ func (s *analysisService) SummarySnapshot(ctx context.Context) (ports.SummarySna
 		hotspotLimit = s.app.Config.Architecture.TopComplexity
 	}
 	hotspots := s.app.Graph.TopComplexity(hotspotLimit)
-	hallucinations := s.app.AnalyzeHallucinations()
-	unusedImports := s.app.AnalyzeUnusedImports()
+	hallucinations := s.app.AnalyzeHallucinations(ctx)
+	unusedImports := s.app.AnalyzeUnusedImports(ctx)
 
 	return ports.SummarySnapshot{
 		FileCount:      s.app.Graph.FileCount(),
@@ -336,10 +342,10 @@ func (s *analysisService) SyncOutputs(ctx context.Context, req ports.SyncOutputs
 	metrics := s.app.Graph.ComputeModuleMetrics()
 	hotspots := s.app.Graph.TopComplexity(s.app.Config.Architecture.TopComplexity)
 	violations := s.app.ArchitectureViolations()
-	unused := s.app.AnalyzeUnusedImports()
+	unused := s.app.AnalyzeUnusedImports(ctx)
 
 	s.app.Config.Output = filteredOutput
-	err = s.app.GenerateOutputs(cycles, nil, unused, metrics, violations, hotspots)
+	err = s.app.GenerateOutputs(ctx, cycles, nil, unused, metrics, violations, hotspots)
 	s.app.Config.Output = originalOutput
 	if err != nil {
 		return ports.SyncOutputsResult{}, err
@@ -378,7 +384,7 @@ func (s *analysisService) GenerateMarkdownReport(ctx context.Context, req ports.
 		return ports.MarkdownReportResult{}, fmt.Errorf("app is required")
 	}
 
-	result, err := newPresentationService(s.app).GenerateMarkdownReport(MarkdownReportRequest{
+	result, err := s.app.GenerateMarkdownReport(ctx, MarkdownReportRequest{
 		OutputPath: req.Path,
 		WriteFile:  req.WriteFile || strings.TrimSpace(req.Path) != "",
 		Verbosity:  req.Verbosity,
@@ -417,7 +423,7 @@ func (s *watchService) CurrentUpdate(ctx context.Context) (ports.WatchUpdate, er
 	if s.app == nil {
 		return ports.WatchUpdate{}, fmt.Errorf("app is required")
 	}
-	return toWatchUpdate(s.app.CurrentUpdate()), nil
+	return toWatchUpdate(s.app.CurrentUpdate(ctx)), nil
 }
 
 func (s *watchService) Subscribe(ctx context.Context, handler func(ports.WatchUpdate)) error {

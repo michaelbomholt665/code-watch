@@ -3,6 +3,7 @@ package graph
 
 import (
 	"circular/internal/engine/parser"
+	"circular/internal/shared/observability"
 	"sort"
 	"sync"
 )
@@ -154,6 +155,13 @@ func (g *Graph) AddFile(file *parser.File) {
 		}
 		g.importedBy[imp.Module][file.Module] = true
 	}
+
+	observability.GraphNodes.Set(float64(len(g.modules)))
+	edgeCount := 0
+	for _, targets := range g.imports {
+		edgeCount += len(targets)
+	}
+	observability.GraphEdges.Set(float64(edgeCount))
 }
 
 func (g *Graph) RemoveFile(path string) {
@@ -231,6 +239,13 @@ func (g *Graph) removeFileLocked(path string) {
 	g.fileCache.Evict(path)
 	delete(g.fileToModule, path)
 	delete(g.fileToLanguage, path)
+
+	observability.GraphNodes.Set(float64(len(g.modules)))
+	edgeCount := 0
+	for _, targets := range g.imports {
+		edgeCount += len(targets)
+	}
+	observability.GraphEdges.Set(float64(edgeCount))
 }
 
 func (g *Graph) GetModule(name string) (*Module, bool) {

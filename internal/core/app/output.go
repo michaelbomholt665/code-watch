@@ -6,6 +6,7 @@ import (
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/version"
 	"circular/internal/ui/report"
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -18,10 +19,10 @@ func (a *App) SetUpdateHandler(handler func(Update)) {
 	a.onUpdate = handler
 }
 
-func (a *App) CurrentUpdate() Update {
+func (a *App) CurrentUpdate(ctx context.Context) Update {
 	return Update{
 		Cycles:         a.Graph.DetectCycles(),
-		Hallucinations: a.AnalyzeHallucinations(),
+		Hallucinations: a.AnalyzeHallucinations(ctx),
 		ModuleCount:    a.Graph.ModuleCount(),
 		FileCount:      a.Graph.FileCount(),
 		SecretCount:    a.SecretCount(),
@@ -38,6 +39,7 @@ func (a *App) emitUpdate(update Update) {
 }
 
 func (a *App) GenerateOutputs(
+	ctx context.Context,
 	cycles [][]string,
 	unresolved []resolver.UnresolvedReference,
 	unusedImports []resolver.UnusedImport,
@@ -78,7 +80,7 @@ func (a *App) GenerateOutputs(
 		}
 		tsv := dependenciesTSV
 
-		probableBridges := a.AnalyzeProbableBridges()
+		probableBridges := a.AnalyzeProbableBridges(ctx)
 		if len(probableBridges) > 0 {
 			probableTSV, err := tsvGen.GenerateProbableBridges(probableBridges)
 			if err != nil {
@@ -191,9 +193,9 @@ func (a *App) GenerateOutputs(
 
 	if targets.Markdown != "" {
 		if unresolved == nil {
-			unresolved = a.AnalyzeHallucinations()
+			unresolved = a.AnalyzeHallucinations(ctx)
 		}
-		probableBridges := a.AnalyzeProbableBridges()
+		probableBridges := a.AnalyzeProbableBridges(ctx)
 		root, err := a.resolveOutputRoot()
 		if err != nil {
 			return err

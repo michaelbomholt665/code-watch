@@ -124,7 +124,11 @@ func (p *Parser) detectLanguage(path string) string {
 }
 
 func (p *Parser) IsSupportedPath(filePath string) bool {
-	return p.detectLanguage(filePath) != ""
+	return p.GetLanguage(filePath) != ""
+}
+
+func (p *Parser) GetLanguage(path string) string {
+	return p.detectLanguage(path)
 }
 
 func (p *Parser) IsTestFile(path string) bool {

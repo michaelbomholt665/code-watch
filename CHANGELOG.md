@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-02-21
+
+### Added
+- `observability:` Added **Prometheus metrics** support (`internal/shared/observability/metrics.go`).
+  - New metrics: `circular_parsing_seconds` (per language), `circular_graph_nodes_total`, `circular_graph_edges_total`, `circular_analysis_seconds`, and `circular_watcher_events_total`.
+  - Added `/metrics` endpoint to a new observability HTTP server.
+- `observability:` Added **OpenTelemetry tracing** support (`internal/shared/observability/tracing.go`).
+  - Integrated tracing in `RunScan`, `Resolver`, and `MCP` tool calls.
+  - Added OTLP gRPC exporter support via configuration.
+- `observability:` Added **Health Check** endpoint (`/health`) providing status of graph, symbol store, and parser.
+- `test:` Added **Integration Testing** suite (`internal/test/integration/app_integration_test.go`) for full-stack validation.
+- `test:` Added **Parser Fuzzing** for Go and Python targeting the `UniversalExtractor`.
+- `test:` Added **Performance Benchmarks** for graph operations (`AddFile`, `DetectCycles`).
+- `test:` Added **MCP End-to-End Tests** with a mocked transport layer.
+- `mcp:` Added **SSE Transport Plan** (`docs/plans/2026-02-21-mcp-sse-transport.md`) to support HTTP-based client connections.
+- `config:` Added `[observability]` TOML section to control metrics, tracing, and server port.
+
+### Changed
+- `core:` Standardized `context.Context` propagation across all core services (`App`, `Resolver`, `AnalysisService`) to support tracing and cancellation.
+- `parser:` Exported `GetLanguage` in `CodeParser` port to allow language-aware metrics collection.
+
+### Docs
+- Updated `docs/documentation/mcp.md` with multi-transport support details (stdio and SSE).
+- Updated `README.md` features list to include SSE transport and enhanced observability.
+
 ## 2026-02-20
 
 ### Added

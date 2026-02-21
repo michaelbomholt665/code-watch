@@ -3,6 +3,8 @@ package app
 import (
 	"circular/internal/core/app/helpers"
 	"circular/internal/engine/resolver"
+	"circular/internal/shared/observability"
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -13,6 +15,9 @@ import (
 func (a *App) HandleChanges(paths []string) {
 	slog.Info("detected changes", "count", len(paths))
 	start := time.Now()
+	defer func() {
+		observability.AnalysisDuration.WithLabelValues("handle_changes").Observe(time.Since(start).Seconds())
+	}()
 	affectedSet := make(map[string]bool)
 
 	for _, path := range paths {
@@ -56,10 +61,11 @@ func (a *App) HandleChanges(paths []string) {
 	metrics := a.Graph.ComputeModuleMetrics()
 	hotspots := a.Graph.TopComplexity(a.Config.Architecture.TopComplexity)
 	violations := a.ArchitectureViolations()
-	hallucinations := a.AnalyzeHallucinationsIncremental(affectedSet)
-	unusedImports := a.AnalyzeUnusedImportsIncremental(affectedSet)
+	ctx := context.Background()
+	hallucinations := a.AnalyzeHallucinationsIncremental(ctx, affectedSet)
+	unusedImports := a.AnalyzeUnusedImportsIncremental(ctx, affectedSet)
 
-	if err := a.GenerateOutputs(cycles, hallucinations, unusedImports, metrics, violations, hotspots); err != nil {
+	if err := a.GenerateOutputs(ctx, cycles, hallucinations, unusedImports, metrics, violations, hotspots); err != nil {
 		slog.Error("failed to generate outputs", "error", err)
 	}
 
@@ -152,21 +158,21 @@ func (a *App) loadResolverBridges() []resolver.ExplicitBridge {
 	return bridges
 }
 
-func (a *App) AnalyzeHallucinations() []resolver.UnresolvedReference {
+func (a *App) AnalyzeHallucinations(ctx context.Context) []resolver.UnresolvedReference {
 	res := a.newResolver()
 	defer func() { _ = res.Close() }()
-	unresolved := res.FindUnresolved()
+	unresolved := res.FindUnresolved(ctx)
 	a.rebuildUnresolvedCache(unresolved)
 	return unresolved
 }
 
-func (a *App) AnalyzeProbableBridges() []resolver.ProbableBridgeReference {
+func (a *App) AnalyzeProbableBridges(ctx context.Context) []resolver.ProbableBridgeReference {
 	res := a.newResolver()
 	defer func() { _ = res.Close() }()
-	return res.FindProbableBridgeReferences()
+	return res.FindProbableBridgeReferences(ctx)
 }
 
-func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []resolver.UnresolvedReference {
+func (a *App) AnalyzeHallucinationsIncremental(ctx context.Context, affectedSet map[string]bool) []resolver.UnresolvedReference {
 	if len(affectedSet) == 0 {
 		return a.cachedUnresolved()
 	}
@@ -178,7 +184,7 @@ func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []re
 
 	res := a.newResolver()
 	defer func() { _ = res.Close() }()
-	updated := res.FindUnresolvedForPaths(paths)
+	updated := res.FindUnresolvedForPaths(ctx, paths)
 
 	a.unresolvedMu.Lock()
 	for _, path := range paths {
@@ -197,22 +203,22 @@ func (a *App) AnalyzeHallucinationsIncremental(affectedSet map[string]bool) []re
 	return a.cachedUnresolved()
 }
 
-func (a *App) AnalyzeProbableBridgesForPaths(paths []string) []resolver.ProbableBridgeReference {
+func (a *App) AnalyzeProbableBridgesForPaths(ctx context.Context, paths []string) []resolver.ProbableBridgeReference {
 	res := a.newResolver()
 	defer func() { _ = res.Close() }()
-	return res.FindProbableBridgeReferencesForPaths(paths)
+	return res.FindProbableBridgeReferencesForPaths(ctx, paths)
 }
 
-func (a *App) AnalyzeUnusedImports() []resolver.UnusedImport {
+func (a *App) AnalyzeUnusedImports(ctx context.Context) []resolver.UnusedImport {
 	paths := a.currentGraphPaths()
 	res := a.newResolver()
 	defer func() { _ = res.Close() }()
-	unused := res.FindUnusedImports(paths)
+	unused := res.FindUnusedImports(ctx, paths)
 	a.rebuildUnusedCache(unused)
 	return unused
 }
 
-func (a *App) AnalyzeUnusedImportsIncremental(affectedSet map[string]bool) []resolver.UnusedImport {
+func (a *App) AnalyzeUnusedImportsIncremental(ctx context.Context, affectedSet map[string]bool) []resolver.UnusedImport {
 	if len(affectedSet) == 0 {
 		return a.cachedUnused()
 	}
@@ -224,7 +230,7 @@ func (a *App) AnalyzeUnusedImportsIncremental(affectedSet map[string]bool) []res
 
 	res := a.newResolver()
 	defer func() { _ = res.Close() }()
-	updated := res.FindUnusedImports(paths)
+	updated := res.FindUnusedImports(ctx, paths)
 
 	a.unusedMu.Lock()
 	for _, path := range paths {

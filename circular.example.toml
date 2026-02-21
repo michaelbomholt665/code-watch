@@ -76,6 +76,14 @@ debounce = "1s"
 files = 1000
 file_contents = 1000
 
+[observability]
+enabled = false
+port = 9090
+enable_metrics = true
+enable_tracing = false
+otlp_endpoint = "localhost:4317"
+service_name = "circular"
+
 [secrets]
 enabled = false
 entropy_threshold = 4.0

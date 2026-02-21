@@ -6,6 +6,7 @@ import (
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -84,8 +85,8 @@ func (a *App) allSecrets(limit int) []parser.Secret {
 	return all
 }
 
-func (a *App) GenerateMarkdownReport(req MarkdownReportRequest) (MarkdownReportResult, error) {
-	return newPresentationService(a).GenerateMarkdownReport(req)
+func (a *App) GenerateMarkdownReport(ctx context.Context, req MarkdownReportRequest) (MarkdownReportResult, error) {
+	return newPresentationService(a).GenerateMarkdownReport(ctx, req)
 }
 
 func (a *App) PrintSummary(

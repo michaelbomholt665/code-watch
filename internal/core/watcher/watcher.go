@@ -2,6 +2,7 @@
 package watcher
 
 import (
+	"circular/internal/shared/observability"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -145,6 +146,7 @@ func (w *Watcher) run() {
 			if !ok {
 				return
 			}
+			observability.WatcherEventsTotal.Inc()
 
 			if event.Op&fsnotify.Create == fsnotify.Create {
 				info, err := os.Stat(event.Name)

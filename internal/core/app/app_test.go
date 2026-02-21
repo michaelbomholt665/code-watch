@@ -46,7 +46,7 @@ func TestApp(t *testing.T) {
 	}
 
 	// Test InitialScan
-	err = app.InitialScan()
+	err = app.InitialScan(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestApp(t *testing.T) {
 	}
 
 	// Test GenerateOutputs
-	err = app.GenerateOutputs(nil, nil, nil, nil, nil, nil)
+	err = app.GenerateOutputs(context.Background(), nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,16 +100,17 @@ func TestApp_GenerateOutputs_IncludesUnusedImportRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
-	unused := app.AnalyzeUnusedImports()
+	ctx := context.Background()
+	unused := app.AnalyzeUnusedImports(ctx)
 	if len(unused) == 0 {
 		t.Fatal("expected at least one unused import")
 	}
 
-	if err := app.GenerateOutputs(nil, nil, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(ctx, nil, nil, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -159,7 +160,7 @@ func TestApp_GenerateOutputs_IncludesProbableBridgeRows(t *testing.T) {
 		},
 	})
 
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -214,7 +215,7 @@ func TestApp_ProcessFile_DetectsSecretsWhenEnabled(t *testing.T) {
 		t.Fatalf("expected non-zero secret count, got %d", got)
 	}
 
-	update := app.CurrentUpdate()
+	update := app.CurrentUpdate(context.Background())
 	if update.SecretCount == 0 {
 		t.Fatalf("expected non-zero update.SecretCount, got %d", update.SecretCount)
 	}
@@ -246,10 +247,10 @@ func TestApp_GenerateOutputs_IncludesSecretRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -318,11 +319,11 @@ func TestApp_GenerateOutputs_MermaidPlantUMLAndMarkdownInjection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -378,14 +379,15 @@ func TestApp_GenerateOutputs_WritesMarkdownReport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
+	ctx := context.Background()
 	cycles := app.Graph.DetectCycles()
-	unresolved := app.AnalyzeHallucinations()
-	unused := app.AnalyzeUnusedImports()
-	if err := app.GenerateOutputs(cycles, unresolved, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	unresolved := app.AnalyzeHallucinations(ctx)
+	unused := app.AnalyzeUnusedImports(ctx)
+	if err := app.GenerateOutputs(ctx, cycles, unresolved, unused, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -430,10 +432,10 @@ func TestApp_GenerateMarkdownReport_WriteFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	result, err := app.GenerateMarkdownReport(MarkdownReportRequest{
+	result, err := app.GenerateMarkdownReport(context.Background(), MarkdownReportRequest{
 		WriteFile: true,
 	})
 	if err != nil {
@@ -493,11 +495,11 @@ func TestApp_GenerateOutputs_DiagramPathsUseDetectedRootAndDiagramsDir(t *testin
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -568,11 +570,11 @@ func TestApp_GenerateOutputs_ArchitectureDiagramMode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -622,10 +624,10 @@ func TestApp_GenerateOutputs_ComponentAndFlowDiagramModes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	componentOut, err := os.ReadFile(cfg.Output.Mermaid)
@@ -643,7 +645,7 @@ func TestApp_GenerateOutputs_ComponentAndFlowDiagramModes(t *testing.T) {
 			MaxDepth:    4,
 		},
 	}
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	flowOut, err := os.ReadFile(cfg.Output.Mermaid)
@@ -749,10 +751,10 @@ func TestApp_GenerateOutputs_MultipleDiagramModesCreateSuffixedFiles(t *testing.
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := app.InitialScan(); err != nil {
+	if err := app.InitialScan(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if err := app.GenerateOutputs(nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil); err != nil {
 		t.Fatal(err)
 	}
 

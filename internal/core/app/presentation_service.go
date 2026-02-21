@@ -6,6 +6,7 @@ import (
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/version"
 	"circular/internal/ui/report"
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -24,14 +25,14 @@ func newPresentationService(app *App) *PresentationService {
 	}
 }
 
-func (p *PresentationService) GenerateMarkdownReport(req MarkdownReportRequest) (MarkdownReportResult, error) {
+func (p *PresentationService) GenerateMarkdownReport(ctx context.Context, req MarkdownReportRequest) (MarkdownReportResult, error) {
 	cycles := p.app.Graph.DetectCycles()
 	metrics := p.app.Graph.ComputeModuleMetrics()
 	hotspots := p.app.Graph.TopComplexity(p.app.Config.Architecture.TopComplexity)
 	violations := p.app.ArchitectureViolations()
-	probableBridges := p.app.AnalyzeProbableBridges()
-	unresolved := p.app.AnalyzeHallucinations()
-	unused := p.app.AnalyzeUnusedImports()
+	probableBridges := p.app.AnalyzeProbableBridges(ctx)
+	unresolved := p.app.AnalyzeHallucinations(ctx)
+	unused := p.app.AnalyzeUnusedImports(ctx)
 
 	root, err := p.app.resolveOutputRoot()
 	if err != nil {

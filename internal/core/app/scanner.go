@@ -4,6 +4,8 @@ import (
 	"circular/internal/core/app/helpers"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
+	"circular/internal/shared/observability"
+	"context"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -11,11 +13,15 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gobwas/glob"
 )
 
-func (a *App) InitialScan() error {
+func (a *App) InitialScan(ctx context.Context) error {
+	ctx, span := observability.Tracer.Start(ctx, "App.InitialScan")
+	defer span.End()
+
 	finalPaths := helpers.UniqueScanRoots(a.Config.WatchPaths)
 	expandedPaths := make(map[string]bool, len(finalPaths))
 	for _, p := range finalPaths {
@@ -115,6 +121,12 @@ func (a *App) ScanDirectories(paths []string, excludeDirs, excludeFiles []string
 }
 
 func (a *App) ProcessFile(path string) error {
+	start := time.Now()
+	lang := a.codeParser.GetLanguage(path)
+	defer func() {
+		observability.ParsingDuration.WithLabelValues(lang).Observe(time.Since(start).Seconds())
+	}()
+
 	previousContent := a.contentForPath(path)
 	previousFile, _ := a.Graph.GetFile(path)
 	content, err := os.ReadFile(path)

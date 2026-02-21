@@ -13,6 +13,7 @@ import (
 // CodeParser abstracts source parsing and language-file support checks.
 type CodeParser interface {
 	ParseFile(path string, content []byte) (*parser.File, error)
+	GetLanguage(path string) string
 	IsSupportedPath(filePath string) bool
 	IsTestFile(path string) bool
 	SupportedExtensions() []string
