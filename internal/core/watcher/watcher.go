@@ -3,6 +3,8 @@ package watcher
 
 import (
 	"circular/internal/shared/observability"
+	"hash/fnv"
+	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -28,6 +30,9 @@ type Watcher struct {
 	pending   map[string]time.Time
 	pendingMu sync.Mutex
 	timer     *time.Timer
+
+	fileHashes map[string]uint64
+	hashesMu   sync.Mutex
 }
 
 func NewWatcher(debounce time.Duration, excludeDirs, excludeFiles []string, onChange func([]string)) (*Watcher, error) {
@@ -68,12 +73,27 @@ func NewWatcher(debounce time.Duration, excludeDirs, excludeFiles []string, onCh
 			".py": true,
 		},
 		testSuffixes: []string{"_test.go", "_test.py"},
+		fileHashes:   make(map[string]uint64),
 	}
 
 	w.excludeDirs = compiledDirs
 	w.excludeFiles = compiledFiles
 
 	return w, nil
+}
+
+func (w *Watcher) computeHash(path string) (uint64, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return 0, err
+	}
+	defer f.Close()
+
+	h := fnv.New64a()
+	if _, err := io.Copy(h, f); err != nil {
+		return 0, err
+	}
+	return h.Sum64(), nil
 }
 
 func (w *Watcher) SetLanguageFilters(extensions, filenames, testSuffixes []string) {
@@ -212,10 +232,41 @@ func (w *Watcher) flushChanges() {
 	w.pending = make(map[string]time.Time)
 	w.pendingMu.Unlock()
 
-	if len(paths) > 0 {
+	if len(paths) == 0 {
+		return
+	}
+
+	var realChanges []string
+	w.hashesMu.Lock()
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		if os.IsNotExist(err) {
+			delete(w.fileHashes, path)
+			realChanges = append(realChanges, path)
+			continue
+		}
+		if err != nil || info.IsDir() {
+			continue
+		}
+
+		hash, err := w.computeHash(path)
+		if err != nil {
+			realChanges = append(realChanges, path)
+			continue
+		}
+
+		if lastHash, ok := w.fileHashes[path]; ok && lastHash == hash {
+			continue
+		}
+		w.fileHashes[path] = hash
+		realChanges = append(realChanges, path)
+	}
+	w.hashesMu.Unlock()
+
+	if len(realChanges) > 0 {
 		w.callbackMu.Lock()
 		defer w.callbackMu.Unlock()
-		w.onChange(paths)
+		w.onChange(realChanges)
 	}
 }
 

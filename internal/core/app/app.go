@@ -114,6 +114,15 @@ func (a *App) UpdateConfig(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
+func (a *App) PruneCache(percentage int) {
+	if a.Graph != nil {
+		a.Graph.PruneCache(percentage)
+	}
+	if a.fileContents != nil {
+		a.fileContents.Prune(percentage)
+	}
+}
+
 func New(cfg *config.Config) (*App, error) {
 	registry, err := buildParserRegistry(cfg)
 	if err != nil {

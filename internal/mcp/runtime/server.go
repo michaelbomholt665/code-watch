@@ -54,6 +54,9 @@ type Server struct {
 	projectMu sync.RWMutex
 	watchMu   sync.Mutex
 	watching  bool
+
+	busyMu   sync.Mutex
+	activeOp contracts.OperationID
 }
 
 type historyStore interface {
@@ -337,6 +340,24 @@ func (s *Server) dispatchOperation(ctx context.Context, raw map[string]any) (any
 		}
 	}
 
+	if isExclusiveOperation(operation) {
+		s.busyMu.Lock()
+		if s.activeOp != "" {
+			s.busyMu.Unlock()
+			return nil, contracts.ToolError{
+				Code:    contracts.ErrorUnavailable,
+				Message: fmt.Sprintf("resource busy: %s in progress", s.activeOp),
+			}
+		}
+		s.activeOp = operation
+		s.busyMu.Unlock()
+		defer func() {
+			s.busyMu.Lock()
+			s.activeOp = ""
+			s.busyMu.Unlock()
+		}()
+	}
+
 	if !s.allowlist.Allows(operation) {
 		return nil, contracts.ToolError{Code: contracts.ErrorInvalidArgument, Message: fmt.Sprintf("operation not allowlisted: %s", operation)}
 	}
@@ -403,4 +424,12 @@ func wrapToolResult(operation contracts.OperationID, payload any) any {
 
 func toToolError(err error) error {
 	return adapters.MapToMCPError(err)
+}
+
+func isExclusiveOperation(op contracts.OperationID) bool {
+	switch op {
+	case contracts.OperationScanRun:
+		return true
+	}
+	return false
 }

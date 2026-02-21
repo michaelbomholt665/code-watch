@@ -14,8 +14,12 @@ func TestMain(m *testing.M) {
 	if err := os.MkdirAll("./grammars", 0o755); err != nil {
 		panic(err)
 	}
+	if err := os.MkdirAll("./src", 0o755); err != nil {
+		panic(err)
+	}
 	code := m.Run()
 	os.RemoveAll("./grammars")
+	os.RemoveAll("./src")
 	os.Exit(code)
 }
 

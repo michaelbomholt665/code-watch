@@ -85,6 +85,10 @@ func (g *Graph) UpdateCapacity(capacity int) {
 	g.fileCache.SetCapacity(capacity)
 }
 
+func (g *Graph) PruneCache(percentage int) int {
+	return g.fileCache.Prune(percentage)
+}
+
 func (g *Graph) AddFile(file *parser.File) {
 	g.mu.Lock()
 	defer g.mu.Unlock()

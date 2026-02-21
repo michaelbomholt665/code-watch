@@ -194,30 +194,152 @@ var (
 - Integration tests in `internal/test/`
 - Benchmark tests for performance-critical paths
 
-### 3.2 Areas for Improvement
+### 3.2 Implemented Improvements (2026-02-21 Update)
 
-#### 1. Error Context Propagation
+The following improvements have been implemented since the initial analysis:
 
-**Issue:** Some error paths lose context during wrapping.
+#### 1. Error Context Propagation ✅ IMPLEMENTED
 
-**Location:** [`internal/core/app/service.go`](internal/core/app/service.go)
+**Location:** [`internal/core/errors/errors.go`](internal/core/errors/errors.go)
 
 ```go
-// Current
-if err := s.app.ProcessFile(filePath); err != nil {
-    warnings = append(warnings, fmt.Sprintf("process file %s: %v", filePath, err))
+// Implemented: DomainError now supports structured context
+type DomainError struct {
+    Code    ErrorCode
+    Message string
+    Err     error
+    Context map[string]interface{}  // NEW: Structured context
 }
 
-// Improved - preserve structured error
-if err := s.app.ProcessFile(filePath); err != nil {
-    warnings = append(warnings, fmt.Sprintf("process file %s: %v", filePath, err))
-    // Consider: structured logging with key-value pairs
+// Context keys defined
+const (
+    CtxPath      = "path"
+    CtxOperation = "operation"
+    CtxLanguage  = "language"
+    CtxSymbol    = "symbol"
+)
+
+// Fluent context addition
+func (e *DomainError) WithContext(key string, value interface{}) *DomainError
+
+// Helper function for adding context to any error
+func AddContext(err error, key string, value interface{}) error
+```
+
+**Status:** Fully implemented with fluent API for context chaining.
+
+#### 2. Memory Management ✅ IMPLEMENTED
+
+**Location:** [`internal/engine/graph/lru.go`](internal/engine/graph/lru.go)
+
+```go
+// Implemented: Proactive cache pruning
+func (c *LRUCache[K, V]) Prune(percentage int) int {
+    // Removes oldest percentage of items from the cache
+    // Returns count of items removed
 }
 ```
 
-**Recommendation:** Add structured error context with file path, operation, and timing information.
+**Location:** [`internal/core/app/app.go`](internal/core/app/app.go)
 
-#### 2. Configuration Validation Gaps
+```go
+// Implemented: App-level cache pruning
+func (a *App) PruneCache(percentage int) {
+    if a.Graph != nil {
+        a.Graph.PruneCache(percentage)
+    }
+    if a.fileContents != nil {
+        a.fileContents.Prune(percentage)
+    }
+}
+```
+
+**Configuration:** [`internal/core/config/config.go`](internal/core/config/config.go)
+
+```go
+type Performance struct {
+    MaxHeapMB int `toml:"max_heap_mb"`  // NEW: Memory limit configuration
+}
+```
+
+**Status:** Fully implemented with configuration support.
+
+#### 3. MCP Exclusive Operation Handling ✅ IMPLEMENTED
+
+**Location:** [`internal/mcp/runtime/server.go`](internal/mcp/runtime/server.go)
+
+```go
+type Server struct {
+    // ... existing fields
+    busyMu   sync.Mutex
+    activeOp contracts.OperationID  // NEW: Track active exclusive operation
+}
+
+func isExclusiveOperation(op contracts.OperationID) bool {
+    switch op {
+    case contracts.OperationScanRun:
+        return true
+    }
+    return false
+}
+
+// In dispatchOperation:
+if isExclusiveOperation(operation) {
+    s.busyMu.Lock()
+    if s.activeOp != "" {
+        s.busyMu.Unlock()
+        return nil, contracts.ToolError{
+            Code:    contracts.ErrorUnavailable,
+            Message: fmt.Sprintf("resource busy: %s in progress", s.activeOp),
+        }
+    }
+    s.activeOp = operation
+    s.busyMu.Unlock()
+    defer func() { /* clear activeOp */ }()
+}
+```
+
+**Note:** This is appropriate for a **local-first, single-user MCP** architecture. Per-client rate limiting is not needed since the MCP is designed for single-user local usage.
+
+**Status:** Fully implemented with exclusive operation tracking.
+
+#### 4. Watcher Content Hashing ✅ IMPLEMENTED
+
+**Location:** [`internal/core/watcher/watcher.go`](internal/core/watcher/watcher.go)
+
+```go
+type Watcher struct {
+    // ... existing fields
+    fileHashes map[string]uint64  // NEW: Track file content hashes
+    hashesMu   sync.Mutex
+}
+
+func (w *Watcher) computeHash(path string) (uint64, error) {
+    // Uses FNV-64a for fast content hashing
+}
+
+func (w *Watcher) flushChanges() {
+    // ... 
+    var realChanges []string
+    w.hashesMu.Lock()
+    for _, path := range paths {
+        // ... stat file
+        hash, err := w.computeHash(path)
+        if lastHash, ok := w.fileHashes[path]; ok && lastHash == hash {
+            continue  // Skip unchanged file
+        }
+        w.fileHashes[path] = hash
+        realChanges = append(realChanges, path)
+    }
+    // Only process realChanges
+}
+```
+
+**Status:** Fully implemented with FNV-64a hashing for efficient change detection.
+
+### 3.3 Remaining Areas for Improvement
+
+#### 1. Configuration Validation Gaps
 
 **Issue:** Some configuration combinations are not validated.
 
@@ -230,27 +352,7 @@ if err := s.app.ProcessFile(filePath); err != nil {
 
 **Recommendation:** Add comprehensive cross-field validation rules.
 
-#### 3. Memory Management in Large Codebases
-
-**Issue:** LRU cache eviction may not keep up with very large codebases.
-
-**Location:** [`internal/engine/graph/lru.go`](internal/engine/graph/lru.go)
-
-```go
-// Current eviction is simple
-func (c *LRUCache[K, V]) Evict(key K) {
-    // ... removes from map and list
-}
-
-// Consider: proactive memory pressure handling
-func (c *LRUCache[K, V]) EvictUnderPressure() int {
-    // Evict 25% of entries when under memory pressure
-}
-```
-
-**Recommendation:** Add memory pressure monitoring and proactive cache reduction.
-
-#### 4. Parser Pool Resource Management
+#### 2. Parser Pool Resource Management
 
 **Issue:** Parser pool may leak resources if not properly closed.
 
@@ -258,46 +360,13 @@ func (c *LRUCache[K, V]) EvictUnderPressure() int {
 
 **Recommendation:** Add finalizer logging and resource tracking for debugging leaks.
 
-#### 5. MCP Rate Limiting Granularity
-
-**Issue:** Rate limiting is operation-level but not user/session aware.
-
-**Location:** [`internal/mcp/runtime/server.go`](internal/mcp/runtime/server.go)
-
-```go
-// Current: single limiter for all operations
-if s.opLimiter != nil {
-    weight := validate.GetOperationWeight(operation, s.cfg.MCP.RateLimit.Weights)
-    if !s.opLimiter.Allow(weight) {
-        // Reject
-    }
-}
-```
-
-**Recommendation:** Add per-client or per-session rate limiting for multi-tenant scenarios.
-
-#### 6. Symbol Store SQLite Concurrency
+#### 3. Symbol Store SQLite Concurrency
 
 **Issue:** SQLite symbol store may have contention under high write load.
 
 **Location:** [`internal/engine/graph/symbol_store.go`](internal/engine/graph/symbol_store.go)
 
 **Recommendation:** Consider write batching or moving to a more concurrent store for high-throughput scenarios.
-
-#### 7. Watcher Debounce Edge Cases
-
-**Issue:** Rapid file changes may cause duplicate processing.
-
-**Location:** [`internal/core/watcher/watcher.go`](internal/core/watcher/watcher.go)
-
-```go
-// Current: simple time-based debounce
-w.timer = time.AfterFunc(w.debounce, func() {
-    w.flushChanges()
-})
-```
-
-**Recommendation:** Add content hashing to skip unchanged files even if events fire.
 
 ---
 
@@ -548,29 +617,43 @@ type BridgeScoreWeights struct {
 
 ## 8. Recommendations Summary
 
-### High Priority
+### Implemented (2026-02-21)
+
+| Issue | Implementation | Status |
+|-------|---------------|--------|
+| Error context propagation | `DomainError.Context` with fluent API | ✅ Done |
+| Memory pressure handling | `LRUCache.Prune()` + `App.PruneCache()` | ✅ Done |
+| Watcher edge cases | Content hashing with FNV-64a | ✅ Done |
+| MCP exclusive operations | `busyMu` + `activeOp` tracking | ✅ Done |
+
+### High Priority (Remaining)
 
 | Issue | Recommendation | Effort |
 |-------|---------------|--------|
 | Configuration validation gaps | Add cross-field validation | Medium |
-| Memory pressure handling | Add proactive cache eviction | Medium |
-| Error context propagation | Add structured error context | Low |
 
-### Medium Priority
+### Medium Priority (Remaining)
 
 | Issue | Recommendation | Effort |
 |-------|---------------|--------|
-| Rate limiting granularity | Add per-client limiting | Medium |
-| Watcher edge cases | Add content hashing | Low |
 | Test coverage gaps | Add edge case tests | Medium |
 
-### Low Priority
+### Low Priority (Remaining)
 
 | Issue | Recommendation | Effort |
 |-------|---------------|--------|
 | Parser pool debugging | Add resource tracking | Low |
 | Symbol store concurrency | Consider write batching | High |
 | Audit logging | Add for mutation operations | Medium |
+
+### Design Note: Local-First Single-User MCP
+
+The MCP server is designed as a **local-first, single-user** tool. This design decision means:
+
+- **Per-client rate limiting is not needed** - Only one user interacts with the MCP at a time
+- **Exclusive operation handling is appropriate** - Prevents concurrent scans from conflicting
+- **Session management is simplified** - No need for multi-tenant isolation
+- **Local file system access is expected** - No sandboxing required for trusted local usage
 
 ---
 
@@ -636,16 +719,28 @@ The `internal/` codebase demonstrates strong architectural principles and clean 
 - Well-designed MCP server with multiple transports
 - Good test coverage and error handling
 
-**Primary Areas for Improvement:**
-- Enhanced configuration validation
-- Memory management for large codebases
-- More granular rate limiting
-- Additional security hardening
+**Implemented Improvements (2026-02-21):**
+- ✅ Structured error context propagation with `DomainError.Context`
+- ✅ Proactive cache pruning via `LRUCache.Prune()` and `App.PruneCache()`
+- ✅ Content hashing in watcher to skip unchanged files
+- ✅ Exclusive operation handling for MCP scan operations
 
-The codebase is production-ready with the recommended improvements being enhancements rather than blocking issues.
+**Remaining Areas for Improvement:**
+- Configuration cross-field validation
+- Parser pool resource tracking
+- Symbol store write batching (for high-throughput scenarios)
+
+**Design Context:**
+The MCP server is designed as a **local-first, single-user** tool, which appropriately simplifies:
+- No per-client rate limiting needed
+- Exclusive operation handling prevents concurrent conflicts
+- Local file system access without sandboxing
+
+The codebase is production-ready with the implemented improvements addressing the critical issues identified in the initial analysis.
 
 ---
 
 **Report Generated:** 2026-02-21  
+**Report Updated:** 2026-02-21 (verified implementations)  
 **Analyzed Files:** 100+ Go source files  
 **Total Lines Analyzed:** ~30,000+ lines

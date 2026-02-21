@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 ## 2026-02-21
 
 ### Added
+- `cli:` Added `circular grammars` command to add/list/remove Tree-sitter grammars.
+- `config:` Added `[performance]` section for proactive memory pruning (`max_heap_mb`).
+- `config:` Added `[caches]` section to control LRU capacities.
+- `engine:` Added parser pool resource tracking to detect leaks and active leases.
+- `graph:` Added memory pressure awareness and proactive LRU cache pruning.
+- `graph:` Optimized Symbol Store concurrency with batching and WAL mode tuning.
+- `watcher:` Added content hashing to suppress spurious file events.
+- `mcp:` Added resource guardrails (exclusive operations, rate limits enforcement).
+- `errors:` Enhanced error context propagation with structured metadata.
 - `observability:` Added **Prometheus metrics** support (`internal/shared/observability/metrics.go`).
   - New metrics: `circular_parsing_seconds` (per language), `circular_graph_nodes_total`, `circular_graph_edges_total`, `circular_analysis_seconds`, and `circular_watcher_events_total`.
   - Added `/metrics` endpoint to a new observability HTTP server.

@@ -3,6 +3,7 @@ package parser
 
 import (
 	"sync"
+	"time"
 
 	sitter "github.com/tree-sitter/go-tree-sitter"
 )
@@ -24,12 +25,19 @@ import (
 type ParserPool struct {
 	lang *sitter.Language
 	pool sync.Pool
+
+	// Tracking
+	leases   map[*sitter.Parser]time.Time
+	leasesMu sync.Mutex
 }
 
 // NewParserPool creates a pool for the given language grammar.
 // The language must remain valid for the lifetime of the pool.
 func NewParserPool(lang *sitter.Language) *ParserPool {
-	p := &ParserPool{lang: lang}
+	p := &ParserPool{
+		lang:   lang,
+		leases: make(map[*sitter.Parser]time.Time),
+	}
 	p.pool = sync.Pool{
 		New: func() any {
 			sp := sitter.NewParser()
@@ -46,6 +54,11 @@ func (p *ParserPool) Get() *sitter.Parser {
 	sp := p.pool.Get().(*sitter.Parser)
 	// Ensure the language is set in case the parser was Reset() externally.
 	sp.SetLanguage(p.lang)
+
+	p.leasesMu.Lock()
+	p.leases[sp] = time.Now()
+	p.leasesMu.Unlock()
+
 	return sp
 }
 
@@ -56,6 +69,18 @@ func (p *ParserPool) Put(sp *sitter.Parser) {
 	if sp == nil {
 		return
 	}
+
+	p.leasesMu.Lock()
+	delete(p.leases, sp)
+	p.leasesMu.Unlock()
+
 	sp.Reset()
 	p.pool.Put(sp)
+}
+
+// Stats returns the number of currently active parsers.
+func (p *ParserPool) Stats() int {
+	p.leasesMu.Lock()
+	defer p.leasesMu.Unlock()
+	return len(p.leases)
 }

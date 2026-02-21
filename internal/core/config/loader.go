@@ -245,6 +245,10 @@ func applyDefaults(cfg *Config) {
 		cfg.Caches.FileContents = 1000
 	}
 
+	if cfg.Performance.MaxHeapMB <= 0 {
+		cfg.Performance.MaxHeapMB = 2048
+	}
+
 	if cfg.Observability.Port == 0 {
 		cfg.Observability.Port = 9090
 	}

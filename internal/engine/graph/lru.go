@@ -163,3 +163,25 @@ func (c *LRUCache[K, V]) evictLeastRecentLocked() {
 	c.order.Remove(back)
 	delete(c.items, back.Value.(*lruEntry[K, V]).key)
 }
+
+// Prune removes the oldest percentage (0-100) of items from the cache.
+// Returns the number of items removed.
+func (c *LRUCache[K, V]) Prune(percentage int) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if percentage <= 0 {
+		return 0
+	}
+	if percentage > 100 {
+		percentage = 100
+	}
+
+	target := c.order.Len() * percentage / 100
+	count := 0
+	for i := 0; i < target; i++ {
+		c.evictLeastRecentLocked()
+		count++
+	}
+	return count
+}

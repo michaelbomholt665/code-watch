@@ -24,7 +24,12 @@ type Config struct {
 	Secrets             Secrets             `toml:"secrets"`
 	Resolver            ResolverSettings    `toml:"resolver"`
 	Caches              Caches              `toml:"caches"`
+	Performance         Performance         `toml:"performance"`
 	Observability       Observability       `toml:"observability"`
+}
+
+type Performance struct {
+	MaxHeapMB int `toml:"max_heap_mb"`
 }
 
 type Observability struct {

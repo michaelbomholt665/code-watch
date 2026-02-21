@@ -162,6 +162,17 @@ format = "plantuml"
 beep = false
 terminal = true
 
+[caches]
+files = 1000
+file_contents = 1000
+
+[performance]
+max_heap_mb = 2048
+
+[observability]
+enabled = false
+port = 9090
+
 [architecture]
 enabled = false
 top_complexity = 5
@@ -367,6 +378,16 @@ Settings that require deep re-initialization (like `db.path` or `paths.*`) curre
 - values containing `/` or `\` resolve under output root (`output.paths.root` or detected project root)
 - `output.*`, `alerts.*`, `architecture.*`
 - unchanged semantics from prior versions
+- `caches.files` (`int`)
+- parser LRU cache size (files)
+- `caches.file_contents` (`int`)
+- file content LRU cache size
+- `performance.max_heap_mb` (`int`)
+- proactive memory pruning threshold (default `2048`)
+- `observability.enabled` (`bool`)
+- enables metrics/tracing
+- `observability.port` (`int`)
+- metrics server port
 
 ## Optional Bridge Mapping File
 

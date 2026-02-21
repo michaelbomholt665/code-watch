@@ -83,6 +83,10 @@ func Run(args []string) int {
 		return 1
 	}
 
+	if len(opts.args) > 0 && opts.args[0] == "grammars" {
+		return runGrammarsCommand(cfg, opts.args[1:])
+	}
+
 	if err := runMCPModeIfEnabled(opts, cfg, cfgPath); err != nil {
 		slog.Error("failed to start MCP mode", "error", err)
 		return 1

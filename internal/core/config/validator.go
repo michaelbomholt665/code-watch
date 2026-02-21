@@ -173,6 +173,38 @@ func validateOutput(cfg *Config) error {
 		seenEntryPoints[entry] = true
 	}
 
+	outputs := make(map[string]string)
+	checkConflict := func(path, name string) error {
+		if path == "" {
+			return nil
+		}
+		path = filepath.Clean(path)
+		if owner, exists := outputs[path]; exists {
+			return fmt.Errorf("output conflict: %s and %s share the same path %q", owner, name, path)
+		}
+		outputs[path] = name
+		return nil
+	}
+
+	if err := checkConflict(cfg.Output.DOT, "output.dot"); err != nil {
+		return err
+	}
+	if err := checkConflict(cfg.Output.TSV, "output.tsv"); err != nil {
+		return err
+	}
+	if err := checkConflict(cfg.Output.Mermaid, "output.mermaid"); err != nil {
+		return err
+	}
+	if err := checkConflict(cfg.Output.PlantUML, "output.plantuml"); err != nil {
+		return err
+	}
+	if err := checkConflict(cfg.Output.Markdown, "output.markdown"); err != nil {
+		return err
+	}
+	if err := checkConflict(cfg.Output.SARIF, "output.sarif"); err != nil {
+		return err
+	}
+
 	seen := make(map[string]bool, len(cfg.Output.UpdateMarkdown))
 	for i, injection := range cfg.Output.UpdateMarkdown {
 		ref := fmt.Sprintf("output.update_markdown[%d]", i)
@@ -481,8 +513,20 @@ func validatePaths(cfg *Config) []error {
 
 	// Verify crucial paths if set
 	if cfg.GrammarsPath != "" {
-		if _, err := os.Stat(cfg.GrammarsPath); os.IsNotExist(err) {
+		stat, err := os.Stat(cfg.GrammarsPath)
+		if os.IsNotExist(err) {
 			errs = append(errs, fmt.Errorf("grammars_path %q does not exist", cfg.GrammarsPath))
+		} else if err == nil && !stat.IsDir() {
+			errs = append(errs, fmt.Errorf("grammars_path %q is not a directory", cfg.GrammarsPath))
+		}
+	}
+
+	for i, path := range cfg.WatchPaths {
+		if path == "" {
+			continue
+		}
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			errs = append(errs, fmt.Errorf("watch_paths[%d] %q does not exist", i, path))
 		}
 	}
 

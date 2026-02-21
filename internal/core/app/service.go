@@ -2,6 +2,7 @@ package app
 
 import (
 	"circular/internal/core/config"
+	"circular/internal/core/errors"
 	"circular/internal/core/ports"
 	"circular/internal/data/history"
 	"circular/internal/data/query"
@@ -9,6 +10,7 @@ import (
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/observability"
+	"circular/internal/shared/util"
 	"context"
 	"fmt"
 	"os"
@@ -58,17 +60,22 @@ func (s *analysisService) RunScan(ctx context.Context, req ports.ScanRequest) (p
 		paths := normalizeScanPaths(req.Paths)
 		files, err := s.app.ScanDirectories(paths, s.app.Config.Exclude.Dirs, s.app.Config.Exclude.Files)
 		if err != nil {
-			return ports.ScanResult{}, err
+			return ports.ScanResult{}, errors.AddContext(err, errors.CtxOperation, "scan_directories")
 		}
 		filesScanned = len(files)
-		for _, filePath := range files {
+		for i, filePath := range files {
 			if err := s.app.ProcessFile(filePath); err != nil {
 				warnings = append(warnings, fmt.Sprintf("process file %s: %v", filePath, err))
+			}
+			if i%100 == 0 {
+				if util.GetHeapAllocMB() > uint64(s.app.Config.Performance.MaxHeapMB) {
+					s.app.PruneCache(20)
+				}
 			}
 		}
 	} else {
 		if err := s.app.InitialScan(ctx); err != nil {
-			return ports.ScanResult{}, err
+			return ports.ScanResult{}, errors.AddContext(err, errors.CtxOperation, "initial_scan")
 		}
 		filesScanned = s.app.Graph.FileCount()
 	}
@@ -87,7 +94,13 @@ func (s *analysisService) TraceImportChain(ctx context.Context, from, to string)
 	if s.app == nil {
 		return "", fmt.Errorf("app is required")
 	}
-	return s.app.TraceImportChain(from, to)
+	chain, err := s.app.TraceImportChain(from, to)
+	if err != nil {
+		err = errors.AddContext(err, "from", from)
+		err = errors.AddContext(err, "to", to)
+		return "", err
+	}
+	return chain, nil
 }
 
 func (s *analysisService) AnalyzeImpact(ctx context.Context, path string) (graph.ImpactReport, error) {
@@ -97,7 +110,11 @@ func (s *analysisService) AnalyzeImpact(ctx context.Context, path string) (graph
 	if s.app == nil {
 		return graph.ImpactReport{}, fmt.Errorf("app is required")
 	}
-	return s.app.AnalyzeImpact(ctx, path)
+	report, err := s.app.AnalyzeImpact(ctx, path)
+	if err != nil {
+		return graph.ImpactReport{}, errors.AddContext(err, errors.CtxPath, path)
+	}
+	return report, nil
 }
 
 func (s *analysisService) DetectCycles(ctx context.Context, limit int) ([][]string, int, error) {

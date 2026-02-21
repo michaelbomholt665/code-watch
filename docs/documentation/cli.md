@@ -6,7 +6,17 @@ Entrypoint: `cmd/circular/main.go` delegates to `internal/ui/cli.Run(...)`.
 
 ```bash
 circular [flags] [path]
+circular grammars <command> [args]
 ```
+
+## Grammar Management
+
+- `circular grammars add <name> <url>`
+  - Download and build a Tree-sitter grammar from a git repository.
+- `circular grammars list`
+  - List installed grammars.
+- `circular grammars remove <name>`
+  - Remove an installed grammar.
 
 ## Flags
 

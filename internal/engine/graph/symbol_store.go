@@ -36,12 +36,13 @@ func OpenSQLiteSymbolStore(path, projectKey string) (*SQLiteSymbolStore, error) 
 		}
 	}
 
-	dsn := fmt.Sprintf("file:%s?_pragma=busy_timeout(2000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)", cleanPath)
+	dsn := fmt.Sprintf("file:%s?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(ON)", cleanPath)
 	db, err := sql.Open(sqliteDriverName, dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open sqlite symbol store %q: %w", cleanPath, err)
 	}
-	db.SetMaxOpenConns(1)
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(5)
 	db.SetConnMaxLifetime(0)
 	db.SetConnMaxIdleTime(0)
 
@@ -61,6 +62,43 @@ func OpenSQLiteSymbolStore(path, projectKey string) (*SQLiteSymbolStore, error) 
 	}
 
 	return &SQLiteSymbolStore{db: db, projectKey: key}, nil
+}
+
+type Batch struct {
+	tx    *sql.Tx
+	store *SQLiteSymbolStore
+}
+
+func (s *SQLiteSymbolStore) BeginBatch() (*Batch, error) {
+	if s == nil || s.db == nil {
+		return nil, fmt.Errorf("store not initialized")
+	}
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, fmt.Errorf("begin batch: %w", err)
+	}
+	return &Batch{tx: tx, store: s}, nil
+}
+
+func (b *Batch) UpsertFile(file *parser.File) error {
+	if err := upsertFileRows(b.tx, b.store.projectKey, file); err != nil {
+		return err
+	}
+	if err := upsertFileBlob(b.tx, b.store.projectKey, file); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *Batch) Commit() error {
+	if err := b.tx.Commit(); err != nil {
+		return fmt.Errorf("commit batch: %w", err)
+	}
+	return nil
+}
+
+func (b *Batch) Rollback() error {
+	return b.tx.Rollback()
 }
 
 func (s *SQLiteSymbolStore) Close() error {

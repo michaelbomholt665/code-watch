@@ -68,6 +68,7 @@ This codebase is 100% AI-generated. Use it at your own risk and responsibility.
 - Optional Bubble Tea terminal UI for live issue monitoring
 - Grammar provenance manifest verification (`grammars/manifest.toml`) with `--verify-grammars`
 - Configuration dry-run check with `--check`
+- Tree-sitter grammar management CLI (`add`/`list`/`remove`)
 
 ## Runtime Modes
 
@@ -268,6 +269,11 @@ Note:
 - Mermaid output is enabled by default; PlantUML is disabled by default unless explicitly enabled.
 
 ## CLI
+
+Commands:
+- `circular grammars add <name> <url>` download and build grammar
+- `circular grammars list` list installed grammars
+- `circular grammars remove <name>` remove installed grammar
 
 Flags:
 - `--config` path to TOML config (default `./data/config/circular.toml`)
