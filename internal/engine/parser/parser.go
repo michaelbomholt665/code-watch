@@ -19,6 +19,7 @@ type Parser struct {
 	extensions     map[string]string
 	filenames      map[string]string
 	testFileSuffix []string
+	pools          map[string]*ParserPool
 }
 
 type Extractor interface {
@@ -35,6 +36,7 @@ func NewParser(loader *GrammarLoader) *Parser {
 		extractors: make(map[string]Extractor),
 		extensions: make(map[string]string),
 		filenames:  make(map[string]string),
+		pools:      make(map[string]*ParserPool),
 	}
 	for lang, spec := range loader.LanguageRegistry() {
 		if !spec.Enabled {
@@ -47,6 +49,11 @@ func NewParser(loader *GrammarLoader) *Parser {
 			p.filenames[strings.ToLower(path.Base(name))] = lang
 		}
 		p.testFileSuffix = append(p.testFileSuffix, spec.TestFileSuffixes...)
+
+		// Initialize parser pool for this language
+		if grammar := loader.languages[lang]; grammar != nil {
+			p.pools[lang] = NewParserPool(grammar)
+		}
 	}
 	sort.Strings(p.testFileSuffix)
 	return p
@@ -93,11 +100,21 @@ func (p *Parser) ParseFile(path string, content []byte) (*File, error) {
 		return nil, errors.New(errors.CodeInternal, fmt.Sprintf("grammar not loaded: %s", lang))
 	}
 
-	parser := sitter.NewParser()
-	defer parser.Close()
-	parser.SetLanguage(grammar)
+	var tree *sitter.Tree
 
-	tree := parser.Parse(content, nil)
+	if pool, ok := p.pools[lang]; ok {
+		// Use pool
+		sp := pool.Get()
+		defer pool.Put(sp)
+		tree = sp.Parse(content, nil)
+	} else {
+		// Fallback (e.g. dynamic grammar or no pool)
+		parser := sitter.NewParser()
+		defer parser.Close()
+		parser.SetLanguage(grammar)
+		tree = parser.Parse(content, nil)
+	}
+
 	if tree == nil {
 		return nil, errors.New(errors.CodeInternal, "parse failed")
 	}

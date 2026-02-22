@@ -10,21 +10,7 @@
 
 ### Issues Identified
 
-#### 1. Race Condition in `SyncOutputs`
-In `internal/core/app/service.go`, the `SyncOutputsWithSnapshot` method modifies the global `app.Config` to filter outputs for a specific request.
-
-```go
-cfgCopy := *s.app.Config
-cfgCopy.Output = filteredOutput
-s.app.Config.Output = cfgCopy.Output // Unsafe modification of shared state!
-// ... do work ...
-s.app.Config.Output = originalOutput
-```
-
-**Risk**: If multiple requests (e.g., via MCP or parallel CLI operations) occur, they will overwrite each other's configuration or read inconsistent state. This violates thread safety.
-**Recommendation**: Pass the desired output configuration (or a transient config object) to `GenerateOutputs` instead of relying on the global `app.Config`.
-
-#### 2. Leaking Infrastructure Details into Core
+#### 1. Leaking Infrastructure Details into Core
 `internal/core/app/app.go` imports `circular/internal/engine/graph` and uses `*graph.SQLiteSymbolStore`.
 
 ```go
@@ -38,7 +24,7 @@ type App struct {
 **Violation**: `SQLiteSymbolStore` is a concrete implementation tied to SQLite. The core domain should depend on an interface (likely `ports.SymbolStore` or similar, though `ports.go` only defines `HistoryStore` currently).
 **Recommendation**: Define a `SymbolStore` interface in `ports` and use that in `App`.
 
-#### 3. Watcher as an Adapter in Core
+#### 2. Watcher as an Adapter in Core
 `internal/core/watcher/watcher.go` imports `github.com/fsnotify/fsnotify` directly.
 **Violation**: This is a concrete adapter implementation residing in `internal/core`. In strict Hexagonal Architecture, core logic should not depend on external drivers like filesystem event watchers.
 **Recommendation**: Define a `Watcher` port (interface) in `ports` and move the implementation to `internal/ui/watcher` or `internal/engine/watcher`.
@@ -98,12 +84,10 @@ type App struct {
 
 ## Summary & Next Steps
 The codebase is well-structured and follows the intended architecture mostly. However, there are a few critical issues:
-1.  **Race Condition**: `SyncOutputs` is dangerous.
-2.  **Performance**: `ParserPool` is unimplemented/unused.
-3.  **Coupling**: Some infrastructure details (SQLite, fsnotify, Observability) leak into Core.
+1.  **Performance**: `ParserPool` is unimplemented/unused.
+2.  **Coupling**: Some infrastructure details (SQLite, fsnotify, Observability) leak into Core.
 
 **Recommended Actions**:
-1.  Fix the `SyncOutputs` race condition immediately.
-2.  Wire up `ParserPool` in `Parser`.
-3.  Refactor `App` to use `SymbolStore` interface.
-4.  Move `internal/core/watcher` to an adapter layer.
+1.  Wire up `ParserPool` in `Parser`.
+2.  Refactor `App` to use `SymbolStore` interface.
+3.  Move `internal/core/watcher` to an adapter layer.
