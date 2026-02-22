@@ -21,8 +21,7 @@ type App struct {
 }
 ```
 
-**Violation**: `SQLiteSymbolStore` is a concrete implementation tied to SQLite. The core domain should depend on an interface (likely `ports.SymbolStore` or similar, though `ports.go` only defines `HistoryStore` currently).
-**Recommendation**: Define a `SymbolStore` interface in `ports` and use that in `App`.
+**Note**: This concrete dependency is acknowledged as an acceptable deviation for this project's scope (a development tool for a larger system). It serves as a persistent cache/store to optimize memory usage for large codebases.
 
 #### 2. Watcher as an Adapter in Core
 `internal/core/watcher/watcher.go` imports `github.com/fsnotify/fsnotify` directly.
@@ -42,7 +41,7 @@ type App struct {
     }
     ```
     The `README.md` claims "Uses a `sync.Pool`-backed Tree-sitter parser instance pool". This seems to be false or broken.
-    **Recommendation**: Integrate `ParserPool` into `Parser` to reduce allocation overhead.
+    **Resolution**: Fixed by integrating `ParserPool` into `Parser`.
 
 ### Graph (`internal/engine/graph`)
 *   **Observation**: `SQLiteSymbolStore` is tightly coupled to `parser.File`. While this is acceptable for an internal adapter, it reinforces the need for decoupling via interfaces if we ever want to swap the parser or store.
@@ -84,10 +83,8 @@ type App struct {
 
 ## Summary & Next Steps
 The codebase is well-structured and follows the intended architecture mostly. However, there are a few critical issues:
-1.  **Performance**: `ParserPool` is unimplemented/unused.
+1.  **Performance**: `ParserPool` is unimplemented/unused (Fixed).
 2.  **Coupling**: Some infrastructure details (SQLite, fsnotify, Observability) leak into Core.
 
 **Recommended Actions**:
-1.  Wire up `ParserPool` in `Parser`.
-2.  Refactor `App` to use `SymbolStore` interface.
-3.  Move `internal/core/watcher` to an adapter layer.
+1.  Move `internal/core/watcher` to an adapter layer.
