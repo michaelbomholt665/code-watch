@@ -45,6 +45,51 @@ type HistoryStore interface {
 	LoadSnapshots(projectKey string, since time.Time) ([]history.Snapshot, error)
 }
 
+type WriteOperation string
+
+const (
+	WriteOperationUpsertFile   WriteOperation = "upsert_file"
+	WriteOperationDeleteFile   WriteOperation = "delete_file"
+	WriteOperationPruneToPaths WriteOperation = "prune_to_paths"
+)
+
+type WriteRequest struct {
+	ProjectKey string
+	Operation  WriteOperation
+	File       *parser.File
+	FilePath   string
+	Paths      []string
+}
+
+type EnqueueResult string
+
+const (
+	EnqueueAccepted EnqueueResult = "accepted"
+	EnqueueDropped  EnqueueResult = "dropped"
+	EnqueueSpooled  EnqueueResult = "spooled"
+)
+
+type WriteQueuePort interface {
+	Enqueue(req WriteRequest) EnqueueResult
+	DequeueBatch(ctx context.Context, maxItems int, wait time.Duration) ([]WriteRequest, error)
+	Close() error
+}
+
+type SpoolRow struct {
+	ID       int64
+	Request  WriteRequest
+	Attempts int
+}
+
+type WriteSpoolPort interface {
+	Enqueue(req WriteRequest) error
+	DequeueBatch(ctx context.Context, maxItems int) ([]SpoolRow, error)
+	Ack(ids []int64) error
+	Nack(rows []SpoolRow, nextAttemptAt time.Time, lastErr string) error
+	PendingCount(ctx context.Context) (int, error)
+	Close() error
+}
+
 // ScanRequest defines a scan operation request for driving adapters.
 type ScanRequest struct {
 	Paths []string
@@ -76,9 +121,9 @@ type MarkdownReportRequest struct {
 
 // MarkdownReportResult contains markdown report generation results.
 type MarkdownReportResult struct {
-	Markdown string
-	Path     string
-	Written  bool
+	Markdown  string
+	Path      string
+	Written   bool
 	RuleGuide ArchitectureRuleGuide
 }
 
@@ -98,9 +143,9 @@ type SummarySnapshot struct {
 }
 
 type ArchitectureRuleSummary struct {
-	RuleCount       int
-	ModuleCount     int
-	ViolationCount  int
+	RuleCount        int
+	ModuleCount      int
+	ViolationCount   int
 	ImportViolations int
 	FileViolations   int
 }

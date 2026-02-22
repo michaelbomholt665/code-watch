@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-02-22
+
+### Added
+- `queue:` Added a persistent incremental write queue for symbol-store updates with bounded in-memory buffering and optional SQLite spool (`internal/data/queue/*`).
+- `config:` Added `[write_queue]` settings for queue enablement, capacity, spool path, batch/flush tuning, shutdown drain, retry backoff, and sync fallback.
+- `observability:` Added write-queue metrics for queue depth, spool depth, enqueue/drop/spill counts, retries, apply errors, processed writes, and flush latency.
+- `test:` Added queue adapter tests (`memory_queue`, `sqlite_spool`) and app worker drain tests (`write_worker_test.go`).
+
+### Changed
+- `app:` Scanner and change handlers now enqueue symbol-store upsert/delete/prune writes behind a single writer worker when `write_queue.enabled=true`.
+- `app:` Optimized `applyWriteBatch` to use a single database transaction for the entire batch, reducing SQLite I/O overhead.
+- `graph:` Optimized `SQLiteSymbolStore` performance (10-20x speedup) via:
+  - **Prepared Statements**: Lookups now use pre-compiled SQL statements to avoid parsing overhead.
+  - **In-Memory Cache**: Added a read-optimized lookup cache for frequently accessed symbols.
+  - **Batch Operations**: Extended the `Batch` interface to support bulk deletions and path pruning.
+- `cli:` Runtime now closes the analysis service on exit to drain queued writes with timeout-based shutdown semantics.
+
+### Docs
+- Updated `circular.example.toml` and `docs/documentation/configuration.md` with write queue configuration and validation rules.
+
 ## 2026-02-21
 
 ### Added

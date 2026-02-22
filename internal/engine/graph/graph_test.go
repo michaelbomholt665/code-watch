@@ -433,6 +433,58 @@ func TestGraph_TopComplexity(t *testing.T) {
 	}
 }
 
+func TestGraph_TopComplexity_IgnoresZeroLOC(t *testing.T) {
+	g := NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:   "mod/main.go",
+		Module: "mod",
+		Definitions: []parser.Definition{
+			{Name: "Ghost", Kind: parser.KindFunction, ComplexityScore: 20},
+			{Name: "Real", Kind: parser.KindFunction, ComplexityScore: 8, LOC: 20},
+		},
+	})
+
+	top := g.TopComplexity(5)
+	if len(top) != 1 {
+		t.Fatalf("expected 1 hotspot, got %d", len(top))
+	}
+	if top[0].Definition != "Real" {
+		t.Fatalf("expected Real hotspot, got %s", top[0].Definition)
+	}
+}
+
+func TestGraph_AddFile_PrefersHigherQualityDefinition(t *testing.T) {
+	g := NewGraph()
+
+	g.AddFile(&parser.File{
+		Path:   "mod/one.go",
+		Module: "mod",
+		Definitions: []parser.Definition{
+			{Name: "Run", Kind: parser.KindFunction, BranchCount: 3, ParameterCount: 2, NestingDepth: 2, LOC: 40},
+		},
+	})
+	g.AddFile(&parser.File{
+		Path:   "mod/two.go",
+		Module: "mod",
+		Definitions: []parser.Definition{
+			{Name: "Run", Kind: parser.KindFunction},
+		},
+	})
+
+	defs, ok := g.GetDefinitions("mod")
+	if !ok {
+		t.Fatal("expected module definitions")
+	}
+	def, ok := defs["Run"]
+	if !ok {
+		t.Fatal("expected Run definition")
+	}
+	if def.LOC != 40 || def.BranchCount != 3 || def.ParameterCount != 2 || def.NestingDepth != 2 {
+		t.Fatalf("expected high-quality metrics to be retained, got %+v", *def)
+	}
+}
+
 func TestGraph_BuildUniversalSymbolTable(t *testing.T) {
 	g := NewGraph()
 

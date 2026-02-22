@@ -66,7 +66,9 @@ func (m *MarkdownGenerator) Generate(data MarkdownReportData, opts MarkdownRepor
 		b.WriteString("- [Architecture Rules](#architecture-rules)\n")
 		b.WriteString("- [Architecture Violations](#architecture-violations)\n")
 		b.WriteString("- [Architecture Rule Violations](#architecture-rule-violations)\n")
-		b.WriteString("- [Complexity Hotspots](#complexity-hotspots)\n")
+		if len(data.Hotspots) > 0 {
+			b.WriteString("- [Complexity Hotspots](#complexity-hotspots)\n")
+		}
 		b.WriteString("- [Probable Bridge References](#probable-bridge-references)\n")
 		b.WriteString("- [Unresolved References](#unresolved-references)\n")
 		b.WriteString("- [Unused Imports](#unused-imports)\n")
@@ -94,7 +96,9 @@ func (m *MarkdownGenerator) Generate(data MarkdownReportData, opts MarkdownRepor
 	m.writeArchitectureRules(&b, data.ArchitectureRules, data.RuleSummary, opts.CollapsibleSections)
 	m.writeViolations(&b, data.Violations, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeRuleViolations(&b, data.RuleViolations, opts.ProjectRoot, opts.CollapsibleSections)
-	m.writeHotspots(&b, data.Hotspots, opts.ProjectRoot, opts.CollapsibleSections, verbosity)
+	if len(data.Hotspots) > 0 {
+		m.writeHotspots(&b, data.Hotspots, opts.ProjectRoot, opts.CollapsibleSections, verbosity)
+	}
 	m.writeProbableBridges(&b, data.ProbableBridges, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeUnresolved(&b, data.Unresolved, opts.ProjectRoot, opts.CollapsibleSections)
 	m.writeUnusedImports(&b, data.UnusedImports, opts.ProjectRoot, opts.CollapsibleSections, verbosity)

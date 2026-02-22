@@ -16,6 +16,7 @@ component "circular/internal/core/ports\n(step:2)" as circular_internal_core_por
 component "circular/internal/core/watcher\n(step:3)" as circular_internal_core_watcher
 component "circular/internal/data/history\n(step:2)" as circular_internal_data_history
 component "circular/internal/data/query\n(step:2)" as circular_internal_data_query
+component "circular/internal/engine/architecture\n(step:3)" as circular_internal_engine_architecture
 component "circular/internal/engine/graph\n(step:3)" as circular_internal_engine_graph
 component "circular/internal/engine/parser\n(step:2)" as circular_internal_engine_parser
 component "circular/internal/engine/parser/grammar\n(step:3)" as circular_internal_engine_parser_grammar
@@ -52,6 +53,7 @@ circular_internal_core_app --> circular_internal_core_ports
 circular_internal_core_app --> circular_internal_core_watcher
 circular_internal_core_app --> circular_internal_data_history
 circular_internal_core_app --> circular_internal_data_query
+circular_internal_core_app --> circular_internal_engine_architecture
 circular_internal_core_app --> circular_internal_engine_graph
 circular_internal_core_app --> circular_internal_engine_parser
 circular_internal_core_app --> circular_internal_engine_resolver
@@ -78,6 +80,9 @@ circular_internal_core_ports --> circular_internal_engine_resolver
 circular_internal_core_watcher --> circular_internal_shared_observability
 circular_internal_data_query --> circular_internal_data_history
 circular_internal_data_query --> circular_internal_engine_graph
+circular_internal_engine_architecture --> circular_internal_core_ports
+circular_internal_engine_architecture --> circular_internal_engine_graph
+circular_internal_engine_architecture --> circular_internal_shared_util
 circular_internal_engine_graph --> circular_internal_engine_parser
 circular_internal_engine_graph --> circular_internal_shared_observability
 circular_internal_engine_graph --> circular_internal_shared_util
@@ -153,6 +158,7 @@ circular_internal_ui_cli --> circular_internal_ui_report_formats
 circular_internal_ui_report --> circular_internal_data_history
 circular_internal_ui_report --> circular_internal_engine_graph
 circular_internal_ui_report --> circular_internal_ui_report_formats
+circular_internal_ui_report_formats --> circular_internal_core_ports
 circular_internal_ui_report_formats --> circular_internal_engine_graph
 circular_internal_ui_report_formats --> circular_internal_engine_parser
 circular_internal_ui_report_formats --> circular_internal_engine_resolver

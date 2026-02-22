@@ -1,7 +1,7 @@
 ---
 title: Code Analysis Report
 project: code-watch
-generated_at: 2026-02-21T21:11:08Z
+generated_at: 2026-02-22T01:53:13Z
 version: 1.0.0
 ---
 
@@ -10,7 +10,9 @@ version: 1.0.0
 ## Table of Contents
 - [Executive Summary](#executive-summary)
 - [Circular Imports](#circular-imports)
+- [Architecture Rules](#architecture-rules)
 - [Architecture Violations](#architecture-violations)
+- [Architecture Rule Violations](#architecture-rule-violations)
 - [Complexity Hotspots](#complexity-hotspots)
 - [Probable Bridge References](#probable-bridge-references)
 - [Unresolved References](#unresolved-references)
@@ -19,29 +21,37 @@ version: 1.0.0
 ## Executive Summary
 | Metric | Value |
 | --- | --- |
-| Total Modules | 39 |
-| Total Files | 148 |
+| Total Modules | 41 |
+| Total Files | 154 |
 | Circular Imports | 0 |
+| Architecture Rules | 0 |
 | Architecture Violations | 0 |
+| Architecture Rule Violations | 0 |
 | Complexity Hotspots | 5 |
 | Probable Bridge References | 0 |
-| Unresolved References | 1174 |
-| Unused Imports | 100 |
+| Unresolved References | 1287 |
+| Unused Imports | 115 |
 
 ## Circular Imports
 No circular imports detected.
 
+## Architecture Rules
+No architecture rules configured.
+
 ## Architecture Violations
 No architecture violations detected.
+
+## Architecture Rule Violations
+No architecture rule violations detected.
 
 ## Complexity Hotspots
 | Module | Definition | File | Score | Branches | Params | Nesting | LOC |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `circular/internal/ui/cli` | `Run` | `internal/ui/cli/runtime.go` | 145 | 51 | 1 | 9 | 244 |
-| `circular/internal/core/config` | `applyDefaults` | `internal/core/config/loader.go` | 131 | 53 | 1 | 3 | 187 |
-| `circular/internal/core/app` | `GenerateOutputs` | `internal/core/app/output.go` | 116 | 36 | 8 | 9 | 189 |
-| `circular/internal/mcp/validate` | `ParseToolArgs` | `internal/mcp/validate/args.go` | 105 | 37 | 3 | 5 | 186 |
-| `circular/internal/core/config` | `validateArchitecture` | `internal/core/config/validator.go` | 97 | 31 | 1 | 11 | 120 |
+| `circular/internal/core/config` | `applyDefaults` | `internal/core/config/loader.go` | 155 | 63 | 1 | 3 | 222 |
+| `circular/internal/ui/cli` | `Run` | `internal/ui/cli/runtime.go` | 150 | 53 | 1 | 9 | 251 |
+| `circular/internal/core/config` | `validateArchitecture` | `internal/core/config/validator.go` | 144 | 51 | 1 | 11 | 192 |
+| `circular/internal/core/app` | `GenerateOutputs` | `internal/core/app/output.go` | 124 | 38 | 10 | 9 | 201 |
+| `circular/internal/ui/report/formats` | `Generate` | `internal/ui/report/formats/mermaid.go` | 107 | 35 | 3 | 9 | 168 |
 
 ## Probable Bridge References
 No probable bridge references detected.
@@ -52,186 +62,6 @@ No probable bridge references detected.
 
 | Reference | Location |
 | --- | --- |
-| `g.GetAllFiles` | `internal/ui/report/formats/sequence.go:42:23` |
-| `b.WriteString` | `internal/ui/report/formats/sequence.go:107:2` |
-| `b.WriteString` | `internal/ui/report/formats/sequence.go:108:2` |
-| `b.WriteString` | `internal/ui/report/formats/sequence.go:126:3` |
-| `b.WriteString` | `internal/ui/report/formats/sequence.go:129:2` |
-| `b.WriteString` | `internal/ui/report/formats/sequence.go:133:3` |
-| `b.String` | `internal/ui/report/formats/sequence.go:136:9` |
-| `g.GetAllFiles` | `internal/ui/report/formats/sequence.go:145:23` |
-| `a.resolveOutputRoot` | `internal/core/app/output_targets.go:21:15` |
-| `helpers.ResolveOutputPath` | `internal/core/app/output_targets.go:33:13` |
-| `helpers.ResolveOutputPath` | `internal/core/app/output_targets.go:34:13` |
-| `helpers.ResolveDiagramPath` | `internal/core/app/output_targets.go:35:13` |
-| `helpers.ResolveDiagramPath` | `internal/core/app/output_targets.go:36:13` |
-| `helpers.ResolveOutputPath` | `internal/core/app/output_targets.go:37:13` |
-| `config.ResolvePaths` | `internal/core/app/output_targets.go:48:16` |
-| `g.Modules` | `internal/ui/report/formats/diagram_modes.go:47:13` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:48:17` |
-| `g.GetImports` | `internal/ui/report/formats/diagram_modes.go:76:13` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:77:23` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:81:14` |
-| `g.GetAllFiles` | `internal/ui/report/formats/diagram_modes.go:92:11` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:152:10` |
-| `g.Modules` | `internal/ui/report/formats/diagram_modes.go:186:13` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:187:17` |
-| `g.GetAllFiles` | `internal/ui/report/formats/diagram_modes.go:196:38` |
-| `g.GetImports` | `internal/ui/report/formats/diagram_modes.go:198:38` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:204:12` |
-| `g.GetImports` | `internal/ui/report/formats/diagram_modes.go:212:13` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:241:29` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:250:22` |
-| `r.checkModule` | `internal/engine/resolver/unresolved.go:15:5` |
-| `r.graph.HasDefinitions` | `internal/engine/resolver/unresolved.go:50:8` |
-| `r.checkModule` | `internal/engine/resolver/unresolved.go:51:9` |
-| `r.graph.HasDefinitions` | `internal/engine/resolver/unresolved.go:67:9` |
-| `r.checkModule` | `internal/engine/resolver/unresolved.go:68:10` |
-| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:88:15` |
-| `span.End` | `internal/engine/resolver/unresolved.go:89:8` |
-| `r.graph.GetAllFiles` | `internal/engine/resolver/unresolved.go:93:11` |
-| `r.findUnresolvedInFile` | `internal/engine/resolver/unresolved.go:96:35` |
-| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:103:15` |
-| `span.End` | `internal/engine/resolver/unresolved.go:104:8` |
-| `r.graph.GetAllFiles` | `internal/engine/resolver/unresolved.go:108:11` |
-| `r.findProbableBridgeReferencesInFile` | `internal/engine/resolver/unresolved.go:111:31` |
-| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:118:15` |
-| `span.End` | `internal/engine/resolver/unresolved.go:119:8` |
-| `r.graph.GetFile` | `internal/engine/resolver/unresolved.go:130:15` |
-| `r.findUnresolvedInFile` | `internal/engine/resolver/unresolved.go:134:35` |
-| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:141:15` |
-| `span.End` | `internal/engine/resolver/unresolved.go:142:8` |
-| `r.graph.GetFile` | `internal/engine/resolver/unresolved.go:153:15` |
-| `r.findProbableBridgeReferencesInFile` | `internal/engine/resolver/unresolved.go:157:31` |
-| `r.resolveReferenceResult` | `internal/engine/resolver/unresolved.go:166:13` |
-| `r.resolveReferenceResult` | `internal/engine/resolver/unresolved.go:183:13` |
-| `watcher.Close` | `internal/core/config/watcher.go:40:3` |
-| `watcher.Close` | `internal/core/config/watcher.go:47:9` |
-| `g.mu.RLock` | `internal/engine/graph/detect.go:7:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/detect.go:8:8` |
-| `g.getSortedNeighbors` | `internal/engine/graph/detect.go:35:16` |
-| `g.getSortedNeighbors` | `internal/engine/graph/detect.go:70:18` |
-| `g.mu.RLock` | `internal/engine/graph/detect.go:100:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/detect.go:101:8` |
-| `g.mu.RLock` | `internal/engine/graph/detect.go:161:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/detect.go:162:8` |
-| `w.pendingMu.Lock` | `internal/core/watcher/watcher.go:135:2` |
-| `w.pendingMu.Unlock` | `internal/core/watcher/watcher.go:136:8` |
-| `w.watchRecursive` | `internal/core/watcher/watcher.go:142:13` |
-| `info.IsDir` | `internal/core/watcher/watcher.go:157:6` |
-| `w.shouldExcludeDir` | `internal/core/watcher/watcher.go:158:7` |
-| `info.IsDir` | `internal/core/watcher/watcher.go:179:22` |
-| `w.shouldExcludeDir` | `internal/core/watcher/watcher.go:180:10` |
-| `w.watchRecursive` | `internal/core/watcher/watcher.go:181:17` |
-| `w.shouldExcludeFile` | `internal/core/watcher/watcher.go:191:7` |
-| `w.scheduleChange` | `internal/core/watcher/watcher.go:199:5` |
-| `w.pendingMu.Lock` | `internal/core/watcher/watcher.go:212:2` |
-| `w.pendingMu.Unlock` | `internal/core/watcher/watcher.go:213:8` |
-| `w.timer.Stop` | `internal/core/watcher/watcher.go:218:3` |
-| `w.pendingMu.Lock` | `internal/core/watcher/watcher.go:227:2` |
-| `w.pendingMu.Unlock` | `internal/core/watcher/watcher.go:233:2` |
-| `info.IsDir` | `internal/core/watcher/watcher.go:248:20` |
-| `g.Match` | `internal/core/watcher/watcher.go:276:6` |
-| `g.Match` | `internal/core/watcher/watcher.go:304:6` |
-| `w.timer.Stop` | `internal/core/watcher/watcher.go:313:3` |
-| `info.IsDir` | `internal/core/watcher/watcher.go:320:35` |
-| `w.shouldExcludeFile` | `internal/core/watcher/watcher.go:323:6` |
-| `w.scheduleChange` | `internal/core/watcher/watcher.go:326:3` |
-| `m.mu.Lock` | `internal/mcp/transport/mock_transport.go:36:2` |
-| `m.mu.Unlock` | `internal/mcp/transport/mock_transport.go:38:3` |
-| `m.mu.Unlock` | `internal/mcp/transport/mock_transport.go:43:2` |
-| `m.mu.Lock` | `internal/mcp/transport/mock_transport.go:57:2` |
-| `m.mu.Unlock` | `internal/mcp/transport/mock_transport.go:58:8` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:46:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:47:8` |
-| `c.order.MoveToFront` | `internal/engine/graph/lru.go:54:2` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:61:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:62:8` |
-| `c.order.MoveToFront` | `internal/engine/graph/lru.go:66:3` |
-| `c.order.Len` | `internal/engine/graph/lru.go:72:5` |
-| `c.evictLeastRecentLocked` | `internal/engine/graph/lru.go:73:3` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:84:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:85:8` |
-| `c.order.Remove` | `internal/engine/graph/lru.go:91:2` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:97:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:98:8` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:110:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:111:8` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:122:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:123:8` |
-| `c.order.Len` | `internal/engine/graph/lru.go:124:9` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:134:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:135:8` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:143:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:144:8` |
-| `c.order.Len` | `internal/engine/graph/lru.go:151:6` |
-| `c.evictLeastRecentLocked` | `internal/engine/graph/lru.go:152:3` |
-| `c.order.Remove` | `internal/engine/graph/lru.go:163:2` |
-| `c.mu.Lock` | `internal/engine/graph/lru.go:170:2` |
-| `c.mu.Unlock` | `internal/engine/graph/lru.go:171:8` |
-| `c.order.Len` | `internal/engine/graph/lru.go:180:12` |
-| `c.evictLeastRecentLocked` | `internal/engine/graph/lru.go:183:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:50:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:51:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:52:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:53:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:54:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:55:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:57:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:59:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:60:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:61:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:62:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:63:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:64:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:65:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:66:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:68:4` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:70:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:73:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:74:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:75:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:76:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:77:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:78:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:79:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:80:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:81:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:82:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:83:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:93:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:94:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:95:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:96:3` |
-| `b.String` | `internal/ui/report/formats/markdown.go:99:9` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:103:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:105:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:122:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:133:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:135:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:148:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:159:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:161:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:178:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:189:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:191:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:213:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:223:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:234:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:236:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:249:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:260:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:262:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:279:3` |
-| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:289:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:308:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:309:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:310:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:311:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:314:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:317:3` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:319:2` |
-| `b.WriteString` | `internal/ui/report/formats/markdown.go:321:3` |
 | `engine.Walk` | `internal/engine/parser/profile_extractors.go:53:2` |
 | `node.ChildByFieldName` | `internal/engine/parser/profile_extractors.go:59:32` |
 | `node.ChildCount` | `internal/engine/parser/profile_extractors.go:61:25` |
@@ -289,109 +119,224 @@ No probable bridge references detected.
 | `child.Kind` | `internal/engine/parser/profile_extractors.go:778:40` |
 | `e.ExtractRaw` | `internal/engine/parser/profile_extractors.go:812:9` |
 | `e.ExtractRaw` | `internal/engine/parser/profile_extractors.go:849:9` |
-| `observability.Tracer.Start` | `internal/core/app/service.go:43:15` |
-| `span.End` | `internal/core/app/service.go:44:8` |
-| `s.app.Graph.FileCount` | `internal/core/app/service.go:80:18` |
-| `s.app.Graph.ModuleCount` | `internal/core/app/service.go:85:17` |
-| `s.app.Graph.DetectCycles` | `internal/core/app/service.go:127:12` |
-| `s.app.Graph.ComputeModuleMetrics` | `internal/core/app/service.go:182:13` |
-| `s.app.Graph.DetectCycles` | `internal/core/app/service.go:183:12` |
-| `s.app.AnalyzeHallucinations` | `internal/core/app/service.go:184:16` |
-| `s.app.AnalyzeUnusedImports` | `internal/core/app/service.go:185:12` |
-| `s.app.ArchitectureViolations` | `internal/core/app/service.go:188:16` |
-| `s.app.Graph.TopComplexity` | `internal/core/app/service.go:194:14` |
-| `s.app.Graph.ModuleCount` | `internal/core/app/service.go:202:22` |
-| `s.app.Graph.FileCount` | `internal/core/app/service.go:203:22` |
-| `s.app.Graph.DetectCycles` | `internal/core/app/service.go:256:12` |
-| `s.app.Graph.ComputeModuleMetrics` | `internal/core/app/service.go:262:13` |
-| `s.app.ArchitectureViolations` | `internal/core/app/service.go:270:16` |
-| `s.app.Graph.TopComplexity` | `internal/core/app/service.go:276:14` |
-| `s.app.AnalyzeHallucinations` | `internal/core/app/service.go:277:20` |
-| `s.app.AnalyzeUnusedImports` | `internal/core/app/service.go:278:19` |
-| `s.app.Graph.FileCount` | `internal/core/app/service.go:281:19` |
-| `s.app.Graph.ModuleCount` | `internal/core/app/service.go:282:19` |
+| `s.app.Graph.FileCount` | `internal/core/app/health.go:35:73` |
+| `s.app.Graph.ModuleCount` | `internal/core/app/health.go:35:98` |
+| `g.mu.RLock` | `internal/engine/graph/metrics.go:25:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/metrics.go:26:8` |
+| `util.SortedStringKeys` | `internal/engine/architecture/evaluator.go:34:17` |
+| `util.SortedStringKeys` | `internal/engine/architecture/evaluator.go:65:20` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:54:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:55:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:56:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:57:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:58:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:59:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:61:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:63:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:64:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:65:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:66:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:67:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:68:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:70:4` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:72:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:73:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:74:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:76:4` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:78:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:81:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:82:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:83:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:84:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:85:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:86:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:87:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:88:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:89:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:90:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:91:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:92:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:93:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:107:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:108:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:109:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:110:3` |
+| `b.String` | `internal/ui/report/formats/markdown.go:113:9` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:117:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:119:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:136:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:147:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:149:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:162:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:173:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:175:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:192:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:203:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:205:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:231:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:240:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:250:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:252:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:279:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:304:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:306:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:328:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:338:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:349:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:351:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:364:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:375:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:377:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:394:3` |
+| `m.writeTableWithCollapse` | `internal/ui/report/formats/markdown.go:404:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:423:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:424:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:425:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:426:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:429:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:432:3` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:434:2` |
+| `b.WriteString` | `internal/ui/report/formats/markdown.go:436:3` |
+| `a.codeParser.IsSupportedPath` | `internal/core/app/analyzer.go:28:7` |
+| `a.codeParser.IsTestFile` | `internal/core/app/analyzer.go:32:25` |
+| `a.enqueueSymbolWrite` | `internal/core/app/analyzer.go:44:14` |
+| `a.unresolvedMu.Lock` | `internal/core/app/analyzer.go:50:4` |
+| `a.unresolvedMu.Unlock` | `internal/core/app/analyzer.go:52:4` |
+| `a.unusedMu.Lock` | `internal/core/app/analyzer.go:53:4` |
+| `a.unusedMu.Unlock` | `internal/core/app/analyzer.go:55:4` |
+| `a.Graph.DetectCycles` | `internal/core/app/analyzer.go:64:12` |
+| `a.Graph.ModuleCount` | `internal/core/app/analyzer.go:78:29` |
+| `a.Graph.ModuleCount` | `internal/core/app/analyzer.go:82:19` |
+| `a.Graph.FileCount` | `internal/core/app/analyzer.go:83:19` |
+| `a.SecretCount` | `internal/core/app/analyzer.go:84:19` |
+| `resolver.NewResolver` | `internal/core/app/analyzer.go:94:10` |
+| `resolver.NewResolver` | `internal/core/app/analyzer.go:105:10` |
+| `res.WithBridgeResolutionConfig` | `internal/core/app/analyzer.go:106:3` |
+| `a.resolverBridgeConfig` | `internal/core/app/analyzer.go:106:34` |
+| `res.WithExplicitBridges` | `internal/core/app/analyzer.go:107:3` |
+| `a.loadResolverBridges` | `internal/core/app/analyzer.go:107:27` |
+| `resolver.NewResolver` | `internal/core/app/analyzer.go:112:10` |
+| `res.WithBridgeResolutionConfig` | `internal/core/app/analyzer.go:113:3` |
+| `a.resolverBridgeConfig` | `internal/core/app/analyzer.go:113:34` |
+| `res.WithExplicitBridges` | `internal/core/app/analyzer.go:114:3` |
+| `a.loadResolverBridges` | `internal/core/app/analyzer.go:114:27` |
+| `res.WithBridgeResolutionConfig` | `internal/core/app/analyzer.go:118:2` |
+| `a.resolverBridgeConfig` | `internal/core/app/analyzer.go:118:33` |
+| `res.WithExplicitBridges` | `internal/core/app/analyzer.go:119:2` |
+| `a.loadResolverBridges` | `internal/core/app/analyzer.go:119:26` |
+| `helpers.UniqueScanRoots` | `internal/core/app/analyzer.go:148:46` |
+| `a.newResolver` | `internal/core/app/analyzer.go:167:9` |
+| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:168:8` |
+| `res.Close` | `internal/core/app/analyzer.go:168:21` |
+| `a.newResolver` | `internal/core/app/analyzer.go:175:9` |
+| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:176:8` |
+| `res.Close` | `internal/core/app/analyzer.go:176:21` |
+| `a.cachedUnresolved` | `internal/core/app/analyzer.go:182:10` |
+| `a.newResolver` | `internal/core/app/analyzer.go:190:9` |
+| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:191:8` |
+| `res.Close` | `internal/core/app/analyzer.go:191:21` |
+| `a.unresolvedMu.Lock` | `internal/core/app/analyzer.go:194:2` |
+| `a.Graph.GetFile` | `internal/core/app/analyzer.go:196:15` |
+| `a.unresolvedMu.Unlock` | `internal/core/app/analyzer.go:206:2` |
+| `a.cachedUnresolved` | `internal/core/app/analyzer.go:208:9` |
+| `a.newResolver` | `internal/core/app/analyzer.go:212:9` |
+| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:213:8` |
+| `res.Close` | `internal/core/app/analyzer.go:213:21` |
+| `a.currentGraphPaths` | `internal/core/app/analyzer.go:218:11` |
+| `a.newResolver` | `internal/core/app/analyzer.go:219:9` |
+| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:220:8` |
+| `res.Close` | `internal/core/app/analyzer.go:220:21` |
+| `res.FindUnusedImports` | `internal/core/app/analyzer.go:221:12` |
+| `a.cachedUnused` | `internal/core/app/analyzer.go:228:10` |
+| `a.newResolver` | `internal/core/app/analyzer.go:236:9` |
+| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:237:8` |
+| `res.Close` | `internal/core/app/analyzer.go:237:21` |
+| `res.FindUnusedImports` | `internal/core/app/analyzer.go:238:13` |
+| `a.unusedMu.Lock` | `internal/core/app/analyzer.go:240:2` |
+| `a.Graph.GetFile` | `internal/core/app/analyzer.go:242:15` |
+| `a.unusedMu.Unlock` | `internal/core/app/analyzer.go:252:2` |
+| `a.cachedUnused` | `internal/core/app/analyzer.go:254:9` |
+| `r.symbolTable.Lookup` | `internal/engine/resolver/probabilistic.go:15:16` |
+| `r.symbolTable.Lookup` | `internal/engine/resolver/probabilistic.go:19:17` |
+| `r.symbolTable.LookupService` | `internal/engine/resolver/probabilistic.go:24:24` |
+| `r.symbolTable.LookupService` | `internal/engine/resolver/probabilistic.go:28:25` |
 | `d.detectWithRanges` | `internal/engine/secrets/detector.go:97:9` |
 | `d.detectWithRanges` | `internal/engine/secrets/detector.go:101:9` |
 | `index.lineCol` | `internal/engine/secrets/detector.go:177:17` |
 | `index.lineCol` | `internal/engine/secrets/detector.go:217:15` |
 | `index.lineCol` | `internal/engine/secrets/detector.go:261:16` |
-| `bridge.matchesSource` | `internal/engine/resolver/bridge.go:106:7` |
-| `bridge.matchesReference` | `internal/engine/resolver/bridge.go:109:6` |
-| `g.mu.RLock` | `internal/engine/graph/metrics.go:25:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/metrics.go:26:8` |
-| `r.mu.RLock` | `internal/mcp/registry/registry.go:44:2` |
-| `r.mu.RUnlock` | `internal/mcp/registry/registry.go:45:8` |
-| `r.mu.RLock` | `internal/mcp/registry/registry.go:52:2` |
-| `r.mu.RUnlock` | `internal/mcp/registry/registry.go:53:8` |
+| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:37:2` |
+| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:38:8` |
+| `a.mu.RLock` | `internal/mcp/adapters/adapter.go:43:2` |
+| `a.mu.RUnlock` | `internal/mcp/adapters/adapter.go:44:8` |
+| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:53:2` |
+| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:54:8` |
+| `a.analysis.RunScan` | `internal/mcp/adapters/adapter.go:60:17` |
+| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:87:2` |
+| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:88:8` |
+| `a.analysis.RunScan` | `internal/mcp/adapters/adapter.go:93:21` |
+| `a.analysis.ListFiles` | `internal/mcp/adapters/adapter.go:98:16` |
+| `a.mu.RLock` | `internal/mcp/adapters/adapter.go:116:2` |
+| `a.mu.RUnlock` | `internal/mcp/adapters/adapter.go:117:8` |
+| `a.analysis.ListFiles` | `internal/mcp/adapters/adapter.go:122:16` |
+| `a.mu.RLock` | `internal/mcp/adapters/adapter.go:138:2` |
+| `a.mu.RUnlock` | `internal/mcp/adapters/adapter.go:139:8` |
+| `a.queryService` | `internal/mcp/adapters/adapter.go:159:9` |
+| `a.queryService` | `internal/mcp/adapters/adapter.go:187:9` |
+| `a.queryService` | `internal/mcp/adapters/adapter.go:223:9` |
+| `a.queryService` | `internal/mcp/adapters/adapter.go:244:9` |
+| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:276:2` |
+| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:277:8` |
+| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:295:2` |
+| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:296:8` |
+| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:403:7` |
+| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:405:7` |
+| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:407:7` |
+| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:409:7` |
 | `config.ResolvePaths` | `internal/mcp/runtime/project_context.go:31:16` |
 | `config.ResolveRelative` | `internal/mcp/runtime/project_context.go:38:21` |
 | `config.ResolveRelative` | `internal/mcp/runtime/project_context.go:40:28` |
 | `util.WriteFileWithDirs` | `internal/mcp/runtime/project_context.go:84:12` |
 | `util.WriteFileWithDirs` | `internal/mcp/runtime/project_context.go:109:12` |
 | `util.WriteFileWithDirs` | `internal/mcp/runtime/project_context.go:126:12` |
-| `m.moduleList.Index` | `internal/ui/cli/ui_panels.go:30:9` |
-| `s.db.Exec` | `internal/mcp/tools/overlays/handler.go:98:14` |
-| `s.db.Exec` | `internal/mcp/tools/overlays/handler.go:195:12` |
-| `a.codeParser.IsSupportedPath` | `internal/core/app/analyzer.go:27:7` |
-| `a.codeParser.IsTestFile` | `internal/core/app/analyzer.go:31:25` |
-| `a.unresolvedMu.Lock` | `internal/core/app/analyzer.go:46:4` |
-| `a.unresolvedMu.Unlock` | `internal/core/app/analyzer.go:48:4` |
-| `a.unusedMu.Lock` | `internal/core/app/analyzer.go:49:4` |
-| `a.unusedMu.Unlock` | `internal/core/app/analyzer.go:51:4` |
-| `a.Graph.DetectCycles` | `internal/core/app/analyzer.go:60:12` |
-| `a.Graph.ModuleCount` | `internal/core/app/analyzer.go:73:29` |
-| `a.Graph.ModuleCount` | `internal/core/app/analyzer.go:77:19` |
-| `a.Graph.FileCount` | `internal/core/app/analyzer.go:78:19` |
-| `a.SecretCount` | `internal/core/app/analyzer.go:79:19` |
-| `resolver.NewResolver` | `internal/core/app/analyzer.go:89:10` |
-| `resolver.NewResolver` | `internal/core/app/analyzer.go:100:10` |
-| `res.WithBridgeResolutionConfig` | `internal/core/app/analyzer.go:101:3` |
-| `a.resolverBridgeConfig` | `internal/core/app/analyzer.go:101:34` |
-| `res.WithExplicitBridges` | `internal/core/app/analyzer.go:102:3` |
-| `a.loadResolverBridges` | `internal/core/app/analyzer.go:102:27` |
-| `resolver.NewResolver` | `internal/core/app/analyzer.go:107:10` |
-| `res.WithBridgeResolutionConfig` | `internal/core/app/analyzer.go:108:3` |
-| `a.resolverBridgeConfig` | `internal/core/app/analyzer.go:108:34` |
-| `res.WithExplicitBridges` | `internal/core/app/analyzer.go:109:3` |
-| `a.loadResolverBridges` | `internal/core/app/analyzer.go:109:27` |
-| `res.WithBridgeResolutionConfig` | `internal/core/app/analyzer.go:113:2` |
-| `a.resolverBridgeConfig` | `internal/core/app/analyzer.go:113:33` |
-| `res.WithExplicitBridges` | `internal/core/app/analyzer.go:114:2` |
-| `a.loadResolverBridges` | `internal/core/app/analyzer.go:114:26` |
-| `helpers.UniqueScanRoots` | `internal/core/app/analyzer.go:143:46` |
-| `a.newResolver` | `internal/core/app/analyzer.go:162:9` |
-| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:163:8` |
-| `res.Close` | `internal/core/app/analyzer.go:163:21` |
-| `a.newResolver` | `internal/core/app/analyzer.go:170:9` |
-| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:171:8` |
-| `res.Close` | `internal/core/app/analyzer.go:171:21` |
-| `a.cachedUnresolved` | `internal/core/app/analyzer.go:177:10` |
-| `a.newResolver` | `internal/core/app/analyzer.go:185:9` |
-| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:186:8` |
-| `res.Close` | `internal/core/app/analyzer.go:186:21` |
-| `a.unresolvedMu.Lock` | `internal/core/app/analyzer.go:189:2` |
-| `a.Graph.GetFile` | `internal/core/app/analyzer.go:191:15` |
-| `a.unresolvedMu.Unlock` | `internal/core/app/analyzer.go:201:2` |
-| `a.cachedUnresolved` | `internal/core/app/analyzer.go:203:9` |
-| `a.newResolver` | `internal/core/app/analyzer.go:207:9` |
-| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:208:8` |
-| `res.Close` | `internal/core/app/analyzer.go:208:21` |
-| `a.currentGraphPaths` | `internal/core/app/analyzer.go:213:11` |
-| `a.newResolver` | `internal/core/app/analyzer.go:214:9` |
-| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:215:8` |
-| `res.Close` | `internal/core/app/analyzer.go:215:21` |
-| `res.FindUnusedImports` | `internal/core/app/analyzer.go:216:12` |
-| `a.cachedUnused` | `internal/core/app/analyzer.go:223:10` |
-| `a.newResolver` | `internal/core/app/analyzer.go:231:9` |
-| `func() { _ = res.Close() }` | `internal/core/app/analyzer.go:232:8` |
-| `res.Close` | `internal/core/app/analyzer.go:232:21` |
-| `res.FindUnusedImports` | `internal/core/app/analyzer.go:233:13` |
-| `a.unusedMu.Lock` | `internal/core/app/analyzer.go:235:2` |
-| `a.Graph.GetFile` | `internal/core/app/analyzer.go:237:15` |
-| `a.unusedMu.Unlock` | `internal/core/app/analyzer.go:247:2` |
-| `a.cachedUnused` | `internal/core/app/analyzer.go:249:9` |
-| `m.Save` | `internal/ui/cli/grammars.go:109:12` |
-| `m.Save` | `internal/ui/cli/grammars.go:144:12` |
+| `config.ResolvePaths` | `internal/mcp/runtime/bootstrap.go:25:16` |
+| `config.ResolveRelative` | `internal/mcp/runtime/bootstrap.go:29:25` |
+| `historyStore.Close` | `internal/mcp/runtime/bootstrap.go:43:8` |
+| `registry.New` | `internal/mcp/runtime/bootstrap.go:48:9` |
+| `historyStore.Close` | `internal/mcp/runtime/bootstrap.go:53:8` |
+| `historyStore.Close` | `internal/mcp/runtime/bootstrap.go:60:7` |
+| `w.cfg.batchSize` | `internal/engine/graph/writer.go:101:35` |
+| `w.cfg.flushInterval` | `internal/engine/graph/writer.go:102:27` |
+| `w.writeBatch` | `internal/engine/graph/writer.go:109:10` |
+| `w.cfg.batchSize` | `internal/engine/graph/writer.go:118:21` |
+| `w.cfg.flushInterval` | `internal/engine/graph/writer.go:121:18` |
+| `tx.Rollback` | `internal/engine/graph/writer.go:160:8` |
+| `tx.Commit` | `internal/engine/graph/writer.go:164:12` |
+| `w.writeBatch` | `internal/engine/graph/writer.go:178:11` |
+| `db.Exec` | `internal/engine/graph/schema.go:12:12` |
+| `r.checkModule` | `internal/engine/resolver/unresolved.go:15:5` |
+| `r.graph.HasDefinitions` | `internal/engine/resolver/unresolved.go:50:8` |
+| `r.checkModule` | `internal/engine/resolver/unresolved.go:51:9` |
+| `r.graph.HasDefinitions` | `internal/engine/resolver/unresolved.go:67:9` |
+| `r.checkModule` | `internal/engine/resolver/unresolved.go:68:10` |
+| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:88:15` |
+| `span.End` | `internal/engine/resolver/unresolved.go:89:8` |
+| `r.graph.GetAllFiles` | `internal/engine/resolver/unresolved.go:93:11` |
+| `r.findUnresolvedInFile` | `internal/engine/resolver/unresolved.go:96:35` |
+| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:103:15` |
+| `span.End` | `internal/engine/resolver/unresolved.go:104:8` |
+| `r.graph.GetAllFiles` | `internal/engine/resolver/unresolved.go:108:11` |
+| `r.findProbableBridgeReferencesInFile` | `internal/engine/resolver/unresolved.go:111:31` |
+| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:118:15` |
+| `span.End` | `internal/engine/resolver/unresolved.go:119:8` |
+| `r.graph.GetFile` | `internal/engine/resolver/unresolved.go:130:15` |
+| `r.findUnresolvedInFile` | `internal/engine/resolver/unresolved.go:134:35` |
+| `observability.Tracer.Start` | `internal/engine/resolver/unresolved.go:141:15` |
+| `span.End` | `internal/engine/resolver/unresolved.go:142:8` |
+| `r.graph.GetFile` | `internal/engine/resolver/unresolved.go:153:15` |
+| `r.findProbableBridgeReferencesInFile` | `internal/engine/resolver/unresolved.go:157:31` |
+| `r.resolveReferenceResult` | `internal/engine/resolver/unresolved.go:166:13` |
+| `r.resolveReferenceResult` | `internal/engine/resolver/unresolved.go:183:13` |
 | `util.NormalizePatternPath` | `internal/engine/graph/architecture.go:71:15` |
 | `g.mu.RLock` | `internal/engine/graph/architecture.go:104:2` |
 | `g.mu.RUnlock` | `internal/engine/graph/architecture.go:105:8` |
@@ -401,113 +346,177 @@ No probable bridge references detected.
 | `util.NormalizePatternPath` | `internal/engine/graph/architecture.go:166:13` |
 | `util.HasPathPrefix` | `internal/engine/graph/architecture.go:203:5` |
 | `util.HasPathPrefix` | `internal/engine/graph/architecture.go:206:29` |
-| `a.Graph.GetAllFiles` | `internal/core/app/caches.go:7:20` |
-| `a.unresolvedMu.Lock` | `internal/core/app/caches.go:13:2` |
-| `a.unresolvedMu.Unlock` | `internal/core/app/caches.go:15:2` |
-| `a.Graph.GetAllFiles` | `internal/core/app/caches.go:31:20` |
-| `a.unusedMu.Lock` | `internal/core/app/caches.go:37:2` |
-| `a.unusedMu.Unlock` | `internal/core/app/caches.go:39:2` |
-| `a.Graph.GetAllFiles` | `internal/core/app/caches.go:54:11` |
-| `a.Graph.DetectCycles` | `internal/core/app/output.go:24:19` |
-| `a.Graph.ModuleCount` | `internal/core/app/output.go:26:19` |
-| `a.Graph.FileCount` | `internal/core/app/output.go:27:19` |
-| `a.SecretCount` | `internal/core/app/output.go:28:19` |
-| `helpers.ArchitectureModelFromConfig` | `internal/core/app/output.go:51:15` |
-| `helpers.WriteArtifact` | `internal/core/app/output.go:71:13` |
-| `helpers.WriteArtifact` | `internal/core/app/output.go:115:13` |
-| `a.Config.Output.MermaidEnabled` | `internal/core/app/output.go:120:42` |
-| `a.Config.Output.PlantUMLEnabled` | `internal/core/app/output.go:121:44` |
-| `a.Config.Output.Report.IncludeMermaidEnabled` | `internal/core/app/output.go:122:31` |
-| `a.Config.Output.MermaidEnabled` | `internal/core/app/output.go:122:81` |
-| `a.Config.Output.MermaidEnabled` | `internal/core/app/output.go:128:7` |
-| `a.Config.Output.PlantUMLEnabled` | `internal/core/app/output.go:132:7` |
-| `report.NewMermaidGenerator` | `internal/core/app/output.go:139:17` |
-| `mermaidGen.SetModuleMetrics` | `internal/core/app/output.go:140:3` |
-| `mermaidGen.SetComplexityHotspots` | `internal/core/app/output.go:141:3` |
-| `mode.Suffix` | `internal/core/app/output.go:145:59` |
-| `helpers.DiagramOutputPath` | `internal/core/app/output.go:149:16` |
-| `helpers.WriteArtifact` | `internal/core/app/output.go:150:15` |
-| `mode.Suffix` | `internal/core/app/output.go:164:60` |
-| `helpers.DiagramOutputPath` | `internal/core/app/output.go:168:16` |
-| `helpers.WriteArtifact` | `internal/core/app/output.go:169:15` |
-| `a.resolveOutputRoot` | `internal/core/app/output.go:195:16` |
-| `report.NewMarkdownGenerator().Generate` | `internal/core/app/output.go:200:14` |
-| `report.NewMarkdownGenerator` | `internal/core/app/output.go:200:14` |
-| `a.Graph.ModuleCount` | `internal/core/app/output.go:201:21` |
-| `a.Graph.FileCount` | `internal/core/app/output.go:202:21` |
-| `a.Config.Output.Report.IncludeMermaidEnabled` | `internal/core/app/output.go:217:25` |
-| `helpers.WriteArtifact` | `internal/core/app/output.go:223:13` |
-| `sample.WriteRune` | `internal/core/config/helpers/validators.go:69:4` |
-| `sample.WriteRune` | `internal/core/config/helpers/validators.go:75:4` |
-| `sample.WriteRune` | `internal/core/config/helpers/validators.go:77:4` |
-| `db.Exec` | `internal/engine/graph/schema.go:12:12` |
-| `msg.String` | `internal/ui/cli/ui_actions.go:14:9` |
-| `m.issueList.Update` | `internal/ui/cli/ui_actions.go:31:22` |
-| `msg.String` | `internal/ui/cli/ui_actions.go:35:9` |
-| `m.moduleList.Update` | `internal/ui/cli/ui_actions.go:70:22` |
-| `m.moduleList.Index` | `internal/ui/cli/ui_actions.go:78:9` |
-| `err.Error` | `internal/ui/cli/ui_actions.go:84:24` |
-| `successStyle.Render` | `internal/ui/cli/runtime.go:58:50` |
-| `err.Error` | `internal/ui/cli/runtime.go:69:27` |
-| `err.Error` | `internal/ui/cli/runtime.go:77:27` |
-| `analysis.RunScan` | `internal/ui/cli/runtime.go:161:15` |
-| `config.NewWatcher` | `internal/ui/cli/runtime.go:241:19` |
-| `analysis.UpdateConfig` | `internal/ui/cli/runtime.go:243:13` |
-| `configWatcher.Start` | `internal/ui/cli/runtime.go:247:12` |
-| `configWatcher.Stop` | `internal/ui/cli/runtime.go:250:9` |
-| `analysis.WatchService` | `internal/ui/cli/runtime.go:253:11` |
-| `err.Error` | `internal/ui/cli/runtime.go:283:28` |
-| `err.Error` | `internal/ui/cli/runtime.go:293:28` |
-| `analysis.QueryService` | `internal/ui/cli/runtime.go:312:9` |
-| `err.Error` | `internal/ui/cli/runtime.go:323:28` |
-| `err.Error` | `internal/ui/cli/runtime.go:339:28` |
-| `err.Error` | `internal/ui/cli/runtime.go:344:28` |
-| `err.Error` | `internal/ui/cli/runtime.go:356:28` |
-| `err.Error` | `internal/ui/cli/runtime.go:361:28` |
-| `err.Error` | `internal/ui/cli/runtime.go:380:28` |
-| `config.Load` | `internal/ui/cli/runtime.go:399:15` |
-| `config.Load` | `internal/ui/cli/runtime.go:413:19` |
-| `config.ResolveRelative` | `internal/ui/cli/runtime.go:648:19` |
-| `config.ResolveRelative` | `internal/ui/cli/runtime.go:656:34` |
-| `config.ResolveRelative` | `internal/ui/cli/runtime.go:658:41` |
-| `analysis.RunScan` | `internal/ui/cli/runtime.go:705:15` |
-| `config.NewWatcher` | `internal/ui/cli/runtime.go:725:19` |
-| `analysis.UpdateConfig` | `internal/ui/cli/runtime.go:727:13` |
-| `configWatcher.Start` | `internal/ui/cli/runtime.go:731:12` |
-| `configWatcher.Stop` | `internal/ui/cli/runtime.go:734:9` |
-| `s.graph.Modules` | `internal/data/query/service.go:36:13` |
-| `s.graph.GetImports` | `internal/data/query/service.go:37:13` |
-| `s.graph.GetImports` | `internal/data/query/service.go:84:13` |
-| `s.graph.GetImports` | `internal/data/query/service.go:205:13` |
-| `s.graph.Modules` | `internal/data/query/service.go:207:13` |
-| `w.cfg.batchSize` | `internal/engine/graph/writer.go:101:35` |
-| `w.cfg.flushInterval` | `internal/engine/graph/writer.go:102:27` |
-| `w.writeBatch` | `internal/engine/graph/writer.go:109:10` |
-| `w.cfg.batchSize` | `internal/engine/graph/writer.go:118:21` |
-| `w.cfg.flushInterval` | `internal/engine/graph/writer.go:121:18` |
-| `tx.Rollback` | `internal/engine/graph/writer.go:160:8` |
-| `tx.Commit` | `internal/engine/graph/writer.go:164:12` |
-| `w.writeBatch` | `internal/engine/graph/writer.go:178:11` |
-| `b.WriteString` | `internal/ui/report/surgical.go:131:2` |
-| `b.WriteString` | `internal/ui/report/surgical.go:132:2` |
-| `b.WriteString` | `internal/ui/report/surgical.go:133:2` |
-| `contracts.OperationID` | `internal/mcp/openapi/converter.go:36:10` |
-| `a.detector.Detect` | `internal/engine/secrets/adapter.go:27:9` |
-| `a.detector.Detect` | `internal/engine/secrets/adapter.go:32:10` |
-| `util.SortedStringKeys` | `internal/engine/parser/parser.go:145:9` |
-| `util.SortedStringKeys` | `internal/engine/parser/parser.go:149:9` |
-| `parsed.UTC` | `internal/mcp/tools/query/handler.go:53:10` |
-| `parsed.UTC` | `internal/mcp/tools/query/handler.go:56:10` |
-| `r.mu.Lock` | `internal/shared/util/limiter_registry.go:39:2` |
-| `r.mu.Unlock` | `internal/shared/util/limiter_registry.go:40:8` |
-| `r.mu.Lock` | `internal/shared/util/limiter_registry.go:63:2` |
-| `r.mu.Unlock` | `internal/shared/util/limiter_registry.go:64:8` |
-| `tx.Exec` | `internal/data/history/schema.go:139:16` |
-| `tx.Rollback` | `internal/data/history/schema.go:140:8` |
-| `tx.Exec` | `internal/data/history/schema.go:143:16` |
-| `tx.Rollback` | `internal/data/history/schema.go:144:8` |
-| `s.app.Graph.FileCount` | `internal/core/app/health.go:35:73` |
-| `s.app.Graph.ModuleCount` | `internal/core/app/health.go:35:98` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:47:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:48:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:49:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:50:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:51:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:52:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:53:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:54:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:89:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:90:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:91:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:92:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:93:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:117:4` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:120:5` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:122:5` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:126:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:129:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:130:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:132:3` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:134:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:144:5` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:146:5` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:148:5` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:154:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:155:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:156:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:157:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:158:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:159:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:160:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:161:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:162:2` |
+| `buf.WriteString` | `internal/ui/report/formats/dot.go:164:2` |
+| `buf.String` | `internal/ui/report/formats/dot.go:166:9` |
+| `node.Kind` | `internal/engine/parser/engine.go:38:31` |
+| `node.ChildCount` | `internal/engine/parser/engine.go:43:25` |
+| `node.Child` | `internal/engine/parser/engine.go:44:16` |
+| `node.StartByte` | `internal/engine/parser/engine.go:53:25` |
+| `node.EndByte` | `internal/engine/parser/engine.go:53:42` |
+| `node.StartPosition` | `internal/engine/parser/engine.go:59:15` |
+| `node.StartPosition` | `internal/engine/parser/engine.go:60:15` |
+| `node.ChildCount` | `internal/engine/parser/engine.go:68:24` |
+| `node.Child` | `internal/engine/parser/engine.go:69:12` |
+| `child.Kind` | `internal/engine/parser/engine.go:70:6` |
+| `c.Text` | `internal/engine/parser/engine.go:71:11` |
+| `node.Kind` | `internal/engine/parser/engine.go:81:5` |
+| `c.Text` | `internal/engine/parser/engine.go:82:53` |
+| `node.ChildCount` | `internal/engine/parser/engine.go:85:24` |
+| `node.Child` | `internal/engine/parser/engine.go:86:28` |
+| `g.mu.RLock` | `internal/engine/graph/detect.go:7:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/detect.go:8:8` |
+| `g.getSortedNeighbors` | `internal/engine/graph/detect.go:35:16` |
+| `g.getSortedNeighbors` | `internal/engine/graph/detect.go:70:18` |
+| `g.mu.RLock` | `internal/engine/graph/detect.go:100:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/detect.go:101:8` |
+| `g.mu.RLock` | `internal/engine/graph/detect.go:161:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/detect.go:162:8` |
+| `db.Close` | `internal/engine/graph/symbol_store.go:57:7` |
+| `db.Close` | `internal/engine/graph/symbol_store.go:62:7` |
+| `db.Prepare` | `internal/engine/graph/symbol_store.go:71:21` |
+| `db.Close` | `internal/engine/graph/symbol_store.go:97:7` |
+| `db.Prepare` | `internal/engine/graph/symbol_store.go:101:28` |
+| `db.Close` | `internal/engine/graph/symbol_store.go:128:7` |
+| `s.cacheMu.Lock` | `internal/engine/graph/symbol_store.go:146:2` |
+| `s.cacheMu.Unlock` | `internal/engine/graph/symbol_store.go:147:8` |
+| `s.db.Begin` | `internal/engine/graph/symbol_store.go:161:13` |
+| `b.store.clearCache` | `internal/engine/graph/symbol_store.go:175:2` |
+| `b.tx.Exec` | `internal/engine/graph/symbol_store.go:183:15` |
+| `b.store.clearCache` | `internal/engine/graph/symbol_store.go:186:2` |
+| `b.tx.Exec` | `internal/engine/graph/symbol_store.go:192:16` |
+| `b.tx.Exec` | `internal/engine/graph/symbol_store.go:195:16` |
+| `b.tx.Exec` | `internal/engine/graph/symbol_store.go:205:16` |
+| `b.store.clearCache` | `internal/engine/graph/symbol_store.go:209:2` |
+| `s.db.Begin` | `internal/engine/graph/symbol_store.go:257:13` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:263:16` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:264:8` |
+| `tx.Commit` | `internal/engine/graph/symbol_store.go:267:13` |
+| `s.clearCache` | `internal/engine/graph/symbol_store.go:270:3` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:275:7` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:280:8` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:284:8` |
+| `tx.Commit` | `internal/engine/graph/symbol_store.go:289:12` |
+| `s.clearCache` | `internal/engine/graph/symbol_store.go:292:2` |
+| `s.db.Begin` | `internal/engine/graph/symbol_store.go:300:13` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:305:7` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:309:7` |
+| `tx.Commit` | `internal/engine/graph/symbol_store.go:312:12` |
+| `s.clearCache` | `internal/engine/graph/symbol_store.go:315:2` |
+| `s.db.Begin` | `internal/engine/graph/symbol_store.go:323:13` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:328:7` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:331:15` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:332:7` |
+| `tx.Commit` | `internal/engine/graph/symbol_store.go:335:12` |
+| `s.clearCache` | `internal/engine/graph/symbol_store.go:338:2` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:366:11` |
+| `s.db.Begin` | `internal/engine/graph/symbol_store.go:377:13` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:382:16` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:383:8` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:386:16` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:387:8` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:392:8` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:396:8` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:399:16` |
+| `tx.Rollback` | `internal/engine/graph/symbol_store.go:400:8` |
+| `tx.Commit` | `internal/engine/graph/symbol_store.go:404:12` |
+| `s.clearCache` | `internal/engine/graph/symbol_store.go:407:2` |
+| `s.cacheMu.RLock` | `internal/engine/graph/symbol_store.go:420:2` |
+| `s.cacheMu.RUnlock` | `internal/engine/graph/symbol_store.go:422:3` |
+| `s.cacheMu.RUnlock` | `internal/engine/graph/symbol_store.go:425:2` |
+| `s.lookupRowsStmt` | `internal/engine/graph/symbol_store.go:427:9` |
+| `s.cacheMu.Lock` | `internal/engine/graph/symbol_store.go:429:2` |
+| `s.cacheMu.Unlock` | `internal/engine/graph/symbol_store.go:434:2` |
+| `s.cacheMu.RLock` | `internal/engine/graph/symbol_store.go:448:2` |
+| `s.cacheMu.RUnlock` | `internal/engine/graph/symbol_store.go:450:3` |
+| `s.cacheMu.RUnlock` | `internal/engine/graph/symbol_store.go:453:2` |
+| `s.lookupRowsStmt` | `internal/engine/graph/symbol_store.go:455:9` |
+| `s.cacheMu.Lock` | `internal/engine/graph/symbol_store.go:457:2` |
+| `s.cacheMu.Unlock` | `internal/engine/graph/symbol_store.go:462:2` |
+| `db.Exec` | `internal/engine/graph/symbol_store.go:553:13` |
+| `db.Exec` | `internal/engine/graph/symbol_store.go:608:13` |
+| `db.Exec` | `internal/engine/graph/symbol_store.go:632:17` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:649:15` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:656:15` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:663:15` |
+| `tx.Prepare` | `internal/engine/graph/symbol_store.go:666:15` |
+| `stmt.Close` | `internal/engine/graph/symbol_store.go:670:8` |
+| `stmt.Exec` | `internal/engine/graph/symbol_store.go:672:16` |
+| `tx.Exec` | `internal/engine/graph/symbol_store.go:680:15` |
+| `tx.Prepare` | `internal/engine/graph/symbol_store.go:831:15` |
+| `stmt.Close` | `internal/engine/graph/symbol_store.go:862:8` |
+| `stmt.Exec` | `internal/engine/graph/symbol_store.go:865:16` |
+| `b.WriteString` | `internal/core/app/impact_report.go:12:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:13:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:14:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:16:3` |
+| `b.WriteString` | `internal/core/app/impact_report.go:18:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:20:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:22:3` |
+| `b.WriteString` | `internal/core/app/impact_report.go:24:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:26:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:28:3` |
+| `b.WriteString` | `internal/core/app/impact_report.go:30:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:32:2` |
+| `b.WriteString` | `internal/core/app/impact_report.go:34:3` |
+| `b.String` | `internal/core/app/impact_report.go:37:9` |
+| `watcher.Close` | `internal/core/config/watcher.go:40:3` |
+| `watcher.Close` | `internal/core/config/watcher.go:47:9` |
+| `s.mu.Lock` | `internal/mcp/transport/stdio.go:47:2` |
+| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:49:3` |
+| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:54:2` |
+| `s.mu.Lock` | `internal/mcp/transport/stdio.go:57:3` |
+| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:59:3` |
+| `s.mu.Lock` | `internal/mcp/transport/stdio.go:63:2` |
+| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:65:2` |
+| `encoder.Encode` | `internal/mcp/transport/stdio.go:144:15` |
+| `writer.Flush` | `internal/mcp/transport/stdio.go:147:15` |
+| `encoder.Encode` | `internal/mcp/transport/stdio.go:178:13` |
+| `writer.Flush` | `internal/mcp/transport/stdio.go:181:13` |
+| `schema.BuildToolDefinitions` | `internal/mcp/transport/stdio.go:247:15` |
+| `encoder.Encode` | `internal/mcp/transport/stdio.go:295:12` |
+| `writer.Flush` | `internal/mcp/transport/stdio.go:298:12` |
+| `observability.Tracer.Start` | `internal/engine/resolver/unused_imports.go:11:13` |
+| `span.End` | `internal/engine/resolver/unused_imports.go:12:8` |
+| `r.graph.GetFile` | `internal/engine/resolver/unused_imports.go:23:15` |
+| `contracts.OperationID` | `internal/mcp/openapi/filters.go:26:11` |
+| `m.mu.Lock` | `internal/mcp/transport/mock_transport.go:36:2` |
+| `m.mu.Unlock` | `internal/mcp/transport/mock_transport.go:38:3` |
+| `m.mu.Unlock` | `internal/mcp/transport/mock_transport.go:43:2` |
+| `m.mu.Lock` | `internal/mcp/transport/mock_transport.go:57:2` |
+| `m.mu.Unlock` | `internal/mcp/transport/mock_transport.go:58:8` |
 | `gen.GenerateArchitecture` | `internal/core/app/helpers/diagrams.go:99:10` |
 | `gen.GenerateComponent` | `internal/core/app/helpers/diagrams.go:101:10` |
 | `gen.GenerateFlow` | `internal/core/app/helpers/diagrams.go:103:10` |
@@ -516,6 +525,54 @@ No probable bridge references detected.
 | `gen.GenerateComponent` | `internal/core/app/helpers/diagrams.go:121:10` |
 | `gen.GenerateFlow` | `internal/core/app/helpers/diagrams.go:123:10` |
 | `gen.Generate` | `internal/core/app/helpers/diagrams.go:125:10` |
+| `tx.Exec` | `internal/data/history/schema.go:139:16` |
+| `tx.Rollback` | `internal/data/history/schema.go:140:8` |
+| `tx.Exec` | `internal/data/history/schema.go:143:16` |
+| `tx.Rollback` | `internal/data/history/schema.go:144:8` |
+| `m.moduleList.Index` | `internal/ui/cli/ui_panels.go:30:9` |
+| `b.WriteString` | `internal/ui/report/surgical.go:131:2` |
+| `b.WriteString` | `internal/ui/report/surgical.go:132:2` |
+| `b.WriteString` | `internal/ui/report/surgical.go:133:2` |
+| `a.resolveOutputRoot` | `internal/core/app/output_targets.go:21:15` |
+| `helpers.ResolveOutputPath` | `internal/core/app/output_targets.go:33:13` |
+| `helpers.ResolveOutputPath` | `internal/core/app/output_targets.go:34:13` |
+| `helpers.ResolveDiagramPath` | `internal/core/app/output_targets.go:35:13` |
+| `helpers.ResolveDiagramPath` | `internal/core/app/output_targets.go:36:13` |
+| `helpers.ResolveOutputPath` | `internal/core/app/output_targets.go:37:13` |
+| `config.ResolvePaths` | `internal/core/app/output_targets.go:48:16` |
+| `sample.WriteRune` | `internal/core/config/helpers/validators.go:69:4` |
+| `sample.WriteRune` | `internal/core/config/helpers/validators.go:75:4` |
+| `sample.WriteRune` | `internal/core/config/helpers/validators.go:77:4` |
+| `bridge.matchesSource` | `internal/engine/resolver/bridge_scoring.go:41:7` |
+| `bridge.matchesReference` | `internal/engine/resolver/bridge_scoring.go:44:6` |
+| `r.symbolTable.Lookup` | `internal/engine/resolver/bridge_scoring.go:125:16` |
+| `r.symbolTable.Lookup` | `internal/engine/resolver/bridge_scoring.go:129:17` |
+| `r.symbolTable.LookupService` | `internal/engine/resolver/bridge_scoring.go:134:24` |
+| `r.symbolTable.LookupService` | `internal/engine/resolver/bridge_scoring.go:138:25` |
+| `r.isStdlibSymbol` | `internal/engine/resolver/bridge_scoring.go:190:9` |
+| `resolver.NewGoResolver` | `internal/core/app/gomod.go:42:7` |
+| `r.FindGoMod` | `internal/core/app/gomod.go:43:12` |
+| `r.GetModuleRoot` | `internal/core/app/gomod.go:52:15` |
+| `db.Close` | `internal/data/queue/sqlite_spool.go:58:7` |
+| `db.Close` | `internal/data/queue/sqlite_spool.go:62:7` |
+| `s.db.Begin` | `internal/data/queue/sqlite_spool.go:146:13` |
+| `tx.Prepare` | `internal/data/queue/sqlite_spool.go:150:15` |
+| `tx.Rollback` | `internal/data/queue/sqlite_spool.go:152:7` |
+| `stmt.Close` | `internal/data/queue/sqlite_spool.go:155:8` |
+| `stmt.Exec` | `internal/data/queue/sqlite_spool.go:157:16` |
+| `tx.Rollback` | `internal/data/queue/sqlite_spool.go:158:8` |
+| `tx.Commit` | `internal/data/queue/sqlite_spool.go:162:12` |
+| `s.db.Begin` | `internal/data/queue/sqlite_spool.go:176:13` |
+| `tx.Prepare` | `internal/data/queue/sqlite_spool.go:180:15` |
+| `tx.Rollback` | `internal/data/queue/sqlite_spool.go:186:7` |
+| `stmt.Close` | `internal/data/queue/sqlite_spool.go:189:8` |
+| `stmt.Exec` | `internal/data/queue/sqlite_spool.go:191:16` |
+| `tx.Rollback` | `internal/data/queue/sqlite_spool.go:192:8` |
+| `tx.Commit` | `internal/data/queue/sqlite_spool.go:196:12` |
+| `r.mu.Lock` | `internal/shared/util/limiter_registry.go:39:2` |
+| `r.mu.Unlock` | `internal/shared/util/limiter_registry.go:40:8` |
+| `r.mu.Lock` | `internal/shared/util/limiter_registry.go:63:2` |
+| `r.mu.Unlock` | `internal/shared/util/limiter_registry.go:64:8` |
 | `b.WriteString` | `internal/ui/report/formats/plantuml.go:46:2` |
 | `b.WriteString` | `internal/ui/report/formats/plantuml.go:47:2` |
 | `b.WriteString` | `internal/ui/report/formats/plantuml.go:48:2` |
@@ -615,35 +672,18 @@ No probable bridge references detected.
 | `b.WriteString` | `internal/ui/report/formats/plantuml.go:334:2` |
 | `b.WriteString` | `internal/ui/report/formats/plantuml.go:335:2` |
 | `b.String` | `internal/ui/report/formats/plantuml.go:336:9` |
-| `helpers.CompileGlobs` | `internal/core/app/app.go:103:29` |
-| `helpers.CompileGlobs` | `internal/core/app/app.go:107:30` |
-| `helpers.CompileGlobs` | `internal/core/app/app.go:154:28` |
-| `helpers.CompileGlobs` | `internal/core/app/app.go:158:29` |
-| `graph.NewLayerRuleEngine` | `internal/core/app/app.go:187:23` |
-| `helpers.ArchitectureModelFromConfig` | `internal/core/app/app.go:187:48` |
-| `bridge.matchesSource` | `internal/engine/resolver/bridge_scoring.go:41:7` |
-| `bridge.matchesReference` | `internal/engine/resolver/bridge_scoring.go:44:6` |
-| `r.symbolTable.Lookup` | `internal/engine/resolver/bridge_scoring.go:125:16` |
-| `r.symbolTable.Lookup` | `internal/engine/resolver/bridge_scoring.go:129:17` |
-| `r.symbolTable.LookupService` | `internal/engine/resolver/bridge_scoring.go:134:24` |
-| `r.symbolTable.LookupService` | `internal/engine/resolver/bridge_scoring.go:138:25` |
-| `r.isStdlibSymbol` | `internal/engine/resolver/bridge_scoring.go:190:9` |
-| `b.WriteString` | `internal/core/app/impact_report.go:12:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:13:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:14:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:16:3` |
-| `b.WriteString` | `internal/core/app/impact_report.go:18:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:20:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:22:3` |
-| `b.WriteString` | `internal/core/app/impact_report.go:24:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:26:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:28:3` |
-| `b.WriteString` | `internal/core/app/impact_report.go:30:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:32:2` |
-| `b.WriteString` | `internal/core/app/impact_report.go:34:3` |
-| `b.String` | `internal/core/app/impact_report.go:37:9` |
-| `g.mu.RLock` | `internal/engine/graph/symbol_table.go:41:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/symbol_table.go:42:8` |
+| `db.Close` | `internal/data/history/store.go:65:7` |
+| `db.Close` | `internal/data/history/store.go:69:7` |
+| `s.mu.Lock` | `internal/data/history/store.go:84:2` |
+| `s.mu.Unlock` | `internal/data/history/store.go:85:8` |
+| `s.withRetry` | `internal/data/history/store.go:128:9` |
+| `s.mu.Lock` | `internal/data/history/store.go:153:2` |
+| `s.mu.Unlock` | `internal/data/history/store.go:154:8` |
+| `s.withRetry` | `internal/data/history/store.go:178:9` |
+| `err.Error` | `internal/data/history/store.go:259:25` |
+| `err.Error` | `internal/data/history/store.go:274:25` |
+| `analysis.QueryService` | `internal/ui/cli/run_ui.go:16:13` |
+| `analysis.WatchService` | `internal/ui/cli/run_ui.go:17:11` |
 | `b.WriteString` | `internal/ui/report/formats/mermaid.go:50:2` |
 | `b.WriteString` | `internal/ui/report/formats/mermaid.go:51:2` |
 | `m.graph.Modules` | `internal/ui/report/formats/mermaid.go:53:13` |
@@ -797,74 +837,72 @@ No probable bridge references detected.
 | `util.NormalizePatternPath` | `internal/ui/report/formats/mermaid.go:599:16` |
 | `util.HasPathPrefix` | `internal/ui/report/formats/mermaid.go:638:5` |
 | `util.HasPathPrefix` | `internal/ui/report/formats/mermaid.go:641:29` |
-| `a.Graph.GetModule` | `internal/core/app/reporting.go:17:14` |
-| `a.Graph.GetModule` | `internal/core/app/reporting.go:20:14` |
-| `b.WriteString` | `internal/core/app/reporting.go:30:2` |
-| `b.WriteString` | `internal/core/app/reporting.go:32:3` |
-| `b.WriteString` | `internal/core/app/reporting.go:33:3` |
-| `b.WriteString` | `internal/core/app/reporting.go:35:4` |
-| `b.String` | `internal/core/app/reporting.go:39:27` |
-| `a.Graph.GetAllFiles` | `internal/core/app/reporting.go:56:23` |
-| `a.Graph.GetAllFiles` | `internal/core/app/reporting.go:64:23` |
-| `observability.Tracer.Start` | `internal/engine/resolver/unused_imports.go:11:13` |
-| `span.End` | `internal/engine/resolver/unused_imports.go:12:8` |
-| `r.graph.GetFile` | `internal/engine/resolver/unused_imports.go:23:15` |
-| `sp.SetLanguage` | `internal/engine/parser/pool.go:44:4` |
-| `sp.SetLanguage` | `internal/engine/parser/pool.go:56:2` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:24:2` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:29:4` |
-| `buf.String` | `internal/ui/report/formats/tsv.go:34:9` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:40:2` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:42:3` |
-| `buf.String` | `internal/ui/report/formats/tsv.go:54:9` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:60:2` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:62:3` |
-| `buf.String` | `internal/ui/report/formats/tsv.go:74:9` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:80:2` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:82:3` |
-| `buf.String` | `internal/ui/report/formats/tsv.go:93:9` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:99:2` |
-| `buf.WriteString` | `internal/ui/report/formats/tsv.go:101:3` |
-| `buf.String` | `internal/ui/report/formats/tsv.go:113:9` |
-| `contracts.OperationID` | `internal/mcp/openapi/filters.go:26:11` |
-| `b.WriteRune` | `internal/ui/report/formats/utils.go:40:4` |
-| `b.WriteRune` | `internal/ui/report/formats/utils.go:43:3` |
-| `b.String` | `internal/ui/report/formats/utils.go:45:9` |
-| `g.Modules` | `internal/ui/report/formats/utils.go:94:13` |
-| `g.GetImports` | `internal/ui/report/formats/utils.go:95:13` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/utils.go:96:17` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/utils.go:100:23` |
-| `util.SortedStringKeys` | `internal/ui/report/formats/utils.go:105:14` |
-| `graph.NewLayerRuleEngine` | `internal/core/app/presentation_service.go:24:15` |
-| `helpers.ArchitectureModelFromConfig` | `internal/core/app/presentation_service.go:24:40` |
-| `report.NewMermaidGenerator` | `internal/core/app/presentation_service.go:44:17` |
-| `mermaidGen.SetModuleMetrics` | `internal/core/app/presentation_service.go:45:3` |
-| `mermaidGen.SetComplexityHotspots` | `internal/core/app/presentation_service.go:46:3` |
-| `helpers.ArchitectureModelFromConfig` | `internal/core/app/presentation_service.go:47:65` |
-| `report.NewMarkdownGenerator().Generate` | `internal/core/app/presentation_service.go:57:13` |
-| `report.NewMarkdownGenerator` | `internal/core/app/presentation_service.go:57:13` |
-| `helpers.WriteArtifact` | `internal/core/app/presentation_service.go:97:13` |
-| `helpers.MetricLeaders` | `internal/core/app/presentation_service.go:170:15` |
-| `helpers.MetricLeaders` | `internal/core/app/presentation_service.go:171:15` |
-| `helpers.MetricLeaders` | `internal/core/app/presentation_service.go:172:16` |
-| `config.ResolvePaths` | `internal/core/app/symbol_store.go:22:27` |
-| `a.currentGraphPaths` | `internal/core/app/symbol_store.go:59:36` |
+| `contracts.OperationID` | `internal/mcp/openapi/converter.go:36:10` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:46:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:47:8` |
+| `c.order.MoveToFront` | `internal/engine/graph/lru.go:54:2` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:61:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:62:8` |
+| `c.order.MoveToFront` | `internal/engine/graph/lru.go:66:3` |
+| `c.order.Len` | `internal/engine/graph/lru.go:72:5` |
+| `c.evictLeastRecentLocked` | `internal/engine/graph/lru.go:73:3` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:84:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:85:8` |
+| `c.order.Remove` | `internal/engine/graph/lru.go:91:2` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:97:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:98:8` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:110:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:111:8` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:122:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:123:8` |
+| `c.order.Len` | `internal/engine/graph/lru.go:124:9` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:134:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:135:8` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:143:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:144:8` |
+| `c.order.Len` | `internal/engine/graph/lru.go:151:6` |
+| `c.evictLeastRecentLocked` | `internal/engine/graph/lru.go:152:3` |
+| `c.order.Remove` | `internal/engine/graph/lru.go:163:2` |
+| `c.mu.Lock` | `internal/engine/graph/lru.go:170:2` |
+| `c.mu.Unlock` | `internal/engine/graph/lru.go:171:8` |
+| `c.order.Len` | `internal/engine/graph/lru.go:180:12` |
+| `c.evictLeastRecentLocked` | `internal/engine/graph/lru.go:183:3` |
 | `f.Close` | `internal/engine/parser/manifest.go:47:8` |
 | `f.Close` | `internal/engine/parser/manifest.go:79:8` |
-| `s.mu.Lock` | `internal/mcp/transport/stdio.go:47:2` |
-| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:49:3` |
-| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:54:2` |
-| `s.mu.Lock` | `internal/mcp/transport/stdio.go:57:3` |
-| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:59:3` |
-| `s.mu.Lock` | `internal/mcp/transport/stdio.go:63:2` |
-| `s.mu.Unlock` | `internal/mcp/transport/stdio.go:65:2` |
-| `encoder.Encode` | `internal/mcp/transport/stdio.go:144:15` |
-| `writer.Flush` | `internal/mcp/transport/stdio.go:147:15` |
-| `encoder.Encode` | `internal/mcp/transport/stdio.go:178:13` |
-| `writer.Flush` | `internal/mcp/transport/stdio.go:181:13` |
-| `schema.BuildToolDefinitions` | `internal/mcp/transport/stdio.go:247:15` |
-| `encoder.Encode` | `internal/mcp/transport/stdio.go:295:12` |
-| `writer.Flush` | `internal/mcp/transport/stdio.go:298:12` |
+| `info.IsDir` | `internal/engine/parser/loader.go:46:57` |
+| `info.IsDir` | `internal/engine/parser/loader.go:52:56` |
+| `util.SortedStringKeys` | `internal/engine/parser/loader.go:75:25` |
+| `a.Config.WriteQueue.QueueEnabled` | `internal/core/app/write_worker.go:23:6` |
+| `config.ResolvePaths` | `internal/core/app/write_worker.go:47:27` |
+| `a.writeQueue.DequeueBatch` | `internal/core/app/write_worker.go:86:23` |
+| `a.writeSpool.DequeueBatch` | `internal/core/app/write_worker.go:100:22` |
+| `a.updateQueueMetrics` | `internal/core/app/write_worker.go:112:4` |
+| `a.applyWriteBatch` | `internal/core/app/write_worker.go:120:18` |
+| `a.writeSpool.Ack` | `internal/core/app/write_worker.go:131:18` |
+| `a.updateQueueMetrics` | `internal/core/app/write_worker.go:137:3` |
+| `a.writeSpool.Enqueue` | `internal/core/app/write_worker.go:147:14` |
+| `observability.WriteQueueSpilledTotal.Inc` | `internal/core/app/write_worker.go:150:5` |
+| `a.writeSpool.Nack` | `internal/core/app/write_worker.go:165:12` |
+| `a.Config.WriteQueue.QueueEnabled` | `internal/core/app/write_worker.go:200:6` |
+| `a.applyWriteRequest` | `internal/core/app/write_worker.go:201:10` |
+| `a.updateQueueMetrics` | `internal/core/app/write_worker.go:210:3` |
+| `a.writeSpool.Enqueue` | `internal/core/app/write_worker.go:215:14` |
+| `a.Config.WriteQueue.SyncFallbackEnabled` | `internal/core/app/write_worker.go:216:8` |
+| `a.applyWriteRequest` | `internal/core/app/write_worker.go:217:13` |
+| `observability.WriteQueueSpilledTotal.Inc` | `internal/core/app/write_worker.go:221:4` |
+| `a.updateQueueMetrics` | `internal/core/app/write_worker.go:222:4` |
+| `a.Config.WriteQueue.SyncFallbackEnabled` | `internal/core/app/write_worker.go:225:6` |
+| `a.applyWriteRequest` | `internal/core/app/write_worker.go:226:11` |
+| `a.symbolStore.BeginBatch` | `internal/core/app/write_worker.go:242:12` |
+| `a.symbolStore.UpsertFile` | `internal/core/app/write_worker.go:275:10` |
+| `a.symbolStore.DeleteFile` | `internal/core/app/write_worker.go:277:10` |
+| `a.symbolStore.PruneToPaths` | `internal/core/app/write_worker.go:279:10` |
+| `a.writeQueue.DequeueBatch` | `internal/core/app/write_worker.go:330:21` |
+| `a.writeSpool.DequeueBatch` | `internal/core/app/write_worker.go:337:17` |
+| `a.applyWriteBatch` | `internal/core/app/write_worker.go:349:15` |
+| `a.writeSpool.Nack` | `internal/core/app/write_worker.go:351:10` |
+| `a.writeSpool.Ack` | `internal/core/app/write_worker.go:354:15` |
+| `a.applyWriteBatch` | `internal/core/app/write_worker.go:363:13` |
 | `node.Kind` | `internal/engine/parser/universal.go:180:11` |
 | `node.ChildCount` | `internal/engine/parser/universal.go:185:26` |
 | `node.Child` | `internal/engine/parser/universal.go:186:11` |
@@ -887,32 +925,129 @@ No probable bridge references detected.
 | `node.Kind` | `internal/engine/parser/universal.go:344:10` |
 | `node.StartPosition` | `internal/engine/parser/universal.go:358:17` |
 | `node.StartPosition` | `internal/engine/parser/universal.go:359:17` |
-| `node.ChildCount` | `internal/engine/parser/universal.go:395:24` |
-| `node.Child` | `internal/engine/parser/universal.go:396:17` |
-| `node.ChildByFieldName` | `internal/engine/parser/universal.go:409:11` |
-| `node.ChildByFieldName` | `internal/engine/parser/universal.go:416:13` |
-| `node.ChildByFieldName` | `internal/engine/parser/universal.go:421:12` |
-| `node.ChildCount` | `internal/engine/parser/universal.go:428:24` |
-| `node.Child` | `internal/engine/parser/universal.go:429:12` |
-| `child.Kind` | `internal/engine/parser/universal.go:433:11` |
-| `node.Kind` | `internal/engine/parser/universal.go:444:10` |
-| `node.ChildCount` | `internal/engine/parser/universal.go:445:5` |
-| `node.StartByte` | `internal/engine/parser/universal.go:459:11` |
-| `node.EndByte` | `internal/engine/parser/universal.go:460:9` |
-| `node.StartPosition` | `internal/engine/parser/universal.go:630:15` |
-| `node.ChildByFieldName` | `internal/engine/parser/universal.go:642:15` |
+| `node.ChildCount` | `internal/engine/parser/universal.go:397:24` |
+| `node.Child` | `internal/engine/parser/universal.go:398:17` |
+| `node.ChildByFieldName` | `internal/engine/parser/universal.go:411:11` |
+| `node.ChildByFieldName` | `internal/engine/parser/universal.go:418:13` |
+| `node.ChildByFieldName` | `internal/engine/parser/universal.go:423:12` |
+| `node.ChildCount` | `internal/engine/parser/universal.go:430:24` |
+| `node.Child` | `internal/engine/parser/universal.go:431:12` |
+| `child.Kind` | `internal/engine/parser/universal.go:435:11` |
+| `node.Kind` | `internal/engine/parser/universal.go:446:10` |
+| `node.ChildCount` | `internal/engine/parser/universal.go:447:5` |
+| `node.StartByte` | `internal/engine/parser/universal.go:461:11` |
+| `node.EndByte` | `internal/engine/parser/universal.go:462:9` |
+| `node.StartPosition` | `internal/engine/parser/universal.go:632:15` |
 | `node.ChildByFieldName` | `internal/engine/parser/universal.go:644:15` |
-| `node.ChildByFieldName` | `internal/engine/parser/universal.go:647:15` |
-| `n.Kind` | `internal/engine/parser/universal.go:658:10` |
-| `n.ChildCount` | `internal/engine/parser/universal.go:666:25` |
-| `n.Child` | `internal/engine/parser/universal.go:667:9` |
-| `ch.Kind` | `internal/engine/parser/universal.go:678:11` |
-| `node.ChildCount` | `internal/engine/parser/universal.go:692:24` |
-| `node.Child` | `internal/engine/parser/universal.go:693:9` |
-| `ch.Kind` | `internal/engine/parser/universal.go:697:10` |
-| `n.Kind` | `internal/engine/parser/universal.go:713:11` |
-| `n.ChildCount` | `internal/engine/parser/universal.go:731:25` |
-| `n.Child` | `internal/engine/parser/universal.go:732:9` |
+| `node.ChildByFieldName` | `internal/engine/parser/universal.go:646:15` |
+| `node.ChildByFieldName` | `internal/engine/parser/universal.go:649:15` |
+| `n.Kind` | `internal/engine/parser/universal.go:660:10` |
+| `n.ChildCount` | `internal/engine/parser/universal.go:668:25` |
+| `n.Child` | `internal/engine/parser/universal.go:669:9` |
+| `ch.Kind` | `internal/engine/parser/universal.go:680:11` |
+| `node.ChildCount` | `internal/engine/parser/universal.go:694:24` |
+| `node.Child` | `internal/engine/parser/universal.go:695:9` |
+| `ch.Kind` | `internal/engine/parser/universal.go:699:10` |
+| `n.Kind` | `internal/engine/parser/universal.go:715:11` |
+| `n.ChildCount` | `internal/engine/parser/universal.go:733:25` |
+| `n.Child` | `internal/engine/parser/universal.go:734:9` |
+| `g.mu.Lock` | `internal/engine/graph/graph.go:77:2` |
+| `g.mu.Unlock` | `internal/engine/graph/graph.go:78:8` |
+| `g.mu.Lock` | `internal/engine/graph/graph.go:83:2` |
+| `g.mu.Unlock` | `internal/engine/graph/graph.go:84:8` |
+| `g.mu.Lock` | `internal/engine/graph/graph.go:93:2` |
+| `g.mu.Unlock` | `internal/engine/graph/graph.go:94:8` |
+| `g.fileCache.Get` | `internal/engine/graph/graph.go:98:18` |
+| `g.removeFileLocked` | `internal/engine/graph/graph.go:99:3` |
+| `g.fileCache.Put` | `internal/engine/graph/graph.go:102:2` |
+| `g.definitions` | `internal/engine/graph/graph.go:132:34` |
+| `g.definitions` | `internal/engine/graph/graph.go:134:4` |
+| `g.imports` | `internal/engine/graph/graph.go:167:3` |
+| `g.importedBy` | `internal/engine/graph/graph.go:172:3` |
+| `observability.GraphNodes.Set` | `internal/engine/graph/graph.go:175:2` |
+| `observability.GraphEdges.Set` | `internal/engine/graph/graph.go:180:2` |
+| `g.mu.Lock` | `internal/engine/graph/graph.go:184:2` |
+| `g.mu.Unlock` | `internal/engine/graph/graph.go:185:8` |
+| `g.removeFileLocked` | `internal/engine/graph/graph.go:186:2` |
+| `g.fileCache.Get` | `internal/engine/graph/graph.go:221:17` |
+| `g.imports` | `internal/engine/graph/graph.go:242:7` |
+| `g.importedBy` | `internal/engine/graph/graph.go:246:7` |
+| `observability.GraphNodes.Set` | `internal/engine/graph/graph.go:265:2` |
+| `observability.GraphEdges.Set` | `internal/engine/graph/graph.go:270:2` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:274:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:275:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:284:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:285:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:295:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:296:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:301:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:302:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:315:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:316:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:322:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:323:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:328:2` |
+| `g.fileCache.Get` | `internal/engine/graph/graph.go:329:11` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:331:2` |
+| `g.mu.Lock` | `internal/engine/graph/graph.go:341:4` |
+| `g.fileCache.Put` | `internal/engine/graph/graph.go:342:4` |
+| `g.mu.Unlock` | `internal/engine/graph/graph.go:343:4` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:352:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:353:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:365:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:366:8` |
+| `g.mu.RLock` | `internal/engine/graph/graph.go:379:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/graph.go:380:8` |
+| `g.mu.Lock` | `internal/engine/graph/graph.go:481:2` |
+| `g.mu.Unlock` | `internal/engine/graph/graph.go:482:8` |
+| `g.mu.Lock` | `internal/engine/graph/graph.go:489:2` |
+| `g.mu.Unlock` | `internal/engine/graph/graph.go:490:8` |
+| `r.mu.RLock` | `internal/mcp/registry/registry.go:44:2` |
+| `r.mu.RUnlock` | `internal/mcp/registry/registry.go:45:8` |
+| `r.mu.RLock` | `internal/mcp/registry/registry.go:52:2` |
+| `r.mu.RUnlock` | `internal/mcp/registry/registry.go:53:8` |
+| `b.WriteRune` | `internal/ui/report/formats/utils.go:40:4` |
+| `b.WriteRune` | `internal/ui/report/formats/utils.go:43:3` |
+| `b.String` | `internal/ui/report/formats/utils.go:45:9` |
+| `g.Modules` | `internal/ui/report/formats/utils.go:94:13` |
+| `g.GetImports` | `internal/ui/report/formats/utils.go:95:13` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/utils.go:96:17` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/utils.go:100:23` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/utils.go:105:14` |
+| `registry.New` | `internal/mcp/runtime/server.go:86:9` |
+| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:120:2` |
+| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:121:8` |
+| `s.mu.Lock` | `internal/mcp/runtime/server.go:130:2` |
+| `s.mu.Unlock` | `internal/mcp/runtime/server.go:132:3` |
+| `s.mu.Unlock` | `internal/mcp/runtime/server.go:137:2` |
+| `s.mu.Lock` | `internal/mcp/runtime/server.go:147:2` |
+| `s.mu.Unlock` | `internal/mcp/runtime/server.go:149:2` |
+| `s.mu.Lock` | `internal/mcp/runtime/server.go:155:2` |
+| `s.mu.Unlock` | `internal/mcp/runtime/server.go:156:8` |
+| `s.history.Close` | `internal/mcp/runtime/server.go:160:11` |
+| `s.history.Close` | `internal/mcp/runtime/server.go:166:13` |
+| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:182:2` |
+| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:184:2` |
+| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:193:2` |
+| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:195:2` |
+| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:208:2` |
+| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:210:2` |
+| `config.ResolvePaths` | `internal/mcp/runtime/server.go:232:16` |
+| `config.ResolveRelative` | `internal/mcp/runtime/server.go:234:26` |
+| `s.watchMu.Lock` | `internal/mcp/runtime/server.go:254:2` |
+| `s.watchMu.Unlock` | `internal/mcp/runtime/server.go:256:3` |
+| `s.watchMu.Unlock` | `internal/mcp/runtime/server.go:263:2` |
+| `s.watchMu.Lock` | `internal/mcp/runtime/server.go:268:4` |
+| `s.watchMu.Unlock` | `internal/mcp/runtime/server.go:270:4` |
+| `s.registry.HandlerFor` | `internal/mcp/runtime/server.go:279:14` |
+| `s.registry.HandlerFor` | `internal/mcp/runtime/server.go:304:17` |
+| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:324:2` |
+| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:326:2` |
+| `s.busyMu.Lock` | `internal/mcp/runtime/server.go:344:3` |
+| `s.busyMu.Unlock` | `internal/mcp/runtime/server.go:346:4` |
+| `s.busyMu.Unlock` | `internal/mcp/runtime/server.go:353:3` |
+| `s.busyMu.Lock` | `internal/mcp/runtime/server.go:355:4` |
+| `s.busyMu.Unlock` | `internal/mcp/runtime/server.go:357:4` |
 | `util.NewLimiterRegistry` | `internal/mcp/transport/sse.go:50:22` |
 | `util.NewLimiterRegistry` | `internal/mcp/transport/sse.go:51:25` |
 | `mux.HandleFunc` | `internal/mcp/transport/sse.go:61:2` |
@@ -949,215 +1084,13 @@ No probable bridge references detected.
 | `s.handler` | `internal/mcp/transport/sse.go:222:18` |
 | `schema.BuildToolDefinitions` | `internal/mcp/transport/sse.go:271:15` |
 | `s.handler` | `internal/mcp/transport/sse.go:287:18` |
-| `g.mu.RLock` | `internal/engine/graph/impact.go:32:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/impact.go:33:8` |
-| `g.analyzeImpactForModule` | `internal/engine/graph/impact.go:44:11` |
-| `g.analyzeImpactForModule` | `internal/engine/graph/impact.go:49:9` |
-| `engine.Walk` | `internal/engine/parser/dynamic_extractor.go:43:2` |
-| `node.ChildCount` | `internal/engine/parser/dynamic_extractor.go:72:24` |
-| `node.Child` | `internal/engine/parser/dynamic_extractor.go:73:12` |
-| `child.Kind` | `internal/engine/parser/dynamic_extractor.go:74:6` |
-| `child.Kind` | `internal/engine/parser/dynamic_extractor.go:74:38` |
-| `r.symbolTable.Lookup` | `internal/engine/resolver/probabilistic.go:15:16` |
-| `r.symbolTable.Lookup` | `internal/engine/resolver/probabilistic.go:19:17` |
-| `r.symbolTable.LookupService` | `internal/engine/resolver/probabilistic.go:24:24` |
-| `r.symbolTable.LookupService` | `internal/engine/resolver/probabilistic.go:28:25` |
-| `observability.Tracer.Start` | `internal/core/app/scanner.go:21:15` |
-| `span.End` | `internal/core/app/scanner.go:22:8` |
-| `helpers.UniqueScanRoots` | `internal/core/app/scanner.go:24:16` |
-| `resolver.NewGoResolver` | `internal/core/app/scanner.go:27:8` |
-| `r.FindGoMod` | `internal/core/app/scanner.go:28:13` |
-| `r.GetModuleRoot` | `internal/core/app/scanner.go:29:36` |
-| `helpers.UniqueScanRoots` | `internal/core/app/scanner.go:34:15` |
-| `a.processFileWithUpserter` | `internal/core/app/scanner.go:52:13` |
-| `g.Match` | `internal/core/app/scanner.go:98:9` |
-| `a.codeParser.IsSupportedPath` | `internal/core/app/scanner.go:105:8` |
-| `a.codeParser.IsTestFile` | `internal/core/app/scanner.go:110:26` |
-| `g.Match` | `internal/core/app/scanner.go:115:8` |
-| `a.processFileWithUpserter` | `internal/core/app/scanner.go:132:9` |
-| `a.Graph.GetFile` | `internal/core/app/scanner.go:153:21` |
-| `g.Match` | `internal/core/app/scanner.go:222:6` |
-| `g.Match` | `internal/core/app/scanner.go:231:7` |
-| `db.Close` | `internal/data/history/store.go:65:7` |
-| `db.Close` | `internal/data/history/store.go:69:7` |
-| `s.mu.Lock` | `internal/data/history/store.go:84:2` |
-| `s.mu.Unlock` | `internal/data/history/store.go:85:8` |
-| `s.withRetry` | `internal/data/history/store.go:128:9` |
-| `s.mu.Lock` | `internal/data/history/store.go:153:2` |
-| `s.mu.Unlock` | `internal/data/history/store.go:154:8` |
-| `s.withRetry` | `internal/data/history/store.go:178:9` |
-| `err.Error` | `internal/data/history/store.go:259:25` |
-| `err.Error` | `internal/data/history/store.go:274:25` |
-| `m.issueList.Update` | `internal/ui/cli/ui.go:160:22` |
-| `m.moduleList.Update` | `internal/ui/cli/ui.go:162:23` |
-| `successStyle.Render` | `internal/ui/cli/ui.go:173:13` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:47:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:48:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:49:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:50:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:51:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:52:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:53:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:54:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:89:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:90:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:91:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:92:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:93:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:117:4` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:120:5` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:122:5` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:126:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:129:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:130:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:132:3` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:134:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:144:5` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:146:5` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:148:5` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:154:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:155:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:156:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:157:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:158:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:159:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:160:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:161:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:162:2` |
-| `buf.WriteString` | `internal/ui/report/formats/dot.go:164:2` |
-| `buf.String` | `internal/ui/report/formats/dot.go:166:9` |
-| `info.IsDir` | `internal/engine/parser/loader.go:46:57` |
-| `info.IsDir` | `internal/engine/parser/loader.go:52:56` |
-| `util.SortedStringKeys` | `internal/engine/parser/loader.go:75:25` |
-| `registry.New` | `internal/mcp/runtime/server.go:86:9` |
-| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:120:2` |
-| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:121:8` |
-| `s.mu.Lock` | `internal/mcp/runtime/server.go:130:2` |
-| `s.mu.Unlock` | `internal/mcp/runtime/server.go:132:3` |
-| `s.mu.Unlock` | `internal/mcp/runtime/server.go:137:2` |
-| `s.mu.Lock` | `internal/mcp/runtime/server.go:147:2` |
-| `s.mu.Unlock` | `internal/mcp/runtime/server.go:149:2` |
-| `s.mu.Lock` | `internal/mcp/runtime/server.go:155:2` |
-| `s.mu.Unlock` | `internal/mcp/runtime/server.go:156:8` |
-| `s.history.Close` | `internal/mcp/runtime/server.go:160:11` |
-| `s.history.Close` | `internal/mcp/runtime/server.go:166:13` |
-| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:182:2` |
-| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:184:2` |
-| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:193:2` |
-| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:195:2` |
-| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:208:2` |
-| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:210:2` |
-| `config.ResolvePaths` | `internal/mcp/runtime/server.go:232:16` |
-| `config.ResolveRelative` | `internal/mcp/runtime/server.go:234:26` |
-| `s.watchMu.Lock` | `internal/mcp/runtime/server.go:254:2` |
-| `s.watchMu.Unlock` | `internal/mcp/runtime/server.go:256:3` |
-| `s.watchMu.Unlock` | `internal/mcp/runtime/server.go:263:2` |
-| `s.watchMu.Lock` | `internal/mcp/runtime/server.go:268:4` |
-| `s.watchMu.Unlock` | `internal/mcp/runtime/server.go:270:4` |
-| `s.registry.HandlerFor` | `internal/mcp/runtime/server.go:279:14` |
-| `s.registry.HandlerFor` | `internal/mcp/runtime/server.go:304:17` |
-| `s.projectMu.RLock` | `internal/mcp/runtime/server.go:324:2` |
-| `s.projectMu.RUnlock` | `internal/mcp/runtime/server.go:326:2` |
-| `s.busyMu.Lock` | `internal/mcp/runtime/server.go:344:3` |
-| `s.busyMu.Unlock` | `internal/mcp/runtime/server.go:346:4` |
-| `s.busyMu.Unlock` | `internal/mcp/runtime/server.go:353:3` |
-| `s.busyMu.Lock` | `internal/mcp/runtime/server.go:355:4` |
-| `s.busyMu.Unlock` | `internal/mcp/runtime/server.go:357:4` |
-| `buf.WriteString` | `internal/ui/report/trends.go:13:2` |
-| `buf.WriteString` | `internal/ui/report/trends.go:15:3` |
 | `g.Modules` | `internal/ui/report/formats/html_interactive.go:29:13` |
 | `util.SortedStringKeys` | `internal/ui/report/formats/html_interactive.go:30:17` |
 | `util.SortedStringKeys` | `internal/ui/report/formats/html_interactive.go:69:18` |
 | `sb.WriteString` | `internal/ui/report/formats/html_interactive.go:88:2` |
 | `sb.WriteString` | `internal/ui/report/formats/html_interactive.go:123:2` |
-| `resolver.NewGoResolver` | `internal/core/app/gomod.go:42:7` |
-| `r.FindGoMod` | `internal/core/app/gomod.go:43:12` |
-| `r.GetModuleRoot` | `internal/core/app/gomod.go:52:15` |
-| `g.mu.Lock` | `internal/engine/graph/graph.go:77:2` |
-| `g.mu.Unlock` | `internal/engine/graph/graph.go:78:8` |
-| `g.mu.Lock` | `internal/engine/graph/graph.go:83:2` |
-| `g.mu.Unlock` | `internal/engine/graph/graph.go:84:8` |
-| `g.mu.Lock` | `internal/engine/graph/graph.go:93:2` |
-| `g.mu.Unlock` | `internal/engine/graph/graph.go:94:8` |
-| `g.fileCache.Get` | `internal/engine/graph/graph.go:98:18` |
-| `g.removeFileLocked` | `internal/engine/graph/graph.go:99:3` |
-| `g.fileCache.Put` | `internal/engine/graph/graph.go:102:2` |
-| `g.imports` | `internal/engine/graph/graph.go:161:3` |
-| `g.importedBy` | `internal/engine/graph/graph.go:166:3` |
-| `observability.GraphNodes.Set` | `internal/engine/graph/graph.go:169:2` |
-| `observability.GraphEdges.Set` | `internal/engine/graph/graph.go:174:2` |
-| `g.mu.Lock` | `internal/engine/graph/graph.go:178:2` |
-| `g.mu.Unlock` | `internal/engine/graph/graph.go:179:8` |
-| `g.removeFileLocked` | `internal/engine/graph/graph.go:180:2` |
-| `g.fileCache.Get` | `internal/engine/graph/graph.go:215:17` |
-| `g.imports` | `internal/engine/graph/graph.go:230:7` |
-| `g.importedBy` | `internal/engine/graph/graph.go:234:7` |
-| `observability.GraphNodes.Set` | `internal/engine/graph/graph.go:253:2` |
-| `observability.GraphEdges.Set` | `internal/engine/graph/graph.go:258:2` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:262:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:263:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:272:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:273:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:283:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:284:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:289:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:290:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:303:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:304:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:310:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:311:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:316:2` |
-| `g.fileCache.Get` | `internal/engine/graph/graph.go:317:11` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:319:2` |
-| `g.mu.Lock` | `internal/engine/graph/graph.go:329:4` |
-| `g.fileCache.Put` | `internal/engine/graph/graph.go:330:4` |
-| `g.mu.Unlock` | `internal/engine/graph/graph.go:331:4` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:340:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:341:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:353:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:354:8` |
-| `g.mu.RLock` | `internal/engine/graph/graph.go:367:2` |
-| `g.mu.RUnlock` | `internal/engine/graph/graph.go:368:8` |
-| `g.mu.Lock` | `internal/engine/graph/graph.go:469:2` |
-| `g.mu.Unlock` | `internal/engine/graph/graph.go:470:8` |
-| `g.mu.Lock` | `internal/engine/graph/graph.go:477:2` |
-| `g.mu.Unlock` | `internal/engine/graph/graph.go:478:8` |
-| `analysis.QueryService` | `internal/ui/cli/run_ui.go:16:13` |
-| `analysis.WatchService` | `internal/ui/cli/run_ui.go:17:11` |
-| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:37:2` |
-| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:38:8` |
-| `a.mu.RLock` | `internal/mcp/adapters/adapter.go:43:2` |
-| `a.mu.RUnlock` | `internal/mcp/adapters/adapter.go:44:8` |
-| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:53:2` |
-| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:54:8` |
-| `a.analysis.RunScan` | `internal/mcp/adapters/adapter.go:60:17` |
-| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:87:2` |
-| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:88:8` |
-| `a.analysis.RunScan` | `internal/mcp/adapters/adapter.go:93:21` |
-| `a.analysis.ListFiles` | `internal/mcp/adapters/adapter.go:98:16` |
-| `a.mu.RLock` | `internal/mcp/adapters/adapter.go:116:2` |
-| `a.mu.RUnlock` | `internal/mcp/adapters/adapter.go:117:8` |
-| `a.analysis.ListFiles` | `internal/mcp/adapters/adapter.go:122:16` |
-| `a.mu.RLock` | `internal/mcp/adapters/adapter.go:138:2` |
-| `a.mu.RUnlock` | `internal/mcp/adapters/adapter.go:139:8` |
-| `a.queryService` | `internal/mcp/adapters/adapter.go:159:9` |
-| `a.queryService` | `internal/mcp/adapters/adapter.go:187:9` |
-| `a.queryService` | `internal/mcp/adapters/adapter.go:223:9` |
-| `a.queryService` | `internal/mcp/adapters/adapter.go:244:9` |
-| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:276:2` |
-| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:277:8` |
-| `a.mu.Lock` | `internal/mcp/adapters/adapter.go:295:2` |
-| `a.mu.Unlock` | `internal/mcp/adapters/adapter.go:296:8` |
-| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:341:7` |
-| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:343:7` |
-| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:345:7` |
-| `domainErrors.IsCode` | `internal/mcp/adapters/adapter.go:347:7` |
-| `config.ResolvePaths` | `internal/mcp/runtime/bootstrap.go:25:16` |
-| `config.ResolveRelative` | `internal/mcp/runtime/bootstrap.go:29:25` |
-| `historyStore.Close` | `internal/mcp/runtime/bootstrap.go:43:8` |
-| `registry.New` | `internal/mcp/runtime/bootstrap.go:48:9` |
-| `historyStore.Close` | `internal/mcp/runtime/bootstrap.go:53:8` |
-| `historyStore.Close` | `internal/mcp/runtime/bootstrap.go:60:7` |
+| `sp.SetLanguage` | `internal/engine/parser/pool.go:44:4` |
+| `sp.SetLanguage` | `internal/engine/parser/pool.go:56:2` |
 | `g.BuildUniversalSymbolTable` | `internal/engine/resolver/resolver.go:88:17` |
 | `g.BuildUniversalSymbolTable` | `internal/engine/resolver/resolver.go:111:17` |
 | `r.resolveReferenceResult` | `internal/engine/resolver/resolver.go:132:12` |
@@ -1165,67 +1098,257 @@ No probable bridge references detected.
 | `span.End` | `internal/engine/resolver/resolver.go:141:8` |
 | `r.isStdlibSymbol` | `internal/engine/resolver/resolver.go:163:5` |
 | `r.isStdlibSymbol` | `internal/engine/resolver/resolver.go:275:9` |
-| `db.Close` | `internal/engine/graph/symbol_store.go:50:7` |
-| `db.Close` | `internal/engine/graph/symbol_store.go:55:7` |
-| `s.db.Begin` | `internal/engine/graph/symbol_store.go:76:13` |
-| `s.db.Begin` | `internal/engine/graph/symbol_store.go:131:13` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:137:16` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:138:8` |
-| `tx.Commit` | `internal/engine/graph/symbol_store.go:141:13` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:148:7` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:153:8` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:157:8` |
-| `tx.Commit` | `internal/engine/graph/symbol_store.go:162:12` |
-| `s.db.Begin` | `internal/engine/graph/symbol_store.go:172:13` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:177:7` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:181:7` |
-| `tx.Commit` | `internal/engine/graph/symbol_store.go:184:12` |
-| `s.db.Begin` | `internal/engine/graph/symbol_store.go:194:13` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:199:7` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:202:15` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:203:7` |
-| `tx.Commit` | `internal/engine/graph/symbol_store.go:206:12` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:236:11` |
-| `s.db.Begin` | `internal/engine/graph/symbol_store.go:247:13` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:252:16` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:253:8` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:256:16` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:257:8` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:262:8` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:266:8` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:269:16` |
-| `tx.Rollback` | `internal/engine/graph/symbol_store.go:270:8` |
-| `tx.Commit` | `internal/engine/graph/symbol_store.go:274:12` |
-| `s.lookupRows` | `internal/engine/graph/symbol_store.go:288:9` |
-| `s.lookupRows` | `internal/engine/graph/symbol_store.go:319:9` |
-| `db.Exec` | `internal/engine/graph/symbol_store.go:429:13` |
-| `db.Exec` | `internal/engine/graph/symbol_store.go:484:13` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:510:15` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:517:15` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:524:15` |
-| `tx.Prepare` | `internal/engine/graph/symbol_store.go:527:15` |
-| `stmt.Close` | `internal/engine/graph/symbol_store.go:531:8` |
-| `stmt.Exec` | `internal/engine/graph/symbol_store.go:533:16` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:549:15` |
-| `tx.Exec` | `internal/engine/graph/symbol_store.go:556:15` |
-| `tx.Prepare` | `internal/engine/graph/symbol_store.go:722:15` |
-| `stmt.Close` | `internal/engine/graph/symbol_store.go:749:8` |
-| `stmt.Exec` | `internal/engine/graph/symbol_store.go:752:16` |
-| `node.Kind` | `internal/engine/parser/engine.go:38:31` |
-| `node.ChildCount` | `internal/engine/parser/engine.go:43:25` |
-| `node.Child` | `internal/engine/parser/engine.go:44:16` |
-| `node.StartByte` | `internal/engine/parser/engine.go:53:25` |
-| `node.EndByte` | `internal/engine/parser/engine.go:53:42` |
-| `node.StartPosition` | `internal/engine/parser/engine.go:59:15` |
-| `node.StartPosition` | `internal/engine/parser/engine.go:60:15` |
-| `node.ChildCount` | `internal/engine/parser/engine.go:68:24` |
-| `node.Child` | `internal/engine/parser/engine.go:69:12` |
-| `child.Kind` | `internal/engine/parser/engine.go:70:6` |
-| `c.Text` | `internal/engine/parser/engine.go:71:11` |
-| `node.Kind` | `internal/engine/parser/engine.go:81:5` |
-| `c.Text` | `internal/engine/parser/engine.go:82:53` |
-| `node.ChildCount` | `internal/engine/parser/engine.go:85:24` |
-| `node.Child` | `internal/engine/parser/engine.go:86:28` |
+| `observability.Tracer.Start` | `internal/core/app/scanner.go:22:15` |
+| `span.End` | `internal/core/app/scanner.go:23:8` |
+| `helpers.UniqueScanRoots` | `internal/core/app/scanner.go:25:16` |
+| `resolver.NewGoResolver` | `internal/core/app/scanner.go:28:8` |
+| `r.FindGoMod` | `internal/core/app/scanner.go:29:13` |
+| `r.GetModuleRoot` | `internal/core/app/scanner.go:30:36` |
+| `helpers.UniqueScanRoots` | `internal/core/app/scanner.go:35:15` |
+| `a.Config.WriteQueue.QueueEnabled` | `internal/core/app/scanner.go:43:30` |
+| `a.symbolStore.BeginBatch` | `internal/core/app/scanner.go:44:13` |
+| `a.processFileWithUpserter` | `internal/core/app/scanner.go:53:13` |
+| `a.enqueueSymbolWrite` | `internal/core/app/scanner.go:63:12` |
+| `a.currentGraphPaths` | `internal/core/app/scanner.go:65:14` |
+| `g.Match` | `internal/core/app/scanner.go:102:9` |
+| `a.codeParser.IsSupportedPath` | `internal/core/app/scanner.go:109:8` |
+| `a.codeParser.IsTestFile` | `internal/core/app/scanner.go:114:26` |
+| `g.Match` | `internal/core/app/scanner.go:119:8` |
+| `a.processFileWithUpserter` | `internal/core/app/scanner.go:136:9` |
+| `a.Graph.GetFile` | `internal/core/app/scanner.go:157:21` |
+| `a.enqueueSymbolWrite` | `internal/core/app/scanner.go:217:19` |
+| `g.Match` | `internal/core/app/scanner.go:230:6` |
+| `g.Match` | `internal/core/app/scanner.go:239:7` |
+| `buf.WriteString` | `internal/ui/report/trends.go:13:2` |
+| `buf.WriteString` | `internal/ui/report/trends.go:15:3` |
+| `config.ResolvePaths` | `internal/core/app/symbol_store.go:22:27` |
+| `a.symbolStore.UpsertFile` | `internal/core/app/symbol_store.go:45:9` |
+| `a.symbolStore.DeleteFile` | `internal/core/app/symbol_store.go:52:9` |
+| `a.symbolStore.PruneToPaths` | `internal/core/app/symbol_store.go:59:9` |
+| `a.currentGraphPaths` | `internal/core/app/symbol_store.go:59:36` |
+| `util.NormalizePatternPath` | `internal/engine/architecture/rules.go:89:11` |
+| `util.NormalizePatternPath` | `internal/engine/architecture/rules.go:113:13` |
+| `util.NormalizePatternPath` | `internal/engine/architecture/rules.go:114:10` |
+| `util.HasPathPrefix` | `internal/engine/architecture/rules.go:125:6` |
+| `util.HasPathPrefix` | `internal/engine/architecture/rules.go:128:20` |
+| `msg.String` | `internal/ui/cli/ui_actions.go:14:9` |
+| `m.issueList.Update` | `internal/ui/cli/ui_actions.go:31:22` |
+| `msg.String` | `internal/ui/cli/ui_actions.go:35:9` |
+| `m.moduleList.Update` | `internal/ui/cli/ui_actions.go:70:22` |
+| `m.moduleList.Index` | `internal/ui/cli/ui_actions.go:78:9` |
+| `err.Error` | `internal/ui/cli/ui_actions.go:84:24` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:25:2` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:30:4` |
+| `buf.String` | `internal/ui/report/formats/tsv.go:35:9` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:41:2` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:43:3` |
+| `buf.String` | `internal/ui/report/formats/tsv.go:55:9` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:61:2` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:63:3` |
+| `buf.String` | `internal/ui/report/formats/tsv.go:75:9` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:81:2` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:91:3` |
+| `buf.String` | `internal/ui/report/formats/tsv.go:105:9` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:111:2` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:113:3` |
+| `buf.String` | `internal/ui/report/formats/tsv.go:124:9` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:130:2` |
+| `buf.WriteString` | `internal/ui/report/formats/tsv.go:132:3` |
+| `buf.String` | `internal/ui/report/formats/tsv.go:144:9` |
+| `a.Graph.GetAllFiles` | `internal/core/app/caches.go:7:20` |
+| `a.unresolvedMu.Lock` | `internal/core/app/caches.go:13:2` |
+| `a.unresolvedMu.Unlock` | `internal/core/app/caches.go:15:2` |
+| `a.Graph.GetAllFiles` | `internal/core/app/caches.go:31:20` |
+| `a.unusedMu.Lock` | `internal/core/app/caches.go:37:2` |
+| `a.unusedMu.Unlock` | `internal/core/app/caches.go:39:2` |
+| `a.Graph.GetAllFiles` | `internal/core/app/caches.go:54:11` |
+| `bridge.matchesSource` | `internal/engine/resolver/bridge.go:106:7` |
+| `bridge.matchesReference` | `internal/engine/resolver/bridge.go:109:6` |
+| `a.detector.Detect` | `internal/engine/secrets/adapter.go:27:9` |
+| `a.detector.Detect` | `internal/engine/secrets/adapter.go:32:10` |
+| `a.Graph.DetectCycles` | `internal/core/app/output.go:25:19` |
+| `a.Graph.ModuleCount` | `internal/core/app/output.go:27:19` |
+| `a.Graph.FileCount` | `internal/core/app/output.go:28:19` |
+| `a.SecretCount` | `internal/core/app/output.go:29:19` |
+| `helpers.ArchitectureModelFromConfig` | `internal/core/app/output.go:54:15` |
+| `helpers.WriteArtifact` | `internal/core/app/output.go:74:13` |
+| `helpers.WriteArtifact` | `internal/core/app/output.go:125:13` |
+| `a.Config.Output.MermaidEnabled` | `internal/core/app/output.go:130:42` |
+| `a.Config.Output.PlantUMLEnabled` | `internal/core/app/output.go:131:44` |
+| `a.Config.Output.Report.IncludeMermaidEnabled` | `internal/core/app/output.go:132:31` |
+| `a.Config.Output.MermaidEnabled` | `internal/core/app/output.go:132:81` |
+| `a.Config.Output.MermaidEnabled` | `internal/core/app/output.go:138:7` |
+| `a.Config.Output.PlantUMLEnabled` | `internal/core/app/output.go:142:7` |
+| `report.NewMermaidGenerator` | `internal/core/app/output.go:149:17` |
+| `mermaidGen.SetModuleMetrics` | `internal/core/app/output.go:150:3` |
+| `mermaidGen.SetComplexityHotspots` | `internal/core/app/output.go:151:3` |
+| `mode.Suffix` | `internal/core/app/output.go:155:59` |
+| `helpers.DiagramOutputPath` | `internal/core/app/output.go:159:16` |
+| `helpers.WriteArtifact` | `internal/core/app/output.go:160:15` |
+| `mode.Suffix` | `internal/core/app/output.go:174:60` |
+| `helpers.DiagramOutputPath` | `internal/core/app/output.go:178:16` |
+| `helpers.WriteArtifact` | `internal/core/app/output.go:179:15` |
+| `a.resolveOutputRoot` | `internal/core/app/output.go:205:16` |
+| `report.NewMarkdownGenerator().Generate` | `internal/core/app/output.go:210:14` |
+| `report.NewMarkdownGenerator` | `internal/core/app/output.go:210:14` |
+| `a.Graph.ModuleCount` | `internal/core/app/output.go:211:23` |
+| `a.Graph.FileCount` | `internal/core/app/output.go:212:23` |
+| `a.Config.Output.Report.IncludeMermaidEnabled` | `internal/core/app/output.go:230:25` |
+| `helpers.WriteArtifact` | `internal/core/app/output.go:236:13` |
+| `engine.Walk` | `internal/engine/parser/dynamic_extractor.go:43:2` |
+| `node.ChildCount` | `internal/engine/parser/dynamic_extractor.go:72:24` |
+| `node.Child` | `internal/engine/parser/dynamic_extractor.go:73:12` |
+| `child.Kind` | `internal/engine/parser/dynamic_extractor.go:74:6` |
+| `child.Kind` | `internal/engine/parser/dynamic_extractor.go:74:38` |
+| `graph.NewLayerRuleEngine` | `internal/core/app/app.go:109:17` |
+| `helpers.ArchitectureModelFromConfig` | `internal/core/app/app.go:109:42` |
+| `helpers.ArchitectureRulesFromConfig` | `internal/core/app/app.go:110:16` |
+| `architecture.NewRuleEvaluator` | `internal/core/app/app.go:111:20` |
+| `helpers.CompileGlobs` | `internal/core/app/app.go:115:29` |
+| `helpers.CompileGlobs` | `internal/core/app/app.go:119:30` |
+| `helpers.CompileGlobs` | `internal/core/app/app.go:166:28` |
+| `helpers.CompileGlobs` | `internal/core/app/app.go:170:29` |
+| `helpers.ArchitectureRulesFromConfig` | `internal/core/app/app.go:194:15` |
+| `graph.NewLayerRuleEngine` | `internal/core/app/app.go:200:23` |
+| `helpers.ArchitectureModelFromConfig` | `internal/core/app/app.go:200:48` |
+| `architecture.NewRuleEvaluator` | `internal/core/app/app.go:202:23` |
+| `g.mu.RLock` | `internal/engine/graph/symbol_table.go:45:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/symbol_table.go:46:8` |
+| `util.SortedStringKeys` | `internal/engine/parser/parser.go:145:9` |
+| `util.SortedStringKeys` | `internal/engine/parser/parser.go:149:9` |
+| `successStyle.Render` | `internal/ui/cli/runtime.go:58:50` |
+| `err.Error` | `internal/ui/cli/runtime.go:69:27` |
+| `err.Error` | `internal/ui/cli/runtime.go:77:27` |
+| `analysis.RunScan` | `internal/ui/cli/runtime.go:168:15` |
+| `config.NewWatcher` | `internal/ui/cli/runtime.go:248:19` |
+| `analysis.UpdateConfig` | `internal/ui/cli/runtime.go:250:13` |
+| `configWatcher.Start` | `internal/ui/cli/runtime.go:254:12` |
+| `configWatcher.Stop` | `internal/ui/cli/runtime.go:257:9` |
+| `analysis.WatchService` | `internal/ui/cli/runtime.go:260:11` |
+| `err.Error` | `internal/ui/cli/runtime.go:290:28` |
+| `err.Error` | `internal/ui/cli/runtime.go:300:28` |
+| `analysis.QueryService` | `internal/ui/cli/runtime.go:319:9` |
+| `err.Error` | `internal/ui/cli/runtime.go:330:28` |
+| `err.Error` | `internal/ui/cli/runtime.go:346:28` |
+| `err.Error` | `internal/ui/cli/runtime.go:351:28` |
+| `err.Error` | `internal/ui/cli/runtime.go:363:28` |
+| `err.Error` | `internal/ui/cli/runtime.go:368:28` |
+| `err.Error` | `internal/ui/cli/runtime.go:387:28` |
+| `config.Load` | `internal/ui/cli/runtime.go:406:15` |
+| `config.Load` | `internal/ui/cli/runtime.go:420:19` |
+| `config.ResolveRelative` | `internal/ui/cli/runtime.go:655:19` |
+| `config.ResolveRelative` | `internal/ui/cli/runtime.go:663:34` |
+| `config.ResolveRelative` | `internal/ui/cli/runtime.go:665:41` |
+| `analysis.RunScan` | `internal/ui/cli/runtime.go:712:15` |
+| `config.NewWatcher` | `internal/ui/cli/runtime.go:732:19` |
+| `analysis.UpdateConfig` | `internal/ui/cli/runtime.go:734:13` |
+| `configWatcher.Start` | `internal/ui/cli/runtime.go:738:12` |
+| `configWatcher.Stop` | `internal/ui/cli/runtime.go:741:9` |
+| `a.Graph.GetModule` | `internal/core/app/reporting.go:17:14` |
+| `a.Graph.GetModule` | `internal/core/app/reporting.go:20:14` |
+| `b.WriteString` | `internal/core/app/reporting.go:30:2` |
+| `b.WriteString` | `internal/core/app/reporting.go:32:3` |
+| `b.WriteString` | `internal/core/app/reporting.go:33:3` |
+| `b.WriteString` | `internal/core/app/reporting.go:35:4` |
+| `b.String` | `internal/core/app/reporting.go:39:27` |
+| `a.Graph.GetAllFiles` | `internal/core/app/reporting.go:77:23` |
+| `a.Graph.GetAllFiles` | `internal/core/app/reporting.go:85:23` |
+| `s.graph.Modules` | `internal/data/query/service.go:36:13` |
+| `s.graph.GetImports` | `internal/data/query/service.go:37:13` |
+| `s.graph.GetImports` | `internal/data/query/service.go:84:13` |
+| `s.graph.GetImports` | `internal/data/query/service.go:205:13` |
+| `s.graph.Modules` | `internal/data/query/service.go:207:13` |
+| `parsed.UTC` | `internal/mcp/tools/query/handler.go:53:10` |
+| `parsed.UTC` | `internal/mcp/tools/query/handler.go:56:10` |
+| `g.GetAllFiles` | `internal/ui/report/formats/sequence.go:42:23` |
+| `b.WriteString` | `internal/ui/report/formats/sequence.go:107:2` |
+| `b.WriteString` | `internal/ui/report/formats/sequence.go:108:2` |
+| `b.WriteString` | `internal/ui/report/formats/sequence.go:126:3` |
+| `b.WriteString` | `internal/ui/report/formats/sequence.go:129:2` |
+| `b.WriteString` | `internal/ui/report/formats/sequence.go:133:3` |
+| `b.String` | `internal/ui/report/formats/sequence.go:136:9` |
+| `g.GetAllFiles` | `internal/ui/report/formats/sequence.go:145:23` |
+| `g.Modules` | `internal/ui/report/formats/diagram_modes.go:47:13` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:48:17` |
+| `g.GetImports` | `internal/ui/report/formats/diagram_modes.go:76:13` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:77:23` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:81:14` |
+| `g.GetAllFiles` | `internal/ui/report/formats/diagram_modes.go:92:11` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:152:10` |
+| `g.Modules` | `internal/ui/report/formats/diagram_modes.go:186:13` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:187:17` |
+| `g.GetAllFiles` | `internal/ui/report/formats/diagram_modes.go:196:38` |
+| `g.GetImports` | `internal/ui/report/formats/diagram_modes.go:198:38` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:204:12` |
+| `g.GetImports` | `internal/ui/report/formats/diagram_modes.go:212:13` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:241:29` |
+| `util.SortedStringKeys` | `internal/ui/report/formats/diagram_modes.go:250:22` |
+| `w.pendingMu.Lock` | `internal/core/watcher/watcher.go:135:2` |
+| `w.pendingMu.Unlock` | `internal/core/watcher/watcher.go:136:8` |
+| `w.watchRecursive` | `internal/core/watcher/watcher.go:142:13` |
+| `info.IsDir` | `internal/core/watcher/watcher.go:157:6` |
+| `w.shouldExcludeDir` | `internal/core/watcher/watcher.go:158:7` |
+| `info.IsDir` | `internal/core/watcher/watcher.go:179:22` |
+| `w.shouldExcludeDir` | `internal/core/watcher/watcher.go:180:10` |
+| `w.watchRecursive` | `internal/core/watcher/watcher.go:181:17` |
+| `w.shouldExcludeFile` | `internal/core/watcher/watcher.go:191:7` |
+| `w.scheduleChange` | `internal/core/watcher/watcher.go:199:5` |
+| `w.pendingMu.Lock` | `internal/core/watcher/watcher.go:212:2` |
+| `w.pendingMu.Unlock` | `internal/core/watcher/watcher.go:213:8` |
+| `w.timer.Stop` | `internal/core/watcher/watcher.go:218:3` |
+| `w.pendingMu.Lock` | `internal/core/watcher/watcher.go:227:2` |
+| `w.pendingMu.Unlock` | `internal/core/watcher/watcher.go:233:2` |
+| `info.IsDir` | `internal/core/watcher/watcher.go:248:20` |
+| `g.Match` | `internal/core/watcher/watcher.go:276:6` |
+| `g.Match` | `internal/core/watcher/watcher.go:304:6` |
+| `w.timer.Stop` | `internal/core/watcher/watcher.go:313:3` |
+| `info.IsDir` | `internal/core/watcher/watcher.go:320:35` |
+| `w.shouldExcludeFile` | `internal/core/watcher/watcher.go:323:6` |
+| `w.scheduleChange` | `internal/core/watcher/watcher.go:326:3` |
+| `g.mu.RLock` | `internal/engine/graph/impact.go:32:2` |
+| `g.mu.RUnlock` | `internal/engine/graph/impact.go:33:8` |
+| `g.analyzeImpactForModule` | `internal/engine/graph/impact.go:44:11` |
+| `g.analyzeImpactForModule` | `internal/engine/graph/impact.go:49:9` |
+| `m.Save` | `internal/ui/cli/grammars.go:109:12` |
+| `m.Save` | `internal/ui/cli/grammars.go:144:12` |
+| `s.db.Exec` | `internal/mcp/tools/overlays/handler.go:98:14` |
+| `s.db.Exec` | `internal/mcp/tools/overlays/handler.go:195:12` |
+| `observability.Tracer.Start` | `internal/core/app/service.go:50:15` |
+| `span.End` | `internal/core/app/service.go:51:8` |
+| `s.app.Graph.FileCount` | `internal/core/app/service.go:87:18` |
+| `s.app.Graph.ModuleCount` | `internal/core/app/service.go:92:17` |
+| `s.app.Graph.DetectCycles` | `internal/core/app/service.go:134:12` |
+| `s.app.Graph.ComputeModuleMetrics` | `internal/core/app/service.go:189:13` |
+| `s.app.Graph.DetectCycles` | `internal/core/app/service.go:190:12` |
+| `s.app.AnalyzeHallucinations` | `internal/core/app/service.go:191:16` |
+| `s.app.AnalyzeUnusedImports` | `internal/core/app/service.go:192:12` |
+| `s.app.ArchitectureViolations` | `internal/core/app/service.go:195:16` |
+| `s.app.Graph.TopComplexity` | `internal/core/app/service.go:201:14` |
+| `s.app.Graph.ModuleCount` | `internal/core/app/service.go:209:22` |
+| `s.app.Graph.FileCount` | `internal/core/app/service.go:210:22` |
+| `s.app.Graph.DetectCycles` | `internal/core/app/service.go:263:12` |
+| `s.app.Graph.ComputeModuleMetrics` | `internal/core/app/service.go:269:13` |
+| `s.app.ArchitectureViolations` | `internal/core/app/service.go:277:16` |
+| `s.app.Graph.TopComplexity` | `internal/core/app/service.go:283:14` |
+| `s.app.AnalyzeHallucinations` | `internal/core/app/service.go:284:20` |
+| `s.app.AnalyzeUnusedImports` | `internal/core/app/service.go:285:19` |
+| `s.app.Graph.FileCount` | `internal/core/app/service.go:289:19` |
+| `s.app.Graph.ModuleCount` | `internal/core/app/service.go:290:19` |
+| `m.issueList.Update` | `internal/ui/cli/ui.go:160:22` |
+| `m.moduleList.Update` | `internal/ui/cli/ui.go:162:23` |
+| `successStyle.Render` | `internal/ui/cli/ui.go:173:13` |
+| `graph.NewLayerRuleEngine` | `internal/core/app/presentation_service.go:25:15` |
+| `helpers.ArchitectureModelFromConfig` | `internal/core/app/presentation_service.go:25:40` |
+| `report.NewMermaidGenerator` | `internal/core/app/presentation_service.go:46:17` |
+| `mermaidGen.SetModuleMetrics` | `internal/core/app/presentation_service.go:47:3` |
+| `mermaidGen.SetComplexityHotspots` | `internal/core/app/presentation_service.go:48:3` |
+| `helpers.ArchitectureModelFromConfig` | `internal/core/app/presentation_service.go:49:65` |
+| `report.NewMarkdownGenerator().Generate` | `internal/core/app/presentation_service.go:59:13` |
+| `report.NewMarkdownGenerator` | `internal/core/app/presentation_service.go:59:13` |
+| `helpers.WriteArtifact` | `internal/core/app/presentation_service.go:110:13` |
+| `helpers.MetricLeaders` | `internal/core/app/presentation_service.go:185:15` |
+| `helpers.MetricLeaders` | `internal/core/app/presentation_service.go:186:15` |
+| `helpers.MetricLeaders` | `internal/core/app/presentation_service.go:187:16` |
 
 </details>
 
@@ -1235,106 +1358,121 @@ No probable bridge references detected.
 
 | Language | Module | Alias | Item | Confidence | Location |
 | --- | --- | --- | --- | --- | --- |
-| `go` | `circular/internal/core/app` | `` | `` | `medium` | `internal/ui/cli/server_observability.go:9:0` |
-| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/config/loader.go:4:0` |
-| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/cli/run_ui.go:4:0` |
-| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/ui/cli/run_ui.go:5:0` |
-| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:5:0` |
-| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:6:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:7:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:9:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/resolver.go:6:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/helpers/metrics.go:4:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/secrets/git_scanner.go:7:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/ui/report/formats/tsv.go:6:0` |
-| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/ports/ports.go:4:0` |
-| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/core/ports/ports.go:5:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/ports/ports.go:7:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/core/ports/ports.go:8:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/utils.go:4:0` |
-| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/app/presentation_service.go:7:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/scanner.go:5:0` |
 | `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/schema/tools.go:3:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/core/app/symbol_store.go:6:0` |
-| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/mcp/transport/stdio.go:5:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/transport/stdio.go:6:0` |
-| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/mcp/transport/sse.go:4:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/transport/sse.go:5:0` |
-| `go` | `circular/internal/engine/parser/registry` | `` | `` | `medium` | `internal/engine/parser/dynamic_extractor.go:4:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/engine/resolver/probabilistic.go:4:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/probabilistic.go:5:0` |
-| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/scan/handler.go:4:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/scan/handler.go:5:0` |
-| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/cli/ui.go:4:0` |
-| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/ui/cli/ui.go:5:0` |
-| `go` | `github.com/prometheus/client_golang/prometheus` | `` | `` | `medium` | `internal/shared/observability/metrics.go:4:0` |
-| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/graph/handler.go:4:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/graph/handler.go:5:0` |
-| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/mcp/runtime/server.go:5:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/runtime/server.go:7:0` |
 | `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/ui/report/trends.go:4:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/html_interactive.go:6:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats_bridge.go:4:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/graph/graph.go:5:0` |
-| `go` | `runtime` | `` | `` | `medium` | `internal/engine/parser/builder.go:8:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/system/handler.go:4:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/core/app/symbol_store.go:6:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/engine/architecture/rules.go:4:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/report/formats/tsv.go:5:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/ui/report/formats/tsv.go:7:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/bridge.go:4:0` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/engine/secrets/adapter.go:4:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/engine/secrets/adapter.go:5:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/secrets/adapter.go:6:0` |
 | `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/ui/cli/runtime_factory.go:5:0` |
 | `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/cli/runtime_factory.go:6:0` |
-| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/mcp/runtime/allowlist.go:4:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/runtime/allowlist.go:5:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/output.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/output.go:6:0` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/app/output.go:8:0` |
+| `go` | `circular/internal/engine/parser/registry` | `` | `` | `medium` | `internal/engine/parser/dynamic_extractor.go:4:0` |
 | `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/app/app.go:5:0` |
 | `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/app.go:7:0` |
 | `go` | `circular/internal/core/watcher` | `` | `` | `medium` | `internal/core/app/app.go:8:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/impact_report.go:4:0` |
-| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/ui/cli/cli.go:4:0` |
 | `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/graph/symbol_table.go:4:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/cli/runtime.go:6:0` |
+| `go` | `syscall` | `` | `` | `medium` | `internal/ui/cli/runtime.go:23:0` |
 | `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/reporting.go:4:0` |
 | `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/reporting.go:6:0` |
 | `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/core/app/reporting.go:7:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/secrets/git_scanner.go:7:0` |
+| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/query/handler.go:4:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/query/handler.go:5:0` |
 | `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/sequence.go:6:0` |
 | `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/ui/report/formats/sequence.go:7:0` |
 | `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/diagram_modes.go:4:0` |
-| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/app/helpers/utils.go:4:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/helpers/utils.go:5:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/markdown.go:4:0` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/ui/cli/grammars.go:4:0` |
+| `go` | `database/sql` | `` | `` | `medium` | `internal/mcp/tools/overlays/handler.go:7:0` |
 | `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/app/service.go:4:0` |
 | `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/service.go:6:0` |
 | `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/service.go:9:0` |
 | `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/core/app/service.go:10:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/secrets/detector.go:5:0` |
-| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/secrets/handler.go:4:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/secrets/handler.go:5:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/bridge.go:4:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:5:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:6:0` |
-| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:7:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/graph/metrics.go:4:0` |
-| `go` | `circular/internal/engine/parser/registry` | `` | `` | `medium` | `internal/engine/parser/grammar/verify.go:4:0` |
-| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/ui/cli/ui_panels.go:4:0` |
-| `go` | `bytes` | `` | `` | `medium` | `internal/data/history/git.go:4:0` |
-| `go` | `database/sql` | `` | `` | `medium` | `internal/mcp/tools/overlays/handler.go:7:0` |
-| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/ui/cli/grammars.go:4:0` |
-| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/output.go:5:0` |
-| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/app/output.go:7:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/report/handler.go:4:0` |
-| `go` | `database/sql` | `` | `` | `medium` | `internal/engine/graph/schema.go:5:0` |
-| `go` | `net/http` | `` | `` | `medium` | `internal/mcp/openapi/loader.go:7:0` |
-| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/cli/runtime.go:6:0` |
-| `go` | `syscall` | `` | `` | `medium` | `internal/ui/cli/runtime.go:23:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/graph/writer.go:5:0` |
+| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/scan/handler.go:4:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/scan/handler.go:5:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/cli/ui.go:4:0` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/ui/cli/ui.go:5:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/presentation_service.go:5:0` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/app/presentation_service.go:8:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/cli/run_ui.go:4:0` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/ui/cli/run_ui.go:5:0` |
 | `go` | `github.com/getkin/kin-openapi/openapi3` | `` | `` | `medium` | `internal/mcp/openapi/converter.go:10:0` |
-| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/engine/secrets/adapter.go:4:0` |
-| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/engine/secrets/adapter.go:5:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/secrets/adapter.go:6:0` |
-| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/data/query/models.go:3:0` |
-| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/query/handler.go:4:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/query/handler.go:5:0` |
-| `go` | `database/sql` | `` | `` | `medium` | `internal/data/history/schema.go:4:0` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/core/config/loader.go:4:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/write_worker.go:5:0` |
+| `go` | `bytes` | `` | `` | `medium` | `internal/data/history/git.go:4:0` |
+| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/graph/handler.go:4:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/graph/handler.go:5:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/graph/graph.go:5:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/report/handler.go:4:0` |
+| `go` | `github.com/prometheus/client_golang/prometheus` | `` | `` | `medium` | `internal/shared/observability/metrics.go:4:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/heuristics.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/utils.go:4:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/mcp/runtime/server.go:5:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/runtime/server.go:7:0` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/mcp/transport/sse.go:4:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/transport/sse.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/html_interactive.go:6:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/resolver.go:6:0` |
 | `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/helpers/secrets.go:4:0` |
 | `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/core/app/helpers/secrets.go:5:0` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/data/query/models.go:3:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/impact_report.go:4:0` |
+| `go` | `circular/internal/engine/parser/registry` | `` | `` | `medium` | `internal/engine/parser/grammar/verify.go:4:0` |
 | `go` | `net/http` | `` | `` | `medium` | `internal/shared/util/net.go:5:0` |
-| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/heuristics.go:5:0` |
-| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/system/handler.go:4:0` |
+| `go` | `circular/internal/core/app` | `` | `` | `medium` | `internal/ui/cli/server_observability.go:9:0` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/mcp/transport/stdio.go:5:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/transport/stdio.go:6:0` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/ui/cli/cli.go:4:0` |
 | `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/app/helpers/diagrams.go:4:0` |
 | `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/helpers/diagrams.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/helpers/metrics.go:4:0` |
+| `go` | `database/sql` | `` | `` | `medium` | `internal/data/history/schema.go:4:0` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/ui/cli/ui_panels.go:4:0` |
+| `go` | `database/sql` | `` | `` | `medium` | `internal/data/queue/schema.go:4:0` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/ports/ports.go:4:0` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/core/ports/ports.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/ports/ports.go:7:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/core/ports/ports.go:8:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/data/queue/sqlite_spool.go:4:0` |
+| `go` | `circular/internal/mcp/adapters` | `` | `` | `medium` | `internal/mcp/tools/secrets/handler.go:4:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/tools/secrets/handler.go:5:0` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/mcp/runtime/allowlist.go:4:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/runtime/allowlist.go:5:0` |
+| `go` | `circular/internal/core/config` | `` | `` | `medium` | `internal/core/app/helpers/utils.go:4:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/helpers/utils.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/core/app/helpers/utils.go:6:0` |
+| `go` | `runtime` | `` | `` | `medium` | `internal/engine/parser/builder.go:8:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/data/queue/memory_queue.go:4:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/graph/metrics.go:4:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/engine/architecture/evaluator.go:4:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/engine/architecture/evaluator.go:5:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/report/formats/markdown.go:4:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/markdown.go:5:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:6:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:7:0` |
+| `go` | `circular/internal/shared/version` | `` | `` | `medium` | `internal/ui/report/formats/sarif.go:8:0` |
+| `go` | `net/http` | `` | `` | `medium` | `internal/mcp/openapi/loader.go:7:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/core/app/analyzer.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/engine/resolver/probabilistic.go:4:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/resolver/probabilistic.go:5:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/secrets/detector.go:5:0` |
+| `go` | `circular/internal/core/ports` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:5:0` |
+| `go` | `circular/internal/data/history` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:6:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:7:0` |
+| `go` | `circular/internal/mcp/contracts` | `` | `` | `medium` | `internal/mcp/adapters/adapter.go:9:0` |
+| `go` | `circular/internal/engine/parser` | `` | `` | `medium` | `internal/engine/graph/writer.go:5:0` |
+| `go` | `database/sql` | `` | `` | `medium` | `internal/engine/graph/schema.go:5:0` |
+| `go` | `circular/internal/engine/graph` | `` | `` | `medium` | `internal/ui/report/formats_bridge.go:4:0` |
 
 </details>
 

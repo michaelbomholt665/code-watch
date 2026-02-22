@@ -468,6 +468,32 @@ func validateResolver(cfg *Config) error {
 	return nil
 }
 
+func validateWriteQueue(cfg *Config) error {
+	q := cfg.WriteQueue
+	if q.MemoryCapacity < 1 {
+		return fmt.Errorf("write_queue.memory_capacity must be >= 1")
+	}
+	if q.BatchSize < 1 {
+		return fmt.Errorf("write_queue.batch_size must be >= 1")
+	}
+	if q.FlushInterval < 10*time.Millisecond {
+		return fmt.Errorf("write_queue.flush_interval must be >= 10ms")
+	}
+	if q.ShutdownDrainTimeout < time.Second {
+		return fmt.Errorf("write_queue.shutdown_drain_timeout must be >= 1s")
+	}
+	if q.RetryBaseDelay < 10*time.Millisecond {
+		return fmt.Errorf("write_queue.retry_base_delay must be >= 10ms")
+	}
+	if q.RetryMaxDelay < q.RetryBaseDelay {
+		return fmt.Errorf("write_queue.retry_max_delay must be >= write_queue.retry_base_delay")
+	}
+	if q.PersistentQueueEnabled() && strings.TrimSpace(q.SpoolPath) == "" {
+		return fmt.Errorf("write_queue.spool_path must not be empty when write_queue.persistent_enabled=true")
+	}
+	return nil
+}
+
 func validateLanguages(cfg *Config) error {
 	for language, settings := range cfg.Languages {
 		if strings.TrimSpace(language) == "" {
@@ -550,6 +576,9 @@ func Validate(cfg *Config) []error {
 		errs = append(errs, err)
 	}
 	if err := validateResolver(cfg); err != nil {
+		errs = append(errs, err)
+	}
+	if err := validateWriteQueue(cfg); err != nil {
 		errs = append(errs, err)
 	}
 

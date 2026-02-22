@@ -349,6 +349,89 @@ exclude = { tests = true, files = ["index.ts", "__init__.py"] }
 	}
 }
 
+func TestLoadWriteQueueDefaults(t *testing.T) {
+	content := `grammars_path = "./grammars"`
+	tmpfile, err := os.CreateTemp("", "config-write-queue-defaults*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if !cfg.WriteQueue.QueueEnabled() {
+		t.Fatal("expected write_queue.enabled default true")
+	}
+	if !cfg.WriteQueue.PersistentQueueEnabled() {
+		t.Fatal("expected write_queue.persistent_enabled default true")
+	}
+	if cfg.WriteQueue.MemoryCapacity != 2048 {
+		t.Fatalf("expected write_queue.memory_capacity=2048, got %d", cfg.WriteQueue.MemoryCapacity)
+	}
+	if cfg.WriteQueue.BatchSize != 128 {
+		t.Fatalf("expected write_queue.batch_size=128, got %d", cfg.WriteQueue.BatchSize)
+	}
+	if cfg.WriteQueue.FlushInterval != 250*time.Millisecond {
+		t.Fatalf("expected write_queue.flush_interval=250ms, got %v", cfg.WriteQueue.FlushInterval)
+	}
+	if cfg.WriteQueue.ShutdownDrainTimeout != 10*time.Second {
+		t.Fatalf("expected write_queue.shutdown_drain_timeout=10s, got %v", cfg.WriteQueue.ShutdownDrainTimeout)
+	}
+	if cfg.WriteQueue.RetryBaseDelay != 500*time.Millisecond {
+		t.Fatalf("expected write_queue.retry_base_delay=500ms, got %v", cfg.WriteQueue.RetryBaseDelay)
+	}
+	if cfg.WriteQueue.RetryMaxDelay != 30*time.Second {
+		t.Fatalf("expected write_queue.retry_max_delay=30s, got %v", cfg.WriteQueue.RetryMaxDelay)
+	}
+	if !cfg.WriteQueue.SyncFallbackEnabled() {
+		t.Fatal("expected write_queue.sync_fallback default true")
+	}
+}
+
+func TestLoadWriteQueueExplicitFalseBools(t *testing.T) {
+	content := `
+grammars_path = "./grammars"
+
+[write_queue]
+enabled = false
+persistent_enabled = false
+sync_fallback = false
+`
+	tmpfile, err := os.CreateTemp("", "config-write-queue-false*.toml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+	if _, err := tmpfile.Write([]byte(content)); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg, err := Load(tmpfile.Name())
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if cfg.WriteQueue.QueueEnabled() {
+		t.Fatal("expected write_queue.enabled=false to be preserved")
+	}
+	if cfg.WriteQueue.PersistentQueueEnabled() {
+		t.Fatal("expected write_queue.persistent_enabled=false to be preserved")
+	}
+	if cfg.WriteQueue.SyncFallbackEnabled() {
+		t.Fatal("expected write_queue.sync_fallback=false to be preserved")
+	}
+}
+
 func TestLoadArchitectureRules_InvalidOverlap(t *testing.T) {
 	content := `
 grammars_path = "./grammars"

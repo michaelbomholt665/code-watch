@@ -93,6 +93,20 @@ func TestApplyTaggedSymbol_References(t *testing.T) {
 	}
 }
 
+func TestDefinitionKindFromNodeKind(t *testing.T) {
+	kind, ok := definitionKindFromNodeKind("function_declaration")
+	if !ok {
+		t.Fatal("expected function_declaration to be classified")
+	}
+	if kind != KindFunction {
+		t.Fatalf("expected KindFunction, got %v", kind)
+	}
+
+	if _, ok := definitionKindFromNodeKind("parameter_declaration"); ok {
+		t.Fatal("expected parameter_declaration to be ignored")
+	}
+}
+
 // TestExtractNodeName_FallbackToLeaf ensures leaf-node text is returned when no
 // named child exists.
 func TestExtractNodeName_FallbackToLeaf(t *testing.T) {

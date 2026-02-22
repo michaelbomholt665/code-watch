@@ -8,6 +8,7 @@ import (
 	"circular/internal/data/history"
 	"circular/internal/engine/graph"
 	"circular/internal/engine/parser"
+	"circular/internal/engine/resolver"
 	"context"
 	"os"
 	"path/filepath"
@@ -148,20 +149,19 @@ func TestApp_GenerateOutputs_IncludesProbableBridgeRows(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	app.Graph.AddFile(&parser.File{
-		Path:     "client.py",
-		Language: "python",
-		Module:   "client",
-		References: []parser.Reference{
-			{
+	probable := []resolver.ProbableBridgeReference{
+		{
+			File: "client.py",
+			Reference: parser.Reference{
 				Name:     "grpc.insecure_channel",
-				Context:  parser.RefContextService,
 				Location: parser.Location{Line: 4, Column: 2},
 			},
+			Confidence: "medium",
+			Score:      6,
+			Reasons:    []string{"bridge_context", "bridge_prefix_heuristic"},
 		},
-	})
-
-	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, nil); err != nil {
+	}
+	if err := app.GenerateOutputs(context.Background(), nil, nil, nil, app.Graph.ComputeModuleMetrics(), nil, nil, ports.ArchitectureRuleSummary{}, nil, probable); err != nil {
 		t.Fatal(err)
 	}
 

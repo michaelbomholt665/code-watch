@@ -26,6 +26,7 @@ type Config struct {
 	Caches              Caches              `toml:"caches"`
 	Performance         Performance         `toml:"performance"`
 	Observability       Observability       `toml:"observability"`
+	WriteQueue          WriteQueueConfig    `toml:"write_queue"`
 }
 
 type Performance struct {
@@ -39,6 +40,19 @@ type Observability struct {
 	ServiceName   string `toml:"service_name"`
 	EnableTracing bool   `toml:"enable_tracing"`
 	EnableMetrics bool   `toml:"enable_metrics"`
+}
+
+type WriteQueueConfig struct {
+	Enabled              *bool         `toml:"enabled"`
+	MemoryCapacity       int           `toml:"memory_capacity"`
+	PersistentEnabled    *bool         `toml:"persistent_enabled"`
+	SpoolPath            string        `toml:"spool_path"`
+	BatchSize            int           `toml:"batch_size"`
+	FlushInterval        time.Duration `toml:"flush_interval"`
+	ShutdownDrainTimeout time.Duration `toml:"shutdown_drain_timeout"`
+	RetryBaseDelay       time.Duration `toml:"retry_base_delay"`
+	RetryMaxDelay        time.Duration `toml:"retry_max_delay"`
+	SyncFallback         *bool         `toml:"sync_fallback"`
 }
 
 type Caches struct {
@@ -325,6 +339,27 @@ func (r ReportOutput) IncludeMermaidEnabled() bool {
 		return false
 	}
 	return *r.IncludeMermaid
+}
+
+func (w WriteQueueConfig) QueueEnabled() bool {
+	if w.Enabled == nil {
+		return true
+	}
+	return *w.Enabled
+}
+
+func (w WriteQueueConfig) PersistentQueueEnabled() bool {
+	if w.PersistentEnabled == nil {
+		return true
+	}
+	return *w.PersistentEnabled
+}
+
+func (w WriteQueueConfig) SyncFallbackEnabled() bool {
+	if w.SyncFallback == nil {
+		return true
+	}
+	return *w.SyncFallback
 }
 
 // validateDynamicGrammars moved to validator.go

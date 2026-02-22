@@ -368,22 +368,24 @@ func walkUniversal(node *sitter.Node, source []byte, file *File, ancestry []stri
 				Location:   loc,
 			}
 			if tag == TagSymDef {
-				defKind := definitionKindFromNodeKind(kind)
-				definition := Definition{
-					Name:     tagged.Name,
-					FullName: tagged.Name,
-					Kind:     defKind,
-					Location: tagged.Location,
-					Scope:    tagged.Ancestry,
+				defKind, ok := definitionKindFromNodeKind(kind)
+				if ok {
+					definition := Definition{
+						Name:     tagged.Name,
+						FullName: tagged.Name,
+						Kind:     defKind,
+						Location: tagged.Location,
+						Scope:    tagged.Ancestry,
+					}
+					if defKind == KindFunction || defKind == KindMethod {
+						branches, params, nesting, locCount := computeFunctionComplexity(node, source)
+						definition.BranchCount = branches
+						definition.ParameterCount = params
+						definition.NestingDepth = nesting
+						definition.LOC = locCount
+					}
+					file.Definitions = append(file.Definitions, definition)
 				}
-				if defKind == KindFunction || defKind == KindMethod {
-					branches, params, nesting, locCount := computeFunctionComplexity(node, source)
-					definition.BranchCount = branches
-					definition.ParameterCount = params
-					definition.NestingDepth = nesting
-					definition.LOC = locCount
-				}
-				file.Definitions = append(file.Definitions, definition)
 			} else {
 				applyTaggedSymbol(file, tagged)
 			}
@@ -552,26 +554,26 @@ var variableNodeKinds = map[string]struct{}{
 	"var_declaration":      {},
 }
 
-func definitionKindFromNodeKind(kind string) DefinitionKind {
+func definitionKindFromNodeKind(kind string) (DefinitionKind, bool) {
 	if _, ok := methodNodeKinds[kind]; ok {
-		return KindMethod
+		return KindMethod, true
 	}
 	if _, ok := functionNodeKinds[kind]; ok {
-		return KindFunction
+		return KindFunction, true
 	}
 	if _, ok := classNodeKinds[kind]; ok {
-		return KindClass
+		return KindClass, true
 	}
 	if _, ok := interfaceNodeKinds[kind]; ok {
-		return KindInterface
+		return KindInterface, true
 	}
 	if _, ok := typeNodeKinds[kind]; ok {
-		return KindType
+		return KindType, true
 	}
 	if _, ok := variableNodeKinds[kind]; ok {
-		return KindVariable
+		return KindVariable, true
 	}
-	return KindFunction
+	return KindVariable, false
 }
 
 var branchNodeKinds = map[string]struct{}{

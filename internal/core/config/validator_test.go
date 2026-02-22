@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestValidateOutputConflicts(t *testing.T) {
@@ -66,5 +67,31 @@ func TestValidateWatchPaths(t *testing.T) {
 	}
 	if !found {
 		t.Errorf("Expected watch path error %q, got %v", targetError, errs)
+	}
+}
+
+func TestValidateWriteQueueRetryOrder(t *testing.T) {
+	enabled := true
+	cfg := &Config{
+		WriteQueue: WriteQueueConfig{
+			Enabled:              &enabled,
+			MemoryCapacity:       1,
+			BatchSize:            1,
+			FlushInterval:        10 * time.Millisecond,
+			ShutdownDrainTimeout: time.Second,
+			RetryBaseDelay:       time.Second,
+			RetryMaxDelay:        500 * time.Millisecond,
+		},
+	}
+	errs := Validate(cfg)
+	found := false
+	for _, err := range errs {
+		if err.Error() == "write_queue.retry_max_delay must be >= write_queue.retry_base_delay" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected write_queue retry delay validation error, got %v", errs)
 	}
 }

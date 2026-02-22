@@ -132,6 +132,13 @@ func Run(args []string) int {
 		slog.Error("failed to initialize app", "error", err)
 		return 1
 	}
+	if closer, ok := analysis.(interface{ Close(context.Context) error }); ok {
+		defer func() {
+			if err := closer.Close(context.Background()); err != nil {
+				slog.Warn("failed to close analysis service", "error", err)
+			}
+		}()
+	}
 
 	if cfg.Observability.Enabled {
 		if cfg.Observability.EnableTracing && cfg.Observability.OTLPEndpoint != "" {

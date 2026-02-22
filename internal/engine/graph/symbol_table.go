@@ -20,6 +20,10 @@ type SymbolRecord struct {
 	TypeHint   string
 	Decorators []string
 	IsService  bool
+	Branches   int
+	Parameters int
+	Nesting    int
+	LOC        int
 	// v4 semantic tagging fields
 	UsageTag   string
 	Confidence float64
@@ -62,6 +66,10 @@ func (g *Graph) BuildUniversalSymbolTable() *UniversalSymbolTable {
 				Signature:  def.Signature,
 				TypeHint:   def.TypeHint,
 				IsService:  isLikelyServiceDefinition(*def),
+				Branches:   def.BranchCount,
+				Parameters: def.ParameterCount,
+				Nesting:    def.NestingDepth,
+				LOC:        def.LOC,
 			}
 			if len(def.Decorators) > 0 {
 				rec.Decorators = append([]string(nil), def.Decorators...)

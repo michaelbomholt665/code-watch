@@ -230,6 +230,26 @@ Settings that require deep re-initialization (like `db.path` or `paths.*`) curre
 - default `5s`
 - `db.project_mode` (`string`)
 - `single` or `multi`
+- `write_queue.enabled` (`bool`, default `true`)
+- enables asynchronous queued symbol-store writes; set to `false` for immediate rollback to direct writes
+- `write_queue.memory_capacity` (`int`)
+- bounded in-memory queue capacity before backpressure policy triggers (default `2048`)
+- `write_queue.persistent_enabled` (`bool`, default `true`)
+- enables SQLite-backed local spool for overflow and crash recovery
+- `write_queue.spool_path` (`string`)
+- spool DB file path; relative values resolve from project root (default `data/database/write_spool.db`)
+- `write_queue.batch_size` (`int`)
+- max queued write requests per flush cycle (default `128`)
+- `write_queue.flush_interval` (`duration`)
+- max wait before forcing a flush cycle (default `250ms`)
+- `write_queue.shutdown_drain_timeout` (`duration`)
+- timeout used to drain pending writes on shutdown (default `10s`)
+- `write_queue.retry_base_delay` (`duration`)
+- base retry delay for failed persistent rows (default `500ms`)
+- `write_queue.retry_max_delay` (`duration`)
+- max exponential backoff delay for failed persistent rows (default `30s`)
+- `write_queue.sync_fallback` (`bool`, default `true`)
+- if queue+spool enqueue both fail, apply writes synchronously on producer path
 - `projects.active` (`string`)
 - explicit active project name when `projects.entries` is present
 - `projects.registry_file` (`string`)
@@ -424,6 +444,13 @@ Config load fails when:
 - `version` is outside supported range
 - `db.driver != sqlite`
 - `db.project_mode` is not `single|multi`
+- `write_queue.memory_capacity < 1`
+- `write_queue.batch_size < 1`
+- `write_queue.flush_interval < 10ms`
+- `write_queue.shutdown_drain_timeout < 1s`
+- `write_queue.retry_base_delay < 10ms`
+- `write_queue.retry_max_delay < write_queue.retry_base_delay`
+- `write_queue.persistent_enabled=true` with empty `write_queue.spool_path`
 - `projects.active` references a missing project
 - duplicate `projects.entries.name` values exist
 - duplicate `projects.entries.db_namespace` values exist or `db_namespace` is empty

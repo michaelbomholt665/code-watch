@@ -45,6 +45,10 @@ type App struct {
 	Graph         *graph.Graph
 	secretScanner ports.SecretScanner
 	symbolStore   *graph.SQLiteSymbolStore
+	writeQueue    ports.WriteQueuePort
+	writeSpool    ports.WriteSpoolPort
+	workerCancel  context.CancelFunc
+	workerDone    chan struct{}
 	archEngine    *graph.LayerRuleEngine
 	archRules     []ports.ArchitectureRule
 	archEvaluator *architecture.RuleEvaluator
@@ -205,6 +209,9 @@ func NewWithDependencies(cfg *config.Config, deps Dependencies) (*App, error) {
 	}
 	if err := app.initSymbolStore(); err != nil {
 		return nil, errors.Wrap(err, errors.CodeInternal, "failed to initialize symbol store")
+	}
+	if err := app.initWriteQueue(); err != nil {
+		return nil, errors.Wrap(err, errors.CodeInternal, "failed to initialize write queue")
 	}
 	return app, nil
 }

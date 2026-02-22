@@ -6,49 +6,48 @@ skinparam nodesep 80
 skinparam ranksep 100
 left to right direction
 
-component "circular/cmd/circular\n(0 funcs, 1 files)\n(d=13 in=0 out=1)\n(imp=1.0)\n(cx=1)" as circular_cmd_circular
-component "circular/internal/core/app\n(0 funcs, 15 files)\n(d=11 in=1 out=15)\n(imp=17.0)\n(cx=1)" as circular_internal_core_app
-component "circular/internal/core/app/helpers\n(0 funcs, 5 files)\n(d=10 in=1 out=7)\n(imp=9.0)" as circular_internal_core_app_helpers
-component "circular/internal/core/config\n(0 funcs, 7 files)\n(d=1 in=7 out=2)\n(imp=16.0)" as circular_internal_core_config
-component "circular/internal/core/config/helpers\n(0 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=2.0)" as circular_internal_core_config_helpers
-component "circular/internal/core/errors\n(0 funcs, 1 files)\n(d=0 in=3 out=0)\n(imp=6.0)" as circular_internal_core_errors
-component "circular/internal/core/ports\n(0 funcs, 1 files)\n(d=6 in=6 out=6)\n(imp=18.0)" as circular_internal_core_ports
-component "circular/internal/core/watcher\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)" as circular_internal_core_watcher
-component "circular/internal/data/history\n(0 funcs, 6 files)\n(d=0 in=7 out=0)\n(imp=14.0)" as circular_internal_data_history
-component "circular/internal/data/query\n(0 funcs, 3 files)\n(d=5 in=3 out=2)\n(imp=8.0)" as circular_internal_data_query
-component "circular/internal/engine/graph\n(0 funcs, 12 files)\n(d=4 in=8 out=3)\n(imp=19.0)" as circular_internal_engine_graph
-component "circular/internal/engine/parser\n(0 funcs, 17 files)\n(d=3 in=10 out=4)\n(imp=24.0)" as circular_internal_engine_parser
-component "circular/internal/engine/parser/extractors\n(0 funcs, 1 files)\n(d=4 in=0 out=1)\n(imp=1.0)" as circular_internal_engine_parser_extractors
-component "circular/internal/engine/parser/grammar\n(0 funcs, 4 files)\n(d=2 in=1 out=1)\n(imp=3.0)" as circular_internal_engine_parser_grammar
-component "circular/internal/engine/parser/registry\n(0 funcs, 1 files)\n(d=1 in=2 out=1)\n(imp=5.0)" as circular_internal_engine_parser_registry
-component "circular/internal/engine/resolver\n(0 funcs, 10 files)\n(d=5 in=4 out=4)\n(imp=12.0)" as circular_internal_engine_resolver
-component "circular/internal/engine/resolver/drivers\n(0 funcs, 5 files)\n(d=0 in=1 out=0)\n(imp=2.0)" as circular_internal_engine_resolver_drivers
-component "circular/internal/engine/secrets\n(0 funcs, 3 files)\n(d=7 in=5 out=3)\n(imp=13.0)" as circular_internal_engine_secrets
-component "circular/internal/mcp/adapters\n(0 funcs, 1 files)\n(d=8 in=5 out=7)\n(imp=17.0)" as circular_internal_mcp_adapters
-component "circular/internal/mcp/contracts\n(0 funcs, 1 files)\n(d=0 in=12 out=0)\n(imp=24.0)" as circular_internal_mcp_contracts
-component "circular/internal/mcp/openapi\n(0 funcs, 3 files)\n(d=1 in=1 out=1)\n(imp=13.0)" as circular_internal_mcp_openapi
-component "circular/internal/mcp/registry\n(0 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=2.0)" as circular_internal_mcp_registry
-component "circular/internal/mcp/runtime\n(0 funcs, 5 files)\n(d=10 in=1 out=17)\n(imp=19.0)" as circular_internal_mcp_runtime
-component "circular/internal/mcp/schema\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)" as circular_internal_mcp_schema
-component "circular/internal/mcp/tools/graph\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)" as circular_internal_mcp_tools_graph
-component "circular/internal/mcp/tools/overlays\n(0 funcs, 1 files)\n(d=5 in=0 out=1)\n(imp=1.0)" as circular_internal_mcp_tools_overlays
-component "circular/internal/mcp/tools/query\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)" as circular_internal_mcp_tools_query
-component "circular/internal/mcp/tools/report\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)" as circular_internal_mcp_tools_report
-component "circular/internal/mcp/tools/scan\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)" as circular_internal_mcp_tools_scan
-component "circular/internal/mcp/tools/secrets\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=4.0)" as circular_internal_mcp_tools_secrets
-component "circular/internal/mcp/tools/system\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=3.0)" as circular_internal_mcp_tools_system
-component "circular/internal/mcp/transport\n(0 funcs, 3 files)\n(d=2 in=1 out=4)\n(imp=6.0)" as circular_internal_mcp_transport
-component "circular/internal/mcp/validate\n(0 funcs, 1 files)\n(d=1 in=1 out=2)\n(imp=4.0)" as circular_internal_mcp_validate
-component "circular/internal/shared/observability\n(0 funcs, 2 files)\n(d=0 in=6 out=0)\n(imp=12.0)" as circular_internal_shared_observability
-component "circular/internal/shared/util\n(0 funcs, 5 files)\n(d=0 in=11 out=0)\n(imp=22.0)" as circular_internal_shared_util
+component "circular/cmd/circular\n(0 funcs, 1 files)\n(d=13 in=0 out=1)\n(imp=2.0)" as circular_cmd_circular
+component "circular/internal/core/app\n(0 funcs, 15 files)\n(d=11 in=1 out=16)\n(imp=80.0)\n(cx=124)" as circular_internal_core_app
+component "circular/internal/core/app/helpers\n(0 funcs, 5 files)\n(d=10 in=1 out=7)\n(imp=28.5)" as circular_internal_core_app_helpers
+component "circular/internal/core/config\n(0 funcs, 7 files)\n(d=1 in=7 out=2)\n(imp=88.0)\n(cx=144)" as circular_internal_core_config
+component "circular/internal/core/config/helpers\n(0 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=15.0)" as circular_internal_core_config_helpers
+component "circular/internal/core/errors\n(0 funcs, 1 files)\n(d=0 in=3 out=0)\n(imp=12.0)" as circular_internal_core_errors
+component "circular/internal/core/ports\n(0 funcs, 1 files)\n(d=6 in=8 out=6)\n(imp=22.0)" as circular_internal_core_ports
+component "circular/internal/core/watcher\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=27.0)" as circular_internal_core_watcher
+component "circular/internal/data/history\n(0 funcs, 6 files)\n(d=0 in=7 out=0)\n(imp=35.0)" as circular_internal_data_history
+component "circular/internal/data/query\n(0 funcs, 3 files)\n(d=5 in=3 out=2)\n(imp=31.0)" as circular_internal_data_query
+component "circular/internal/engine/architecture\n(0 funcs, 2 files)\n(d=7 in=1 out=3)\n(imp=32.0)" as circular_internal_engine_architecture
+component "circular/internal/engine/graph\n(0 funcs, 12 files)\n(d=4 in=9 out=3)\n(imp=59.5)" as circular_internal_engine_graph
+component "circular/internal/engine/parser\n(0 funcs, 17 files)\n(d=3 in=10 out=4)\n(imp=49.5)" as circular_internal_engine_parser
+component "circular/internal/engine/parser/extractors\n(0 funcs, 1 files)\n(d=4 in=0 out=1)\n(imp=2.0)" as circular_internal_engine_parser_extractors
+component "circular/internal/engine/parser/grammar\n(0 funcs, 4 files)\n(d=2 in=1 out=1)\n(imp=24.5)" as circular_internal_engine_parser_grammar
+component "circular/internal/engine/parser/registry\n(0 funcs, 1 files)\n(d=1 in=2 out=1)\n(imp=22.0)" as circular_internal_engine_parser_registry
+component "circular/internal/engine/resolver\n(0 funcs, 10 files)\n(d=5 in=4 out=4)\n(imp=47.5)" as circular_internal_engine_resolver
+component "circular/internal/engine/resolver/drivers\n(0 funcs, 5 files)\n(d=0 in=1 out=0)\n(imp=16.0)" as circular_internal_engine_resolver_drivers
+component "circular/internal/engine/secrets\n(0 funcs, 3 files)\n(d=7 in=5 out=3)\n(imp=35.0)" as circular_internal_engine_secrets
+component "circular/internal/mcp/adapters\n(0 funcs, 1 files)\n(d=8 in=5 out=7)\n(imp=31.5)" as circular_internal_mcp_adapters
+component "circular/internal/mcp/contracts\n(0 funcs, 1 files)\n(d=0 in=12 out=0)\n(imp=25.0)" as circular_internal_mcp_contracts
+component "circular/internal/mcp/openapi\n(0 funcs, 3 files)\n(d=1 in=1 out=1)\n(imp=35.0)" as circular_internal_mcp_openapi
+component "circular/internal/mcp/registry\n(0 funcs, 1 files)\n(d=0 in=1 out=0)\n(imp=9.5)" as circular_internal_mcp_registry
+component "circular/internal/mcp/runtime\n(0 funcs, 5 files)\n(d=10 in=1 out=17)\n(imp=42.0)" as circular_internal_mcp_runtime
+component "circular/internal/mcp/schema\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=7.0)" as circular_internal_mcp_schema
+component "circular/internal/mcp/tools/graph\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=10.0)" as circular_internal_mcp_tools_graph
+component "circular/internal/mcp/tools/overlays\n(0 funcs, 1 files)\n(d=5 in=0 out=1)\n(imp=15.0)" as circular_internal_mcp_tools_overlays
+component "circular/internal/mcp/tools/query\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=11.5)" as circular_internal_mcp_tools_query
+component "circular/internal/mcp/tools/report\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=5.5)" as circular_internal_mcp_tools_report
+component "circular/internal/mcp/tools/scan\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=6.5)" as circular_internal_mcp_tools_scan
+component "circular/internal/mcp/tools/secrets\n(0 funcs, 1 files)\n(d=9 in=1 out=2)\n(imp=11.5)" as circular_internal_mcp_tools_secrets
+component "circular/internal/mcp/tools/system\n(0 funcs, 1 files)\n(d=1 in=1 out=1)\n(imp=10.5)" as circular_internal_mcp_tools_system
+component "circular/internal/mcp/transport\n(0 funcs, 3 files)\n(d=2 in=1 out=4)\n(imp=34.5)" as circular_internal_mcp_transport
+component "circular/internal/mcp/validate\n(0 funcs, 1 files)\n(d=1 in=1 out=2)\n(imp=56.5)" as circular_internal_mcp_validate
+component "circular/internal/shared/observability\n(0 funcs, 2 files)\n(d=0 in=6 out=0)\n(imp=19.5)" as circular_internal_shared_observability
+component "circular/internal/shared/util\n(0 funcs, 5 files)\n(d=0 in=12 out=0)\n(imp=36.5)" as circular_internal_shared_util
 component "circular/internal/shared/version\n(0 funcs, 1 files)\n(d=0 in=4 out=0)\n(imp=8.0)" as circular_internal_shared_version
-component "circular/internal/ui/cli\n(0 funcs, 9 files)\n(d=12 in=1 out=14)\n(imp=16.0)" as circular_internal_ui_cli
-component "circular/internal/ui/report\n(0 funcs, 4 files)\n(d=9 in=3 out=3)\n(imp=9.0)" as circular_internal_ui_report
-component "circular/internal/ui/report/formats\n(0 funcs, 10 files)\n(d=8 in=2 out=6)\n(imp=10.0)" as circular_internal_ui_report_formats
+component "circular/internal/ui/cli\n(0 funcs, 9 files)\n(d=12 in=1 out=14)\n(imp=88.5)\n(cx=145)" as circular_internal_ui_cli
+component "circular/internal/ui/report\n(0 funcs, 4 files)\n(d=9 in=3 out=3)\n(imp=22.0)" as circular_internal_ui_report
+component "circular/internal/ui/report/formats\n(0 funcs, 10 files)\n(d=8 in=2 out=7)\n(imp=64.5)\n(cx=107)" as circular_internal_ui_report_formats
 component "main" as circular_cmd_circular__main <<symbol>>
 circular_cmd_circular ..> circular_cmd_circular__main
-component "*App" as circular_internal_core_app___App <<symbol>>
-circular_internal_core_app ..> circular_internal_core_app___App
 component "AnalysisService" as circular_internal_core_app__AnalysisService <<symbol>>
 circular_internal_core_app ..> circular_internal_core_app__AnalysisService
 component "AnalyzeHallucinations" as circular_internal_core_app__AnalyzeHallucinations <<symbol>>
@@ -65,6 +64,8 @@ component "AnalyzeUnusedImports" as circular_internal_core_app__AnalyzeUnusedImp
 circular_internal_core_app ..> circular_internal_core_app__AnalyzeUnusedImports
 component "AnalyzeUnusedImportsIncremental" as circular_internal_core_app__AnalyzeUnusedImportsIncremental <<symbol>>
 circular_internal_core_app ..> circular_internal_core_app__AnalyzeUnusedImportsIncremental
+component "ArchitectureRuleViolations" as circular_internal_core_app__ArchitectureRuleViolations <<symbol>>
+circular_internal_core_app ..> circular_internal_core_app__ArchitectureRuleViolations
 component "ArchitectureViolations" as circular_internal_core_app__ArchitectureViolations <<symbol>>
 circular_internal_core_app ..> circular_internal_core_app__ArchitectureViolations
 component "BuildQueryService" as circular_internal_core_app__BuildQueryService <<symbol>>
@@ -73,12 +74,12 @@ component "CaptureHistoryTrend" as circular_internal_core_app__CaptureHistoryTre
 circular_internal_core_app ..> circular_internal_core_app__CaptureHistoryTrend
 component "ArchitectureModelFromConfig" as circular_internal_core_app_helpers__ArchitectureModelFromConfig <<symbol>>
 circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__ArchitectureModelFromConfig
+component "ArchitectureRulesFromConfig" as circular_internal_core_app_helpers__ArchitectureRulesFromConfig <<symbol>>
+circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__ArchitectureRulesFromConfig
 component "CompileGlobs" as circular_internal_core_app_helpers__CompileGlobs <<symbol>>
 circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__CompileGlobs
 component "DetectSecrets" as circular_internal_core_app_helpers__DetectSecrets <<symbol>>
 circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__DetectSecrets
-component "DiagramMode" as circular_internal_core_app_helpers__DiagramMode <<symbol>>
-circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__DiagramMode
 component "DiagramOutputPath" as circular_internal_core_app_helpers__DiagramOutputPath <<symbol>>
 circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__DiagramOutputPath
 component "FindContainingWatchPath" as circular_internal_core_app_helpers__FindContainingWatchPath <<symbol>>
@@ -95,58 +96,46 @@ component "MetricLeaders" as circular_internal_core_app_helpers__MetricLeaders <
 circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__MetricLeaders
 component "PreferredInjectionMode" as circular_internal_core_app_helpers__PreferredInjectionMode <<symbol>>
 circular_internal_core_app_helpers ..> circular_internal_core_app_helpers__PreferredInjectionMode
-component "*Config" as circular_internal_core_config___Config <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config___Config
-component "Active" as circular_internal_core_config__Active <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__Active
-component "ActiveFile" as circular_internal_core_config__ActiveFile <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__ActiveFile
-component "ActiveProject" as circular_internal_core_config__ActiveProject <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__ActiveProject
-component "Address" as circular_internal_core_config__Address <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__Address
-component "Alerts" as circular_internal_core_config__Alerts <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__Alerts
-component "Allow" as circular_internal_core_config__Allow <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__Allow
-component "AllowMutations" as circular_internal_core_config__AllowMutations <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__AllowMutations
 component "ApplyEnvOverrides" as circular_internal_core_config__ApplyEnvOverrides <<symbol>>
 circular_internal_core_config ..> circular_internal_core_config__ApplyEnvOverrides
-component "Architecture" as circular_internal_core_config__Architecture <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__Architecture
-component "AutoManageOutputs" as circular_internal_core_config__AutoManageOutputs <<symbol>>
-circular_internal_core_config ..> circular_internal_core_config__AutoManageOutputs
 component "AutoManageOutputsEnabled" as circular_internal_core_config__AutoManageOutputsEnabled <<symbol>>
 circular_internal_core_config ..> circular_internal_core_config__AutoManageOutputsEnabled
+component "AutoSyncConfigEnabled" as circular_internal_core_config__AutoSyncConfigEnabled <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__AutoSyncConfigEnabled
+component "CollapsibleSectionsEnabled" as circular_internal_core_config__CollapsibleSectionsEnabled <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__CollapsibleSectionsEnabled
+component "DefaultConfig" as circular_internal_core_config__DefaultConfig <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__DefaultConfig
+component "DetectProjectRoot" as circular_internal_core_config__DetectProjectRoot <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__DetectProjectRoot
+component "IncludeMermaidEnabled" as circular_internal_core_config__IncludeMermaidEnabled <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__IncludeMermaidEnabled
+component "IsEnabled" as circular_internal_core_config__IsEnabled <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__IsEnabled
+component "Load" as circular_internal_core_config__Load <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__Load
+component "LoadProjectRegistry" as circular_internal_core_config__LoadProjectRegistry <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__LoadProjectRegistry
+component "MermaidEnabled" as circular_internal_core_config__MermaidEnabled <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__MermaidEnabled
+component "NewWatcher" as circular_internal_core_config__NewWatcher <<symbol>>
+circular_internal_core_config ..> circular_internal_core_config__NewWatcher
 component "HasWildcard" as circular_internal_core_config_helpers__HasWildcard <<symbol>>
 circular_internal_core_config_helpers ..> circular_internal_core_config_helpers__HasWildcard
 component "IsPathOverlap" as circular_internal_core_config_helpers__IsPathOverlap <<symbol>>
 circular_internal_core_config_helpers ..> circular_internal_core_config_helpers__IsPathOverlap
 component "WildcardPatternsOverlap" as circular_internal_core_config_helpers__WildcardPatternsOverlap <<symbol>>
 circular_internal_core_config_helpers ..> circular_internal_core_config_helpers__WildcardPatternsOverlap
-component "a" as circular_internal_core_config_helpers__a <<symbol>>
-circular_internal_core_config_helpers ..> circular_internal_core_config_helpers__a
-component "pattern" as circular_internal_core_config_helpers__pattern <<symbol>>
-circular_internal_core_config_helpers ..> circular_internal_core_config_helpers__pattern
 component "wildcardPrefix" as circular_internal_core_config_helpers__wildcardPrefix <<symbol>>
 circular_internal_core_config_helpers ..> circular_internal_core_config_helpers__wildcardPrefix
 component "wildcardSample" as circular_internal_core_config_helpers__wildcardSample <<symbol>>
 circular_internal_core_config_helpers ..> circular_internal_core_config_helpers__wildcardSample
 component "AddContext" as circular_internal_core_errors__AddContext <<symbol>>
 circular_internal_core_errors ..> circular_internal_core_errors__AddContext
-component "Code" as circular_internal_core_errors__Code <<symbol>>
-circular_internal_core_errors ..> circular_internal_core_errors__Code
-component "Context" as circular_internal_core_errors__Context <<symbol>>
-circular_internal_core_errors ..> circular_internal_core_errors__Context
-component "Err" as circular_internal_core_errors__Err <<symbol>>
-circular_internal_core_errors ..> circular_internal_core_errors__Err
 component "Error" as circular_internal_core_errors__Error <<symbol>>
 circular_internal_core_errors ..> circular_internal_core_errors__Error
 component "IsCode" as circular_internal_core_errors__IsCode <<symbol>>
 circular_internal_core_errors ..> circular_internal_core_errors__IsCode
-component "Message" as circular_internal_core_errors__Message <<symbol>>
-circular_internal_core_errors ..> circular_internal_core_errors__Message
 component "New" as circular_internal_core_errors__New <<symbol>>
 circular_internal_core_errors ..> circular_internal_core_errors__New
 component "Unwrap" as circular_internal_core_errors__Unwrap <<symbol>>
@@ -155,34 +144,6 @@ component "WithContext" as circular_internal_core_errors__WithContext <<symbol>>
 circular_internal_core_errors ..> circular_internal_core_errors__WithContext
 component "Wrap" as circular_internal_core_errors__Wrap <<symbol>>
 circular_internal_core_errors ..> circular_internal_core_errors__Wrap
-component "code" as circular_internal_core_errors__code <<symbol>>
-circular_internal_core_errors ..> circular_internal_core_errors__code
-component "*parser.File" as circular_internal_core_ports___parser_File <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports___parser_File
-component "Cycles" as circular_internal_core_ports__Cycles <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__Cycles
-component "Duration" as circular_internal_core_ports__Duration <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__Duration
-component "End" as circular_internal_core_ports__End <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__End
-component "FileCount" as circular_internal_core_ports__FileCount <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__FileCount
-component "FilesScanned" as circular_internal_core_ports__FilesScanned <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__FilesScanned
-component "Formats" as circular_internal_core_ports__Formats <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__Formats
-component "Hallucinations" as circular_internal_core_ports__Hallucinations <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__Hallucinations
-component "HistoryTrendResult" as circular_internal_core_ports__HistoryTrendResult <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__HistoryTrendResult
-component "Hotspots" as circular_internal_core_ports__Hotspots <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__Hotspots
-component "LatestCycleCount" as circular_internal_core_ports__LatestCycleCount <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__LatestCycleCount
-component "LatestModuleCount" as circular_internal_core_ports__LatestModuleCount <<symbol>>
-circular_internal_core_ports ..> circular_internal_core_ports__LatestModuleCount
-component "*Watcher" as circular_internal_core_watcher___Watcher <<symbol>>
-circular_internal_core_watcher ..> circular_internal_core_watcher___Watcher
 component "Close" as circular_internal_core_watcher__Close <<symbol>>
 circular_internal_core_watcher ..> circular_internal_core_watcher__Close
 component "NewWatcher" as circular_internal_core_watcher__NewWatcher <<symbol>>
@@ -193,190 +154,192 @@ component "SetLanguageFilters" as circular_internal_core_watcher__SetLanguageFil
 circular_internal_core_watcher ..> circular_internal_core_watcher__SetLanguageFilters
 component "Watch" as circular_internal_core_watcher__Watch <<symbol>>
 circular_internal_core_watcher ..> circular_internal_core_watcher__Watch
-component "[]string" as circular_internal_core_watcher____string <<symbol>>
-circular_internal_core_watcher ..> circular_internal_core_watcher____string
-component "callbackMu" as circular_internal_core_watcher__callbackMu <<symbol>>
-circular_internal_core_watcher ..> circular_internal_core_watcher__callbackMu
 component "computeHash" as circular_internal_core_watcher__computeHash <<symbol>>
 circular_internal_core_watcher ..> circular_internal_core_watcher__computeHash
-component "debounce" as circular_internal_core_watcher__debounce <<symbol>>
-circular_internal_core_watcher ..> circular_internal_core_watcher__debounce
 component "enqueueExistingFiles" as circular_internal_core_watcher__enqueueExistingFiles <<symbol>>
 circular_internal_core_watcher ..> circular_internal_core_watcher__enqueueExistingFiles
-component "err" as circular_internal_core_watcher__err <<symbol>>
-circular_internal_core_watcher ..> circular_internal_core_watcher__err
-component "*Store" as circular_internal_data_history___Store <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history___Store
-component "AvgCycles" as circular_internal_data_history__AvgCycles <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__AvgCycles
-component "AvgFanIn" as circular_internal_data_history__AvgFanIn <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__AvgFanIn
-component "AvgFanOut" as circular_internal_data_history__AvgFanOut <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__AvgFanOut
-component "AvgUnresolved" as circular_internal_data_history__AvgUnresolved <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__AvgUnresolved
+component "flushChanges" as circular_internal_core_watcher__flushChanges <<symbol>>
+circular_internal_core_watcher ..> circular_internal_core_watcher__flushChanges
+component "run" as circular_internal_core_watcher__run <<symbol>>
+circular_internal_core_watcher ..> circular_internal_core_watcher__run
+component "scheduleChange" as circular_internal_core_watcher__scheduleChange <<symbol>>
+circular_internal_core_watcher ..> circular_internal_core_watcher__scheduleChange
+component "shouldExcludeDir" as circular_internal_core_watcher__shouldExcludeDir <<symbol>>
+circular_internal_core_watcher ..> circular_internal_core_watcher__shouldExcludeDir
+component "shouldExcludeFile" as circular_internal_core_watcher__shouldExcludeFile <<symbol>>
+circular_internal_core_watcher ..> circular_internal_core_watcher__shouldExcludeFile
 component "BuildTrendReport" as circular_internal_data_history__BuildTrendReport <<symbol>>
 circular_internal_data_history ..> circular_internal_data_history__BuildTrendReport
 component "Close" as circular_internal_data_history__Close <<symbol>>
 circular_internal_data_history ..> circular_internal_data_history__Close
-component "CommitHash" as circular_internal_data_history__CommitHash <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__CommitHash
-component "CommitTimestamp" as circular_internal_data_history__CommitTimestamp <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__CommitTimestamp
-component "CycleCount" as circular_internal_data_history__CycleCount <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__CycleCount
-component "DeltaAvgFanIn" as circular_internal_data_history__DeltaAvgFanIn <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__DeltaAvgFanIn
-component "DeltaAvgFanOut" as circular_internal_data_history__DeltaAvgFanOut <<symbol>>
-circular_internal_data_history ..> circular_internal_data_history__DeltaAvgFanOut
-component "CQLCondition" as circular_internal_data_query__CQLCondition <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__CQLCondition
-component "CQLQuery" as circular_internal_data_query__CQLQuery <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__CQLQuery
-component "Column" as circular_internal_data_query__Column <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__Column
-component "Conditions" as circular_internal_data_query__Conditions <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__Conditions
-component "Dependencies" as circular_internal_data_query__Dependencies <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__Dependencies
-component "DependencyCount" as circular_internal_data_query__DependencyCount <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__DependencyCount
+component "EnsureSchema" as circular_internal_data_history__EnsureSchema <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__EnsureSchema
+component "IsCorruptError" as circular_internal_data_history__IsCorruptError <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__IsCorruptError
+component "LoadSnapshots" as circular_internal_data_history__LoadSnapshots <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__LoadSnapshots
+component "NewAdapter" as circular_internal_data_history__NewAdapter <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__NewAdapter
+component "Open" as circular_internal_data_history__Open <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__Open
+component "Path" as circular_internal_data_history__Path <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__Path
+component "ResolveGitMetadata" as circular_internal_data_history__ResolveGitMetadata <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__ResolveGitMetadata
+component "SaveSnapshot" as circular_internal_data_history__SaveSnapshot <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__SaveSnapshot
+component "isLockError" as circular_internal_data_history__isLockError <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__isLockError
+component "movingAverages" as circular_internal_data_history__movingAverages <<symbol>>
+circular_internal_data_history ..> circular_internal_data_history__movingAverages
 component "DependencyTrace" as circular_internal_data_query__DependencyTrace <<symbol>>
 circular_internal_data_query ..> circular_internal_data_query__DependencyTrace
-component "Depth" as circular_internal_data_query__Depth <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__Depth
 component "ExecuteCQL" as circular_internal_data_query__ExecuteCQL <<symbol>>
 circular_internal_data_query ..> circular_internal_data_query__ExecuteCQL
-component "ExportCount" as circular_internal_data_query__ExportCount <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__ExportCount
-component "ExportedSymbols" as circular_internal_data_query__ExportedSymbols <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__ExportedSymbols
-component "Field" as circular_internal_data_query__Field <<symbol>>
-circular_internal_data_query ..> circular_internal_data_query__Field
-component "*Batch" as circular_internal_engine_graph___Batch <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph___Batch
-component "*Module" as circular_internal_engine_graph___Module <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph___Module
-component "*SQLiteSymbolStore" as circular_internal_engine_graph___SQLiteSymbolStore <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph___SQLiteSymbolStore
-component "*parser.File" as circular_internal_engine_graph___parser_File <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph___parser_File
+component "ListModules" as circular_internal_data_query__ListModules <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__ListModules
+component "ModuleDetails" as circular_internal_data_query__ModuleDetails <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__ModuleDetails
+component "NewService" as circular_internal_data_query__NewService <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__NewService
+component "ParseCQL" as circular_internal_data_query__ParseCQL <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__ParseCQL
+component "TrendSlice" as circular_internal_data_query__TrendSlice <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__TrendSlice
+component "compareCQLInt" as circular_internal_data_query__compareCQLInt <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__compareCQLInt
+component "matchesCQLConditions" as circular_internal_data_query__matchesCQLConditions <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__matchesCQLConditions
+component "matchesSingleCQLCondition" as circular_internal_data_query__matchesSingleCQLCondition <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__matchesSingleCQLCondition
+component "parseCQLCondition" as circular_internal_data_query__parseCQLCondition <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__parseCQLCondition
+component "parseInt" as circular_internal_data_query__parseInt <<symbol>>
+circular_internal_data_query ..> circular_internal_data_query__parseInt
+component "AllowsImport" as circular_internal_engine_architecture__AllowsImport <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__AllowsImport
+component "Evaluate" as circular_internal_engine_architecture__Evaluate <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__Evaluate
+component "ExcludesFile" as circular_internal_engine_architecture__ExcludesFile <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__ExcludesFile
+component "MatchesModule" as circular_internal_engine_architecture__MatchesModule <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__MatchesModule
+component "NewRuleEvaluator" as circular_internal_engine_architecture__NewRuleEvaluator <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__NewRuleEvaluator
+component "NewRuleSet" as circular_internal_engine_architecture__NewRuleSet <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__NewRuleSet
+component "Rules" as circular_internal_engine_architecture__Rules <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__Rules
+component "compilePatterns" as circular_internal_engine_architecture__compilePatterns <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__compilePatterns
+component "countFiles" as circular_internal_engine_architecture__countFiles <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__countFiles
+component "isTestFile" as circular_internal_engine_architecture__isTestFile <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__isTestFile
+component "matchPatterns" as circular_internal_engine_architecture__matchPatterns <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__matchPatterns
+component "sortRules" as circular_internal_engine_architecture__sortRules <<symbol>>
+circular_internal_engine_architecture ..> circular_internal_engine_architecture__sortRules
 component "AddFile" as circular_internal_engine_graph__AddFile <<symbol>>
 circular_internal_engine_graph ..> circular_internal_engine_graph__AddFile
-component "Allow" as circular_internal_engine_graph__Allow <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph__Allow
 component "AnalyzeImpact" as circular_internal_engine_graph__AnalyzeImpact <<symbol>>
 circular_internal_engine_graph ..> circular_internal_engine_graph__AnalyzeImpact
-component "Ancestry" as circular_internal_engine_graph__Ancestry <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph__Ancestry
-component "BatchSize" as circular_internal_engine_graph__BatchSize <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph__BatchSize
 component "BeginBatch" as circular_internal_engine_graph__BeginBatch <<symbol>>
 circular_internal_engine_graph ..> circular_internal_engine_graph__BeginBatch
-component "Branches" as circular_internal_engine_graph__Branches <<symbol>>
-circular_internal_engine_graph ..> circular_internal_engine_graph__Branches
 component "BuildUniversalSymbolTable" as circular_internal_engine_graph__BuildUniversalSymbolTable <<symbol>>
 circular_internal_engine_graph ..> circular_internal_engine_graph__BuildUniversalSymbolTable
-component "*Builder" as circular_internal_engine_parser___Builder <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser___Builder
-component "*File" as circular_internal_engine_parser___File <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser___File
-component "*GrammarLoader" as circular_internal_engine_parser___GrammarLoader <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser___GrammarLoader
-component "*Manifest" as circular_internal_engine_parser___Manifest <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser___Manifest
-component "*sitter.Node" as circular_internal_engine_parser___sitter_Node <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser___sitter_Node
-component "AIBVersion" as circular_internal_engine_parser__AIBVersion <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser__AIBVersion
+component "CalculateImportanceScore" as circular_internal_engine_graph__CalculateImportanceScore <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__CalculateImportanceScore
+component "Cap" as circular_internal_engine_graph__Cap <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__Cap
+component "Clear" as circular_internal_engine_graph__Clear <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__Clear
+component "Close" as circular_internal_engine_graph__Close <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__Close
+component "Commit" as circular_internal_engine_graph__Commit <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__Commit
+component "ComputeModuleMetrics" as circular_internal_engine_graph__ComputeModuleMetrics <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__ComputeModuleMetrics
+component "DB" as circular_internal_engine_graph__DB <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__DB
+component "DeleteFile" as circular_internal_engine_graph__DeleteFile <<symbol>>
+circular_internal_engine_graph ..> circular_internal_engine_graph__DeleteFile
 component "Add" as circular_internal_engine_parser__Add <<symbol>>
 circular_internal_engine_parser ..> circular_internal_engine_parser__Add
 component "AddArtifact" as circular_internal_engine_parser__AddArtifact <<symbol>>
 circular_internal_engine_parser ..> circular_internal_engine_parser__AddArtifact
-component "Alias" as circular_internal_engine_parser__Alias <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser__Alias
-component "AllowedAIBVersions" as circular_internal_engine_parser__AllowedAIBVersions <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser__AllowedAIBVersions
-component "Ancestry" as circular_internal_engine_parser__Ancestry <<symbol>>
-circular_internal_engine_parser ..> circular_internal_engine_parser__Ancestry
 component "AppendLocalIdentifiers" as circular_internal_engine_parser__AppendLocalIdentifiers <<symbol>>
 circular_internal_engine_parser ..> circular_internal_engine_parser__AppendLocalIdentifiers
+component "Build" as circular_internal_engine_parser__Build <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__Build
+component "BuildLanguageRegistry" as circular_internal_engine_parser__BuildLanguageRegistry <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__BuildLanguageRegistry
+component "CalculateSHA256" as circular_internal_engine_parser__CalculateSHA256 <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__CalculateSHA256
+component "ChildText" as circular_internal_engine_parser__ChildText <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__ChildText
+component "Cleanup" as circular_internal_engine_parser__Cleanup <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__Cleanup
+component "DebugJava" as circular_internal_engine_parser__DebugJava <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__DebugJava
+component "DefaultExtractorForLanguage" as circular_internal_engine_parser__DefaultExtractorForLanguage <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__DefaultExtractorForLanguage
+component "DefaultLanguageRegistry" as circular_internal_engine_parser__DefaultLanguageRegistry <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__DefaultLanguageRegistry
+component "Exists" as circular_internal_engine_parser__Exists <<symbol>>
+circular_internal_engine_parser ..> circular_internal_engine_parser__Exists
 component "Go" as circular_internal_engine_parser_extractors__Go <<symbol>>
 circular_internal_engine_parser_extractors ..> circular_internal_engine_parser_extractors__Go
 component "Python" as circular_internal_engine_parser_extractors__Python <<symbol>>
 circular_internal_engine_parser_extractors ..> circular_internal_engine_parser_extractors__Python
-component "*sitter.Language" as circular_internal_engine_parser_grammar___sitter_Language <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar___sitter_Language
-component "AIBVersion" as circular_internal_engine_parser_grammar__AIBVersion <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__AIBVersion
-component "ActualHash" as circular_internal_engine_parser_grammar__ActualHash <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__ActualHash
-component "AllowedAIBVersions" as circular_internal_engine_parser_grammar__AllowedAIBVersions <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__AllowedAIBVersions
-component "ApprovedDate" as circular_internal_engine_parser_grammar__ApprovedDate <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__ApprovedDate
-component "ArtifactKind" as circular_internal_engine_parser_grammar__ArtifactKind <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__ArtifactKind
-component "ArtifactPath" as circular_internal_engine_parser_grammar__ArtifactPath <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__ArtifactPath
-component "Artifacts" as circular_internal_engine_parser_grammar__Artifacts <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__Artifacts
-component "ExpectedHash" as circular_internal_engine_parser_grammar__ExpectedHash <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__ExpectedHash
-component "GrammarManifest" as circular_internal_engine_parser_grammar__GrammarManifest <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__GrammarManifest
-component "Language" as circular_internal_engine_parser_grammar__Language <<symbol>>
-circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__Language
 component "LoadDynamic" as circular_internal_engine_parser_grammar__LoadDynamic <<symbol>>
 circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__LoadDynamic
+component "LoadGrammarManifest" as circular_internal_engine_parser_grammar__LoadGrammarManifest <<symbol>>
+circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__LoadGrammarManifest
+component "VerifyGrammarArtifacts" as circular_internal_engine_parser_grammar__VerifyGrammarArtifacts <<symbol>>
+circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__VerifyGrammarArtifacts
+component "VerifyLanguageRegistryArtifacts" as circular_internal_engine_parser_grammar__VerifyLanguageRegistryArtifacts <<symbol>>
+circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__VerifyLanguageRegistryArtifacts
+component "verifyArtifactHash" as circular_internal_engine_parser_grammar__verifyArtifactHash <<symbol>>
+circular_internal_engine_parser_grammar ..> circular_internal_engine_parser_grammar__verifyArtifactHash
 component "BuildLanguageRegistry" as circular_internal_engine_parser_registry__BuildLanguageRegistry <<symbol>>
 circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__BuildLanguageRegistry
 component "DefaultLanguageRegistry" as circular_internal_engine_parser_registry__DefaultLanguageRegistry <<symbol>>
 circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__DefaultLanguageRegistry
-component "DefinitionNodes" as circular_internal_engine_parser_registry__DefinitionNodes <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__DefinitionNodes
-component "DynamicConfig" as circular_internal_engine_parser_registry__DynamicConfig <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__DynamicConfig
-component "Enabled" as circular_internal_engine_parser_registry__Enabled <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__Enabled
-component "Extensions" as circular_internal_engine_parser_registry__Extensions <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__Extensions
-component "ExtractorReady" as circular_internal_engine_parser_registry__ExtractorReady <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__ExtractorReady
-component "Filenames" as circular_internal_engine_parser_registry__Filenames <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__Filenames
-component "GrammarDir" as circular_internal_engine_parser_registry__GrammarDir <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__GrammarDir
-component "ImportNode" as circular_internal_engine_parser_registry__ImportNode <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__ImportNode
-component "IsDynamic" as circular_internal_engine_parser_registry__IsDynamic <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__IsDynamic
-component "LibraryPath" as circular_internal_engine_parser_registry__LibraryPath <<symbol>>
-circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__LibraryPath
-component "Alias" as circular_internal_engine_resolver__Alias <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__Alias
-component "AmbiguousCrossLangMatch" as circular_internal_engine_resolver__AmbiguousCrossLangMatch <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__AmbiguousCrossLangMatch
-component "BridgeContext" as circular_internal_engine_resolver__BridgeContext <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__BridgeContext
-component "BridgeImportEvidence" as circular_internal_engine_resolver__BridgeImportEvidence <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__BridgeImportEvidence
-component "Bridges" as circular_internal_engine_resolver__Bridges <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__Bridges
+component "cloneLanguageRegistry" as circular_internal_engine_parser_registry__cloneLanguageRegistry <<symbol>>
+circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__cloneLanguageRegistry
+component "normalizeExtensions" as circular_internal_engine_parser_registry__normalizeExtensions <<symbol>>
+circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__normalizeExtensions
+component "normalizeFilenames" as circular_internal_engine_parser_registry__normalizeFilenames <<symbol>>
+circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__normalizeFilenames
+component "sortedRegistryIDs" as circular_internal_engine_parser_registry__sortedRegistryIDs <<symbol>>
+circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__sortedRegistryIDs
+component "validateLanguageRegistry" as circular_internal_engine_parser_registry__validateLanguageRegistry <<symbol>>
+circular_internal_engine_parser_registry ..> circular_internal_engine_parser_registry__validateLanguageRegistry
 component "Close" as circular_internal_engine_resolver__Close <<symbol>>
 circular_internal_engine_resolver ..> circular_internal_engine_resolver__Close
-component "Confidence" as circular_internal_engine_resolver__Confidence <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__Confidence
-component "ConfirmedThreshold" as circular_internal_engine_resolver__ConfirmedThreshold <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__ConfirmedThreshold
 component "DiscoverBridgeConfigPaths" as circular_internal_engine_resolver__DiscoverBridgeConfigPaths <<symbol>>
 circular_internal_engine_resolver ..> circular_internal_engine_resolver__DiscoverBridgeConfigPaths
-component "ExplicitBridge" as circular_internal_engine_resolver__ExplicitBridge <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__ExplicitBridge
-component "ExplicitRuleMatch" as circular_internal_engine_resolver__ExplicitRuleMatch <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__ExplicitRuleMatch
-component "File" as circular_internal_engine_resolver__File <<symbol>>
-circular_internal_engine_resolver ..> circular_internal_engine_resolver__File
+component "FindProbableBridgeReferences" as circular_internal_engine_resolver__FindProbableBridgeReferences <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__FindProbableBridgeReferences
+component "FindProbableBridgeReferencesForPaths" as circular_internal_engine_resolver__FindProbableBridgeReferencesForPaths <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__FindProbableBridgeReferencesForPaths
+component "FindUnresolved" as circular_internal_engine_resolver__FindUnresolved <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__FindUnresolved
+component "FindUnresolvedForPaths" as circular_internal_engine_resolver__FindUnresolvedForPaths <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__FindUnresolvedForPaths
+component "FindUnusedImports" as circular_internal_engine_resolver__FindUnusedImports <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__FindUnusedImports
+component "IsCrossLanguageBridgeImportHint" as circular_internal_engine_resolver__IsCrossLanguageBridgeImportHint <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__IsCrossLanguageBridgeImportHint
+component "IsCrossLanguageBridgeReference" as circular_internal_engine_resolver__IsCrossLanguageBridgeReference <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__IsCrossLanguageBridgeReference
+component "IsKnownNonModule" as circular_internal_engine_resolver__IsKnownNonModule <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__IsKnownNonModule
+component "LoadBridgeConfig" as circular_internal_engine_resolver__LoadBridgeConfig <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__LoadBridgeConfig
+component "NewGoResolver" as circular_internal_engine_resolver__NewGoResolver <<symbol>>
+circular_internal_engine_resolver ..> circular_internal_engine_resolver__NewGoResolver
 component "FindGoMod" as circular_internal_engine_resolver_drivers__FindGoMod <<symbol>>
 circular_internal_engine_resolver_drivers ..> circular_internal_engine_resolver_drivers__FindGoMod
 component "GetModuleName" as circular_internal_engine_resolver_drivers__GetModuleName <<symbol>>
@@ -401,30 +364,30 @@ component "ResolveImport" as circular_internal_engine_resolver_drivers__ResolveI
 circular_internal_engine_resolver_drivers ..> circular_internal_engine_resolver_drivers__ResolveImport
 component "ResolveModuleName" as circular_internal_engine_resolver_drivers__ResolveModuleName <<symbol>>
 circular_internal_engine_resolver_drivers ..> circular_internal_engine_resolver_drivers__ResolveModuleName
-component "*Adapter" as circular_internal_engine_secrets___Adapter <<symbol>>
-circular_internal_engine_secrets ..> circular_internal_engine_secrets___Adapter
-component "*Detector" as circular_internal_engine_secrets___Detector <<symbol>>
-circular_internal_engine_secrets ..> circular_internal_engine_secrets___Detector
 component "ChangedLineRanges" as circular_internal_engine_secrets__ChangedLineRanges <<symbol>>
 circular_internal_engine_secrets ..> circular_internal_engine_secrets__ChangedLineRanges
 component "Detect" as circular_internal_engine_secrets__Detect <<symbol>>
 circular_internal_engine_secrets ..> circular_internal_engine_secrets__Detect
 component "DetectInRanges" as circular_internal_engine_secrets__DetectInRanges <<symbol>>
 circular_internal_engine_secrets ..> circular_internal_engine_secrets__DetectInRanges
-component "End" as circular_internal_engine_secrets__End <<symbol>>
-circular_internal_engine_secrets ..> circular_internal_engine_secrets__End
-component "EntropyThreshold" as circular_internal_engine_secrets__EntropyThreshold <<symbol>>
-circular_internal_engine_secrets ..> circular_internal_engine_secrets__EntropyThreshold
 component "IsGitAvailable" as circular_internal_engine_secrets__IsGitAvailable <<symbol>>
 circular_internal_engine_secrets ..> circular_internal_engine_secrets__IsGitAvailable
 component "MaskValue" as circular_internal_engine_secrets__MaskValue <<symbol>>
 circular_internal_engine_secrets ..> circular_internal_engine_secrets__MaskValue
-component "MinTokenLength" as circular_internal_engine_secrets__MinTokenLength <<symbol>>
-circular_internal_engine_secrets ..> circular_internal_engine_secrets__MinTokenLength
-component "Name" as circular_internal_engine_secrets__Name <<symbol>>
-circular_internal_engine_secrets ..> circular_internal_engine_secrets__Name
 component "NewAdapter" as circular_internal_engine_secrets__NewAdapter <<symbol>>
 circular_internal_engine_secrets ..> circular_internal_engine_secrets__NewAdapter
+component "NewAdapterFromDetector" as circular_internal_engine_secrets__NewAdapterFromDetector <<symbol>>
+circular_internal_engine_secrets ..> circular_internal_engine_secrets__NewAdapterFromDetector
+component "NewDetector" as circular_internal_engine_secrets__NewDetector <<symbol>>
+circular_internal_engine_secrets ..> circular_internal_engine_secrets__NewDetector
+component "Reload" as circular_internal_engine_secrets__Reload <<symbol>>
+circular_internal_engine_secrets ..> circular_internal_engine_secrets__Reload
+component "ScanGitHistory" as circular_internal_engine_secrets__ScanGitHistory <<symbol>>
+circular_internal_engine_secrets ..> circular_internal_engine_secrets__ScanGitHistory
+component "buildLineIndex" as circular_internal_engine_secrets__buildLineIndex <<symbol>>
+circular_internal_engine_secrets ..> circular_internal_engine_secrets__buildLineIndex
+component "buildScanSegments" as circular_internal_engine_secrets__buildScanSegments <<symbol>>
+circular_internal_engine_secrets ..> circular_internal_engine_secrets__buildScanSegments
 component "Cycles" as circular_internal_mcp_adapters__Cycles <<symbol>>
 circular_internal_mcp_adapters ..> circular_internal_mcp_adapters__Cycles
 component "GenerateMarkdownReport" as circular_internal_mcp_adapters__GenerateMarkdownReport <<symbol>>
@@ -449,56 +412,28 @@ component "SetProjectKey" as circular_internal_mcp_adapters__SetProjectKey <<sym
 circular_internal_mcp_adapters ..> circular_internal_mcp_adapters__SetProjectKey
 component "SyncOutputs" as circular_internal_mcp_adapters__SyncOutputs <<symbol>>
 circular_internal_mcp_adapters ..> circular_internal_mcp_adapters__SyncOutputs
-component "AlreadyWatching" as circular_internal_mcp_contracts__AlreadyWatching <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__AlreadyWatching
-component "Code" as circular_internal_mcp_contracts__Code <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Code
-component "Column" as circular_internal_mcp_contracts__Column <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Column
-component "Confidence" as circular_internal_mcp_contracts__Confidence <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Confidence
-component "ConfigPath" as circular_internal_mcp_contracts__ConfigPath <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__ConfigPath
-component "CycleCount" as circular_internal_mcp_contracts__CycleCount <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__CycleCount
-component "Cycles" as circular_internal_mcp_contracts__Cycles <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Cycles
-component "DBNamespace" as circular_internal_mcp_contracts__DBNamespace <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__DBNamespace
-component "Dependencies" as circular_internal_mcp_contracts__Dependencies <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Dependencies
-component "DependencyCount" as circular_internal_mcp_contracts__DependencyCount <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__DependencyCount
-component "Depth" as circular_internal_mcp_contracts__Depth <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Depth
-component "Description" as circular_internal_mcp_contracts__Description <<symbol>>
-circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Description
-component "*openapi3.T" as circular_internal_mcp_openapi___openapi3_T <<symbol>>
-circular_internal_mcp_openapi ..> circular_internal_mcp_openapi___openapi3_T
+component "Error" as circular_internal_mcp_contracts__Error <<symbol>>
+circular_internal_mcp_contracts ..> circular_internal_mcp_contracts__Error
 component "ApplyAllowlist" as circular_internal_mcp_openapi__ApplyAllowlist <<symbol>>
 circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__ApplyAllowlist
 component "Convert" as circular_internal_mcp_openapi__Convert <<symbol>>
 circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__Convert
 component "LoadSpec" as circular_internal_mcp_openapi__LoadSpec <<symbol>>
 circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__LoadSpec
-component "[]contracts.OperationDescriptor" as circular_internal_mcp_openapi____contracts_OperationDescriptor <<symbol>>
-circular_internal_mcp_openapi ..> circular_internal_mcp_openapi____contracts_OperationDescriptor
-component "allowlist" as circular_internal_mcp_openapi__allowlist <<symbol>>
-circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__allowlist
 component "defaultObjectSchema" as circular_internal_mcp_openapi__defaultObjectSchema <<symbol>>
 circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__defaultObjectSchema
-component "error" as circular_internal_mcp_openapi__error <<symbol>>
-circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__error
-component "i" as circular_internal_mcp_openapi__i <<symbol>>
-circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__i
-component "id" as circular_internal_mcp_openapi__id <<symbol>>
-circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__id
 component "isHTTPSource" as circular_internal_mcp_openapi__isHTTPSource <<symbol>>
 circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__isHTTPSource
 component "isValidOperationID" as circular_internal_mcp_openapi__isValidOperationID <<symbol>>
 circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__isValidOperationID
-component "Handler" as circular_internal_mcp_registry__Handler <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__Handler
+component "loadSpecFromURL" as circular_internal_mcp_openapi__loadSpecFromURL <<symbol>>
+circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__loadSpecFromURL
+component "requestSchema" as circular_internal_mcp_openapi__requestSchema <<symbol>>
+circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__requestSchema
+component "schemaRefToMap" as circular_internal_mcp_openapi__schemaRefToMap <<symbol>>
+circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__schemaRefToMap
+component "sortDescriptors" as circular_internal_mcp_openapi__sortDescriptors <<symbol>>
+circular_internal_mcp_openapi ..> circular_internal_mcp_openapi__sortDescriptors
 component "HandlerFor" as circular_internal_mcp_registry__HandlerFor <<symbol>>
 circular_internal_mcp_registry ..> circular_internal_mcp_registry__HandlerFor
 component "New" as circular_internal_mcp_registry__New <<symbol>>
@@ -507,36 +442,12 @@ component "Register" as circular_internal_mcp_registry__Register <<symbol>>
 circular_internal_mcp_registry ..> circular_internal_mcp_registry__Register
 component "Tools" as circular_internal_mcp_registry__Tools <<symbol>>
 circular_internal_mcp_registry ..> circular_internal_mcp_registry__Tools
-component "any" as circular_internal_mcp_registry__any <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__any
-component "bool" as circular_internal_mcp_registry__bool <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__bool
-component "ctx" as circular_internal_mcp_registry__ctx <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__ctx
-component "error" as circular_internal_mcp_registry__error <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__error
-component "handler" as circular_internal_mcp_registry__handler <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__handler
-component "handlers" as circular_internal_mcp_registry__handlers <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__handlers
-component "input" as circular_internal_mcp_registry__input <<symbol>>
-circular_internal_mcp_registry ..> circular_internal_mcp_registry__input
-component "*Server" as circular_internal_mcp_runtime___Server <<symbol>>
-circular_internal_mcp_runtime ..> circular_internal_mcp_runtime___Server
 component "Allows" as circular_internal_mcp_runtime__Allows <<symbol>>
 circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__Allows
-component "Analysis" as circular_internal_mcp_runtime__Analysis <<symbol>>
-circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__Analysis
 component "Build" as circular_internal_mcp_runtime__Build <<symbol>>
 circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__Build
 component "BuildOperationAllowlist" as circular_internal_mcp_runtime__BuildOperationAllowlist <<symbol>>
 circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__BuildOperationAllowlist
-component "ConfigFile" as circular_internal_mcp_runtime__ConfigFile <<symbol>>
-circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__ConfigFile
-component "ConfigPath" as circular_internal_mcp_runtime__ConfigPath <<symbol>>
-circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__ConfigPath
-component "DBNamespace" as circular_internal_mcp_runtime__DBNamespace <<symbol>>
-circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__DBNamespace
 component "GenerateConfig" as circular_internal_mcp_runtime__GenerateConfig <<symbol>>
 circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__GenerateConfig
 component "GenerateProjectConfig" as circular_internal_mcp_runtime__GenerateProjectConfig <<symbol>>
@@ -545,54 +456,30 @@ component "GenerateProjectScript" as circular_internal_mcp_runtime__GenerateProj
 circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__GenerateProjectScript
 component "GenerateScript" as circular_internal_mcp_runtime__GenerateScript <<symbol>>
 circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__GenerateScript
+component "New" as circular_internal_mcp_runtime__New <<symbol>>
+circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__New
+component "ProjectContext" as circular_internal_mcp_runtime__ProjectContext <<symbol>>
+circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__ProjectContext
+component "ResolveActiveProjectContext" as circular_internal_mcp_runtime__ResolveActiveProjectContext <<symbol>>
+circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__ResolveActiveProjectContext
+component "Run" as circular_internal_mcp_runtime__Run <<symbol>>
+circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__Run
+component "SelectProject" as circular_internal_mcp_runtime__SelectProject <<symbol>>
+circular_internal_mcp_runtime ..> circular_internal_mcp_runtime__SelectProject
 component "BuildToolDefinitions" as circular_internal_mcp_schema__BuildToolDefinitions <<symbol>>
 circular_internal_mcp_schema ..> circular_internal_mcp_schema__BuildToolDefinitions
-component "Description" as circular_internal_mcp_schema__Description <<symbol>>
-circular_internal_mcp_schema ..> circular_internal_mcp_schema__Description
-component "InputSchema" as circular_internal_mcp_schema__InputSchema <<symbol>>
-circular_internal_mcp_schema ..> circular_internal_mcp_schema__InputSchema
-component "Name" as circular_internal_mcp_schema__Name <<symbol>>
-circular_internal_mcp_schema ..> circular_internal_mcp_schema__Name
-component "Version" as circular_internal_mcp_schema__Version <<symbol>>
-circular_internal_mcp_schema ..> circular_internal_mcp_schema__Version
 component "HandleCycles" as circular_internal_mcp_tools_graph__HandleCycles <<symbol>>
 circular_internal_mcp_tools_graph ..> circular_internal_mcp_tools_graph__HandleCycles
-component "a" as circular_internal_mcp_tools_graph__a <<symbol>>
-circular_internal_mcp_tools_graph ..> circular_internal_mcp_tools_graph__a
-component "contracts.GraphCyclesOutput" as circular_internal_mcp_tools_graph__contracts_GraphCyclesOutput <<symbol>>
-circular_internal_mcp_tools_graph ..> circular_internal_mcp_tools_graph__contracts_GraphCyclesOutput
-component "ctx" as circular_internal_mcp_tools_graph__ctx <<symbol>>
-circular_internal_mcp_tools_graph ..> circular_internal_mcp_tools_graph__ctx
-component "error" as circular_internal_mcp_tools_graph__error <<symbol>>
-circular_internal_mcp_tools_graph ..> circular_internal_mcp_tools_graph__error
-component "in" as circular_internal_mcp_tools_graph__in <<symbol>>
-circular_internal_mcp_tools_graph ..> circular_internal_mcp_tools_graph__in
-component "maxItems" as circular_internal_mcp_tools_graph__maxItems <<symbol>>
-circular_internal_mcp_tools_graph ..> circular_internal_mcp_tools_graph__maxItems
-component "*Overlay" as circular_internal_mcp_tools_overlays___Overlay <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays___Overlay
 component "AddOverlay" as circular_internal_mcp_tools_overlays__AddOverlay <<symbol>>
 circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__AddOverlay
-component "AddOverlayOutput" as circular_internal_mcp_tools_overlays__AddOverlayOutput <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__AddOverlayOutput
 component "CheckOverlay" as circular_internal_mcp_tools_overlays__CheckOverlay <<symbol>>
 circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__CheckOverlay
-component "CreatedAt" as circular_internal_mcp_tools_overlays__CreatedAt <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__CreatedAt
-component "File" as circular_internal_mcp_tools_overlays__File <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__File
-component "FilePath" as circular_internal_mcp_tools_overlays__FilePath <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__FilePath
-component "ID" as circular_internal_mcp_tools_overlays__ID <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__ID
 component "ListOverlays" as circular_internal_mcp_tools_overlays__ListOverlays <<symbol>>
 circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__ListOverlays
-component "ListOverlaysOutput" as circular_internal_mcp_tools_overlays__ListOverlaysOutput <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__ListOverlaysOutput
 component "MarkStale" as circular_internal_mcp_tools_overlays__MarkStale <<symbol>>
 circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__MarkStale
-component "Message" as circular_internal_mcp_tools_overlays__Message <<symbol>>
-circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__Message
+component "NewOverlayStore" as circular_internal_mcp_tools_overlays__NewOverlayStore <<symbol>>
+circular_internal_mcp_tools_overlays ..> circular_internal_mcp_tools_overlays__NewOverlayStore
 component "HandleModuleDetails" as circular_internal_mcp_tools_query__HandleModuleDetails <<symbol>>
 circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__HandleModuleDetails
 component "HandleModules" as circular_internal_mcp_tools_query__HandleModules <<symbol>>
@@ -601,64 +488,22 @@ component "HandleTrace" as circular_internal_mcp_tools_query__HandleTrace <<symb
 circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__HandleTrace
 component "HandleTrends" as circular_internal_mcp_tools_query__HandleTrends <<symbol>>
 circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__HandleTrends
-component "a" as circular_internal_mcp_tools_query__a <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__a
-component "contracts.QueryModuleDetailsOutput" as circular_internal_mcp_tools_query__contracts_QueryModuleDetailsOutput <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__contracts_QueryModuleDetailsOutput
-component "contracts.QueryModulesOutput" as circular_internal_mcp_tools_query__contracts_QueryModulesOutput <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__contracts_QueryModulesOutput
-component "contracts.QueryTraceOutput" as circular_internal_mcp_tools_query__contracts_QueryTraceOutput <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__contracts_QueryTraceOutput
-component "contracts.QueryTrendsOutput" as circular_internal_mcp_tools_query__contracts_QueryTrendsOutput <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__contracts_QueryTrendsOutput
-component "ctx" as circular_internal_mcp_tools_query__ctx <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__ctx
-component "error" as circular_internal_mcp_tools_query__error <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__error
-component "in" as circular_internal_mcp_tools_query__in <<symbol>>
-circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__in
+component "limitDependencies" as circular_internal_mcp_tools_query__limitDependencies <<symbol>>
+circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__limitDependencies
+component "limitStrings" as circular_internal_mcp_tools_query__limitStrings <<symbol>>
+circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__limitStrings
+component "normalizeLimit" as circular_internal_mcp_tools_query__normalizeLimit <<symbol>>
+circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__normalizeLimit
+component "parseSince" as circular_internal_mcp_tools_query__parseSince <<symbol>>
+circular_internal_mcp_tools_query ..> circular_internal_mcp_tools_query__parseSince
 component "HandleGenerateMarkdown" as circular_internal_mcp_tools_report__HandleGenerateMarkdown <<symbol>>
 circular_internal_mcp_tools_report ..> circular_internal_mcp_tools_report__HandleGenerateMarkdown
-component "contracts.ReportGenerateMarkdownOutput" as circular_internal_mcp_tools_report__contracts_ReportGenerateMarkdownOutput <<symbol>>
-circular_internal_mcp_tools_report ..> circular_internal_mcp_tools_report__contracts_ReportGenerateMarkdownOutput
-component "ctx" as circular_internal_mcp_tools_report__ctx <<symbol>>
-circular_internal_mcp_tools_report ..> circular_internal_mcp_tools_report__ctx
-component "error" as circular_internal_mcp_tools_report__error <<symbol>>
-circular_internal_mcp_tools_report ..> circular_internal_mcp_tools_report__error
-component "in" as circular_internal_mcp_tools_report__in <<symbol>>
-circular_internal_mcp_tools_report ..> circular_internal_mcp_tools_report__in
-component "mgr" as circular_internal_mcp_tools_report__mgr <<symbol>>
-circular_internal_mcp_tools_report ..> circular_internal_mcp_tools_report__mgr
 component "HandleRun" as circular_internal_mcp_tools_scan__HandleRun <<symbol>>
 circular_internal_mcp_tools_scan ..> circular_internal_mcp_tools_scan__HandleRun
-component "a" as circular_internal_mcp_tools_scan__a <<symbol>>
-circular_internal_mcp_tools_scan ..> circular_internal_mcp_tools_scan__a
-component "contracts.ScanRunOutput" as circular_internal_mcp_tools_scan__contracts_ScanRunOutput <<symbol>>
-circular_internal_mcp_tools_scan ..> circular_internal_mcp_tools_scan__contracts_ScanRunOutput
-component "ctx" as circular_internal_mcp_tools_scan__ctx <<symbol>>
-circular_internal_mcp_tools_scan ..> circular_internal_mcp_tools_scan__ctx
-component "error" as circular_internal_mcp_tools_scan__error <<symbol>>
-circular_internal_mcp_tools_scan ..> circular_internal_mcp_tools_scan__error
-component "in" as circular_internal_mcp_tools_scan__in <<symbol>>
-circular_internal_mcp_tools_scan ..> circular_internal_mcp_tools_scan__in
 component "HandleList" as circular_internal_mcp_tools_secrets__HandleList <<symbol>>
 circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__HandleList
 component "HandleScan" as circular_internal_mcp_tools_secrets__HandleScan <<symbol>>
 circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__HandleScan
-component "a" as circular_internal_mcp_tools_secrets__a <<symbol>>
-circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__a
-component "contracts.SecretsListOutput" as circular_internal_mcp_tools_secrets__contracts_SecretsListOutput <<symbol>>
-circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__contracts_SecretsListOutput
-component "contracts.SecretsScanOutput" as circular_internal_mcp_tools_secrets__contracts_SecretsScanOutput <<symbol>>
-circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__contracts_SecretsScanOutput
-component "ctx" as circular_internal_mcp_tools_secrets__ctx <<symbol>>
-circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__ctx
-component "error" as circular_internal_mcp_tools_secrets__error <<symbol>>
-circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__error
-component "in" as circular_internal_mcp_tools_secrets__in <<symbol>>
-circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__in
-component "maxItems" as circular_internal_mcp_tools_secrets__maxItems <<symbol>>
-circular_internal_mcp_tools_secrets ..> circular_internal_mcp_tools_secrets__maxItems
 component "HandleGenerateConfig" as circular_internal_mcp_tools_system__HandleGenerateConfig <<symbol>>
 circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__HandleGenerateConfig
 component "HandleGenerateScript" as circular_internal_mcp_tools_system__HandleGenerateScript <<symbol>>
@@ -671,78 +516,48 @@ component "HandleSyncOutputs" as circular_internal_mcp_tools_system__HandleSyncO
 circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__HandleSyncOutputs
 component "HandleWatch" as circular_internal_mcp_tools_system__HandleWatch <<symbol>>
 circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__HandleWatch
-component "[]string" as circular_internal_mcp_tools_system____string <<symbol>>
-circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system____string
-component "allowMutations" as circular_internal_mcp_tools_system__allowMutations <<symbol>>
-circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__allowMutations
-component "contracts.ProjectSummary" as circular_internal_mcp_tools_system__contracts_ProjectSummary <<symbol>>
-circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__contracts_ProjectSummary
-component "contracts.SystemGenerateConfigOutput" as circular_internal_mcp_tools_system__contracts_SystemGenerateConfigOutput <<symbol>>
-circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__contracts_SystemGenerateConfigOutput
-component "contracts.SystemGenerateScriptOutput" as circular_internal_mcp_tools_system__contracts_SystemGenerateScriptOutput <<symbol>>
-circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__contracts_SystemGenerateScriptOutput
-component "contracts.SystemSelectProjectOutput" as circular_internal_mcp_tools_system__contracts_SystemSelectProjectOutput <<symbol>>
-circular_internal_mcp_tools_system ..> circular_internal_mcp_tools_system__contracts_SystemSelectProjectOutput
-component "Adapter" as circular_internal_mcp_transport__Adapter <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__Adapter
-component "Args" as circular_internal_mcp_transport__Args <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__Args
 component "Call" as circular_internal_mcp_transport__Call <<symbol>>
 circular_internal_mcp_transport ..> circular_internal_mcp_transport__Call
 component "CallJSON" as circular_internal_mcp_transport__CallJSON <<symbol>>
 circular_internal_mcp_transport ..> circular_internal_mcp_transport__CallJSON
-component "Code" as circular_internal_mcp_transport__Code <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__Code
-component "Data" as circular_internal_mcp_transport__Data <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__Data
-component "Error" as circular_internal_mcp_transport__Error <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__Error
-component "ID" as circular_internal_mcp_transport__ID <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__ID
-component "JSONRPC" as circular_internal_mcp_transport__JSONRPC <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__JSONRPC
-component "Message" as circular_internal_mcp_transport__Message <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__Message
-component "Method" as circular_internal_mcp_transport__Method <<symbol>>
-circular_internal_mcp_transport ..> circular_internal_mcp_transport__Method
 component "NewMockAdapter" as circular_internal_mcp_transport__NewMockAdapter <<symbol>>
 circular_internal_mcp_transport ..> circular_internal_mcp_transport__NewMockAdapter
+component "NewSSE" as circular_internal_mcp_transport__NewSSE <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__NewSSE
+component "NewStdio" as circular_internal_mcp_transport__NewStdio <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__NewStdio
+component "Start" as circular_internal_mcp_transport__Start <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__Start
+component "Stop" as circular_internal_mcp_transport__Stop <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__Stop
+component "handleMessage" as circular_internal_mcp_transport__handleMessage <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__handleMessage
+component "handleRPCMessage" as circular_internal_mcp_transport__handleRPCMessage <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__handleRPCMessage
+component "handleSSE" as circular_internal_mcp_transport__handleSSE <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__handleSSE
+component "mustJSONText" as circular_internal_mcp_transport__mustJSONText <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__mustJSONText
+component "normalizeToolError" as circular_internal_mcp_transport__normalizeToolError <<symbol>>
+circular_internal_mcp_transport ..> circular_internal_mcp_transport__normalizeToolError
 component "GetOperationWeight" as circular_internal_mcp_validate__GetOperationWeight <<symbol>>
 circular_internal_mcp_validate ..> circular_internal_mcp_validate__GetOperationWeight
 component "ParseToolArgs" as circular_internal_mcp_validate__ParseToolArgs <<symbol>>
 circular_internal_mcp_validate ..> circular_internal_mcp_validate__ParseToolArgs
 component "ValidateToolArgs" as circular_internal_mcp_validate__ValidateToolArgs <<symbol>>
 circular_internal_mcp_validate ..> circular_internal_mcp_validate__ValidateToolArgs
-component "[]string" as circular_internal_mcp_validate____string <<symbol>>
-circular_internal_mcp_validate ..> circular_internal_mcp_validate____string
-component "any" as circular_internal_mcp_validate__any <<symbol>>
-circular_internal_mcp_validate ..> circular_internal_mcp_validate__any
-component "contracts.OperationID" as circular_internal_mcp_validate__contracts_OperationID <<symbol>>
-circular_internal_mcp_validate ..> circular_internal_mcp_validate__contracts_OperationID
 component "decodeParams" as circular_internal_mcp_validate__decodeParams <<symbol>>
 circular_internal_mcp_validate ..> circular_internal_mcp_validate__decodeParams
-component "error" as circular_internal_mcp_validate__error <<symbol>>
-circular_internal_mcp_validate ..> circular_internal_mcp_validate__error
-component "field" as circular_internal_mcp_validate__field <<symbol>>
-circular_internal_mcp_validate ..> circular_internal_mcp_validate__field
 component "invalidLimitError" as circular_internal_mcp_validate__invalidLimitError <<symbol>>
 circular_internal_mcp_validate ..> circular_internal_mcp_validate__invalidLimitError
-component "maxCount" as circular_internal_mcp_validate__maxCount <<symbol>>
-circular_internal_mcp_validate ..> circular_internal_mcp_validate__maxCount
 component "normalizeFormats" as circular_internal_mcp_validate__normalizeFormats <<symbol>>
 circular_internal_mcp_validate ..> circular_internal_mcp_validate__normalizeFormats
+component "normalizeStrings" as circular_internal_mcp_validate__normalizeStrings <<symbol>>
+circular_internal_mcp_validate ..> circular_internal_mcp_validate__normalizeStrings
+component "sanitizePaths" as circular_internal_mcp_validate__sanitizePaths <<symbol>>
+circular_internal_mcp_validate ..> circular_internal_mcp_validate__sanitizePaths
 component "InitTracing" as circular_internal_shared_observability__InitTracing <<symbol>>
 circular_internal_shared_observability ..> circular_internal_shared_observability__InitTracing
-component "context.Context" as circular_internal_shared_observability__context_Context <<symbol>>
-circular_internal_shared_observability ..> circular_internal_shared_observability__context_Context
-component "ctx" as circular_internal_shared_observability__ctx <<symbol>>
-circular_internal_shared_observability ..> circular_internal_shared_observability__ctx
-component "error" as circular_internal_shared_observability__error <<symbol>>
-circular_internal_shared_observability ..> circular_internal_shared_observability__error
-component "func(context.Context) error" as circular_internal_shared_observability__func_context_Context__error <<symbol>>
-circular_internal_shared_observability ..> circular_internal_shared_observability__func_context_Context__error
-component "serviceName" as circular_internal_shared_observability__serviceName <<symbol>>
-circular_internal_shared_observability ..> circular_internal_shared_observability__serviceName
 component "Allow" as circular_internal_shared_util__Allow <<symbol>>
 circular_internal_shared_util ..> circular_internal_shared_util__Allow
 component "ContainsPathSeparator" as circular_internal_shared_util__ContainsPathSeparator <<symbol>>
@@ -763,16 +578,10 @@ component "NormalizePatternPath" as circular_internal_shared_util__NormalizePatt
 circular_internal_shared_util ..> circular_internal_shared_util__NormalizePatternPath
 component "SortedStringKeys" as circular_internal_shared_util__SortedStringKeys <<symbol>>
 circular_internal_shared_util ..> circular_internal_shared_util__SortedStringKeys
-component "T" as circular_internal_shared_util__T <<symbol>>
-circular_internal_shared_util ..> circular_internal_shared_util__T
 component "Wait" as circular_internal_shared_util__Wait <<symbol>>
 circular_internal_shared_util ..> circular_internal_shared_util__Wait
-component "*config.Config" as circular_internal_ui_cli___config_Config <<symbol>>
-circular_internal_ui_cli ..> circular_internal_ui_cli___config_Config
-component "*history.Store" as circular_internal_ui_cli___history_Store <<symbol>>
-circular_internal_ui_cli ..> circular_internal_ui_cli___history_Store
-component "*history.TrendReport" as circular_internal_ui_cli___history_TrendReport <<symbol>>
-circular_internal_ui_cli ..> circular_internal_ui_cli___history_TrendReport
+component "WriteFileWithDirs" as circular_internal_shared_util__WriteFileWithDirs <<symbol>>
+circular_internal_shared_util ..> circular_internal_shared_util__WriteFileWithDirs
 component "Description" as circular_internal_ui_cli__Description <<symbol>>
 circular_internal_ui_cli ..> circular_internal_ui_cli__Description
 component "FilterValue" as circular_internal_ui_cli__FilterValue <<symbol>>
@@ -791,22 +600,18 @@ component "Stop" as circular_internal_ui_cli__Stop <<symbol>>
 circular_internal_ui_cli ..> circular_internal_ui_cli__Stop
 component "Title" as circular_internal_ui_cli__Title <<symbol>>
 circular_internal_ui_cli ..> circular_internal_ui_cli__Title
-component "Ancestry" as circular_internal_ui_report__Ancestry <<symbol>>
-circular_internal_ui_report ..> circular_internal_ui_report__Ancestry
-component "Confidence" as circular_internal_ui_report__Confidence <<symbol>>
-circular_internal_ui_report ..> circular_internal_ui_report__Confidence
-component "Context" as circular_internal_ui_report__Context <<symbol>>
-circular_internal_ui_report ..> circular_internal_ui_report__Context
-component "File" as circular_internal_ui_report__File <<symbol>>
-circular_internal_ui_report ..> circular_internal_ui_report__File
+component "Update" as circular_internal_ui_cli__Update <<symbol>>
+circular_internal_ui_cli ..> circular_internal_ui_cli__Update
+component "View" as circular_internal_ui_cli__View <<symbol>>
+circular_internal_ui_cli ..> circular_internal_ui_cli__View
+component "applyModeOptions" as circular_internal_ui_cli__applyModeOptions <<symbol>>
+circular_internal_ui_cli ..> circular_internal_ui_cli__applyModeOptions
 component "GetSymbolContext" as circular_internal_ui_report__GetSymbolContext <<symbol>>
 circular_internal_ui_report ..> circular_internal_ui_report__GetSymbolContext
 component "GetSymbolContextTagged" as circular_internal_ui_report__GetSymbolContextTagged <<symbol>>
 circular_internal_ui_report ..> circular_internal_ui_report__GetSymbolContextTagged
 component "InjectDiagram" as circular_internal_ui_report__InjectDiagram <<symbol>>
 circular_internal_ui_report ..> circular_internal_ui_report__InjectDiagram
-component "Line" as circular_internal_ui_report__Line <<symbol>>
-circular_internal_ui_report ..> circular_internal_ui_report__Line
 component "NewDOTGenerator" as circular_internal_ui_report__NewDOTGenerator <<symbol>>
 circular_internal_ui_report ..> circular_internal_ui_report__NewDOTGenerator
 component "NewMarkdownGenerator" as circular_internal_ui_report__NewMarkdownGenerator <<symbol>>
@@ -815,40 +620,51 @@ component "NewMermaidGenerator" as circular_internal_ui_report__NewMermaidGenera
 circular_internal_ui_report ..> circular_internal_ui_report__NewMermaidGenerator
 component "NewPlantUMLGenerator" as circular_internal_ui_report__NewPlantUMLGenerator <<symbol>>
 circular_internal_ui_report ..> circular_internal_ui_report__NewPlantUMLGenerator
-component "ArtifactLocation" as circular_internal_ui_report_formats__ArtifactLocation <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__ArtifactLocation
-component "Children" as circular_internal_ui_report_formats__Children <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Children
-component "CollapsibleSections" as circular_internal_ui_report_formats__CollapsibleSections <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__CollapsibleSections
-component "Complexity" as circular_internal_ui_report_formats__Complexity <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Complexity
-component "Count" as circular_internal_ui_report_formats__Count <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Count
-component "Cycles" as circular_internal_ui_report_formats__Cycles <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Cycles
-component "DefaultConfig" as circular_internal_ui_report_formats__DefaultConfig <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__DefaultConfig
-component "Definitions" as circular_internal_ui_report_formats__Definitions <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Definitions
-component "Depth" as circular_internal_ui_report_formats__Depth <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Depth
-component "Driver" as circular_internal_ui_report_formats__Driver <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Driver
-component "Edges" as circular_internal_ui_report_formats__Edges <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Edges
-component "Entry" as circular_internal_ui_report_formats__Entry <<symbol>>
-circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Entry
+component "NewTSVGenerator" as circular_internal_ui_report__NewTSVGenerator <<symbol>>
+circular_internal_ui_report ..> circular_internal_ui_report__NewTSVGenerator
+component "RenderTrendJSON" as circular_internal_ui_report__RenderTrendJSON <<symbol>>
+circular_internal_ui_report ..> circular_internal_ui_report__RenderTrendJSON
+component "RenderTrendTSV" as circular_internal_ui_report__RenderTrendTSV <<symbol>>
+circular_internal_ui_report ..> circular_internal_ui_report__RenderTrendTSV
+component "ReplaceBetweenMarkers" as circular_internal_ui_report__ReplaceBetweenMarkers <<symbol>>
+circular_internal_ui_report ..> circular_internal_ui_report__ReplaceBetweenMarkers
+component "buildContext" as circular_internal_ui_report__buildContext <<symbol>>
+circular_internal_ui_report ..> circular_internal_ui_report__buildContext
+component "Generate" as circular_internal_ui_report_formats__Generate <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__Generate
+component "GenerateArchitecture" as circular_internal_ui_report_formats__GenerateArchitecture <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateArchitecture
+component "GenerateArchitectureRuleViolations" as circular_internal_ui_report_formats__GenerateArchitectureRuleViolations <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateArchitectureRuleViolations
+component "GenerateArchitectureViolations" as circular_internal_ui_report_formats__GenerateArchitectureViolations <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateArchitectureViolations
+component "GenerateC4" as circular_internal_ui_report_formats__GenerateC4 <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateC4
+component "GenerateComponent" as circular_internal_ui_report_formats__GenerateComponent <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateComponent
+component "GenerateFlow" as circular_internal_ui_report_formats__GenerateFlow <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateFlow
+component "GenerateInteractiveReport" as circular_internal_ui_report_formats__GenerateInteractiveReport <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateInteractiveReport
+component "GenerateProbableBridges" as circular_internal_ui_report_formats__GenerateProbableBridges <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateProbableBridges
+component "GenerateSARIF" as circular_internal_ui_report_formats__GenerateSARIF <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateSARIF
+component "GenerateSecrets" as circular_internal_ui_report_formats__GenerateSecrets <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateSecrets
+component "GenerateUnusedImports" as circular_internal_ui_report_formats__GenerateUnusedImports <<symbol>>
+circular_internal_ui_report_formats ..> circular_internal_ui_report_formats__GenerateUnusedImports
 
 circular_cmd_circular -[#1f6f8b,dashed]-> circular_internal_ui_cli : deps:1 refs:1 sym:Run
-circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_core_app_helpers : deps:1 refs:34 sym:ArchitectureModelFromConfig,CompileGlobs,DetectSecrets
+circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_core_app_helpers : deps:1 refs:37 sym:ArchitectureModelFromConfig,ArchitectureRulesFromConfig,CompileGlobs
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_core_config : deps:1 refs:2 sym:ResolvePaths
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_core_errors : deps:1 refs:15 sym:AddContext,New,Wrap
 circular_internal_core_app --> circular_internal_core_ports : deps:1
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_core_watcher : deps:1 refs:1 sym:NewWatcher
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_data_history : deps:1 refs:2 sym:BuildTrendReport,ResolveGitMetadata
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_data_query : deps:1 refs:2 sym:NewService
-circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_engine_graph : deps:1 refs:5 sym:NewGraphWithCapacity,NewLRUCache,NewLayerRuleEngine
+circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_engine_architecture : deps:1 refs:2 sym:NewRuleEvaluator
+circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_engine_graph : deps:1 refs:6 sym:NewGraphWithCapacity,NewLRUCache,NewLayerRuleEngine
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_engine_parser : deps:1 refs:4 sym:BuildLanguageRegistry,NewAdapter,NewGrammarLoaderWithRegistry
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_engine_resolver : deps:1 refs:9 sym:DiscoverBridgeConfigPaths,LoadBridgeConfig,NewGoResolver
 circular_internal_core_app -[#1f6f8b,dashed]-> circular_internal_engine_secrets : deps:1 refs:1 sym:NewAdapter
@@ -874,6 +690,9 @@ circular_internal_core_ports --> circular_internal_engine_resolver : deps:1
 circular_internal_core_watcher --> circular_internal_shared_observability : deps:1
 circular_internal_data_query --> circular_internal_data_history : deps:1
 circular_internal_data_query --> circular_internal_engine_graph : deps:1
+circular_internal_engine_architecture --> circular_internal_core_ports : deps:1
+circular_internal_engine_architecture --> circular_internal_engine_graph : deps:1
+circular_internal_engine_architecture -[#1f6f8b,dashed]-> circular_internal_shared_util : deps:1 refs:7 sym:HasPathPrefix,NormalizePatternPath,SortedStringKeys
 circular_internal_engine_graph --> circular_internal_engine_parser : deps:1
 circular_internal_engine_graph --> circular_internal_shared_observability : deps:1
 circular_internal_engine_graph -[#1f6f8b,dashed]-> circular_internal_shared_util : deps:1 refs:7 sym:HasPathPrefix,NormalizePatternPath,SortedStringKeys
@@ -951,6 +770,7 @@ circular_internal_ui_cli -[#1f6f8b,dashed]-> circular_internal_ui_report_formats
 circular_internal_ui_report --> circular_internal_data_history : deps:1
 circular_internal_ui_report --> circular_internal_engine_graph : deps:1
 circular_internal_ui_report -[#1f6f8b,dashed]-> circular_internal_ui_report_formats : deps:1 refs:5 sym:NewDOTGenerator,NewMarkdownGenerator,NewMermaidGenerator
+circular_internal_ui_report_formats --> circular_internal_core_ports : deps:1
 circular_internal_ui_report_formats --> circular_internal_engine_graph : deps:1
 circular_internal_ui_report_formats -[#1f6f8b,dashed]-> circular_internal_engine_parser : deps:1 refs:1 sym:ModuleReferenceBase
 circular_internal_ui_report_formats --> circular_internal_engine_resolver : deps:1

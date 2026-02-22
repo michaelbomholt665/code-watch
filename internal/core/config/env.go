@@ -51,6 +51,18 @@ func ApplyEnvOverrides(cfg *Config) {
 	setEnvString(&cfg.Observability.OTLPEndpoint, "CIRCULAR_OBSERVABILITY_OTLP_ENDPOINT")
 	setEnvBool(&cfg.Observability.EnableTracing, "CIRCULAR_OBSERVABILITY_ENABLE_TRACING")
 	setEnvBool(&cfg.Observability.EnableMetrics, "CIRCULAR_OBSERVABILITY_ENABLE_METRICS")
+
+	// Write queue
+	setEnvBoolPtr(&cfg.WriteQueue.Enabled, "CIRCULAR_WRITE_QUEUE_ENABLED")
+	setEnvInt(&cfg.WriteQueue.MemoryCapacity, "CIRCULAR_WRITE_QUEUE_MEMORY_CAPACITY")
+	setEnvBoolPtr(&cfg.WriteQueue.PersistentEnabled, "CIRCULAR_WRITE_QUEUE_PERSISTENT_ENABLED")
+	setEnvString(&cfg.WriteQueue.SpoolPath, "CIRCULAR_WRITE_QUEUE_SPOOL_PATH")
+	setEnvInt(&cfg.WriteQueue.BatchSize, "CIRCULAR_WRITE_QUEUE_BATCH_SIZE")
+	setEnvDuration(&cfg.WriteQueue.FlushInterval, "CIRCULAR_WRITE_QUEUE_FLUSH_INTERVAL")
+	setEnvDuration(&cfg.WriteQueue.ShutdownDrainTimeout, "CIRCULAR_WRITE_QUEUE_SHUTDOWN_DRAIN_TIMEOUT")
+	setEnvDuration(&cfg.WriteQueue.RetryBaseDelay, "CIRCULAR_WRITE_QUEUE_RETRY_BASE_DELAY")
+	setEnvDuration(&cfg.WriteQueue.RetryMaxDelay, "CIRCULAR_WRITE_QUEUE_RETRY_MAX_DELAY")
+	setEnvBoolPtr(&cfg.WriteQueue.SyncFallback, "CIRCULAR_WRITE_QUEUE_SYNC_FALLBACK")
 }
 
 func setEnvString(target *string, key string) {
@@ -75,6 +87,16 @@ func setEnvBool(target *bool, key string) {
 		if err == nil {
 			log.Printf("Applying env override: %s=%s", key, val)
 			*target = b
+		}
+	}
+}
+
+func setEnvBoolPtr(target **bool, key string) {
+	if val, ok := os.LookupEnv(key); ok {
+		b, err := strconv.ParseBool(strings.ToLower(val))
+		if err == nil {
+			log.Printf("Applying env override: %s=%s", key, val)
+			*target = &b
 		}
 	}
 }

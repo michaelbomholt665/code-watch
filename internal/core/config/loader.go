@@ -255,6 +255,41 @@ func applyDefaults(cfg *Config) {
 	if cfg.Observability.ServiceName == "" {
 		cfg.Observability.ServiceName = "circular"
 	}
+
+	// Write queue defaults.
+	if cfg.WriteQueue.Enabled == nil {
+		enabled := true
+		cfg.WriteQueue.Enabled = &enabled
+	}
+	if cfg.WriteQueue.MemoryCapacity <= 0 {
+		cfg.WriteQueue.MemoryCapacity = 2048
+	}
+	if cfg.WriteQueue.PersistentEnabled == nil {
+		enabled := true
+		cfg.WriteQueue.PersistentEnabled = &enabled
+	}
+	if strings.TrimSpace(cfg.WriteQueue.SpoolPath) == "" {
+		cfg.WriteQueue.SpoolPath = "data/database/write_spool.db"
+	}
+	if cfg.WriteQueue.BatchSize <= 0 {
+		cfg.WriteQueue.BatchSize = 128
+	}
+	if cfg.WriteQueue.FlushInterval <= 0 {
+		cfg.WriteQueue.FlushInterval = 250 * time.Millisecond
+	}
+	if cfg.WriteQueue.ShutdownDrainTimeout <= 0 {
+		cfg.WriteQueue.ShutdownDrainTimeout = 10 * time.Second
+	}
+	if cfg.WriteQueue.RetryBaseDelay <= 0 {
+		cfg.WriteQueue.RetryBaseDelay = 500 * time.Millisecond
+	}
+	if cfg.WriteQueue.RetryMaxDelay <= 0 {
+		cfg.WriteQueue.RetryMaxDelay = 30 * time.Second
+	}
+	if cfg.WriteQueue.SyncFallback == nil {
+		enabled := true
+		cfg.WriteQueue.SyncFallback = &enabled
+	}
 }
 
 func normalizeProjects(cfg *Config) {

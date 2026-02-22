@@ -120,6 +120,8 @@ func TestSQLiteSymbolStore_UpsertDeleteAndPrune(t *testing.T) {
 
 	if got := store.Lookup("One"); len(got) != 1 {
 		t.Fatalf("expected one lookup row, got %d", len(got))
+	} else if got[0].Branches != 0 || got[0].Parameters != 0 || got[0].Nesting != 0 || got[0].LOC != 0 {
+		t.Fatalf("expected default complexity metrics to be zero, got %+v", got[0])
 	}
 	if got := store.Lookup("Two"); len(got) != 1 {
 		t.Fatalf("expected two lookup row, got %d", len(got))
@@ -140,6 +142,43 @@ func TestSQLiteSymbolStore_UpsertDeleteAndPrune(t *testing.T) {
 	}
 	if got := store.Lookup("Two"); len(got) != 0 {
 		t.Fatalf("expected two.go rows pruned, got %d", len(got))
+	}
+}
+
+func TestSQLiteSymbolStore_LookupPersistsComplexityMetrics(t *testing.T) {
+	store, err := OpenSQLiteSymbolStore(filepath.Join(t.TempDir(), "symbols.db"), "proj-a")
+	if err != nil {
+		t.Fatalf("open sqlite symbol store: %v", err)
+	}
+	defer store.Close()
+
+	if err := store.UpsertFile(&parser.File{
+		Path:     "hot.go",
+		Language: "go",
+		Module:   "mod/hot",
+		Definitions: []parser.Definition{
+			{
+				Name:           "Hot",
+				FullName:       "mod/hot.Hot",
+				Kind:           parser.KindFunction,
+				Exported:       true,
+				BranchCount:    4,
+				ParameterCount: 3,
+				NestingDepth:   2,
+				LOC:            55,
+				Location:       parser.Location{File: "hot.go", Line: 12, Column: 1},
+			},
+		},
+	}); err != nil {
+		t.Fatalf("upsert hot.go: %v", err)
+	}
+
+	got := store.Lookup("Hot")
+	if len(got) != 1 {
+		t.Fatalf("expected one lookup row, got %d", len(got))
+	}
+	if got[0].Branches != 4 || got[0].Parameters != 3 || got[0].Nesting != 2 || got[0].LOC != 55 {
+		t.Fatalf("expected persisted complexity metrics, got %+v", got[0])
 	}
 }
 

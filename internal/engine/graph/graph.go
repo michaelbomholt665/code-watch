@@ -66,10 +66,10 @@ func NewGraphWithCapacity(capacity int) *Graph {
 		fileToModule:   make(map[string]string),
 		fileToLanguage: make(map[string]string),
 		modules:        make(map[string]*Module),
-		imports:     make(map[string]map[string]*ImportEdge),
-		importedBy:  make(map[string]map[string]bool),
-		definitions: make(map[string]map[string]*parser.Definition),
-		dirty:       make(map[string]bool),
+		imports:        make(map[string]map[string]*ImportEdge),
+		importedBy:     make(map[string]map[string]bool),
+		definitions:    make(map[string]map[string]*parser.Definition),
+		dirty:          make(map[string]bool),
 	}
 }
 
@@ -129,10 +129,16 @@ func (g *Graph) AddFile(file *parser.File) {
 	fileMaxComplexity := 0
 	for i := range file.Definitions {
 		def := cloneDefinition(&file.Definitions[i])
-		if def.Exported {
-			mod.Exports[def.Name] = def
+		existingDef, hasExistingDef := g.definitions[file.Module][def.Name]
+		if !hasExistingDef || preferDefinition(def, existingDef) {
+			g.definitions[file.Module][def.Name] = def
 		}
-		g.definitions[file.Module][def.Name] = def
+		if def.Exported {
+			existingExport, hasExport := mod.Exports[def.Name]
+			if !hasExport || preferDefinition(def, existingExport) {
+				mod.Exports[def.Name] = def
+			}
+		}
 
 		sc := def.ComplexityScore
 		if sc == 0 {
@@ -215,10 +221,16 @@ func (g *Graph) removeFileLocked(path string) {
 				if f, ok := g.fileCache.Get(filePath); ok {
 					for i := range f.Definitions {
 						def := cloneDefinition(&f.Definitions[i])
-						if def.Exported {
-							mod.Exports[def.Name] = def
+						existingDef, hasExistingDef := g.definitions[moduleName][def.Name]
+						if !hasExistingDef || preferDefinition(def, existingDef) {
+							g.definitions[moduleName][def.Name] = def
 						}
-						g.definitions[moduleName][def.Name] = def
+						if def.Exported {
+							existingExport, hasExport := mod.Exports[def.Name]
+							if !hasExport || preferDefinition(def, existingExport) {
+								mod.Exports[def.Name] = def
+							}
+						}
 					}
 					for _, imp := range f.Imports {
 						edge := &ImportEdge{
@@ -482,6 +494,44 @@ func (g *Graph) GetDirty() []string {
 		delete(g.dirty, p)
 	}
 	return paths
+}
+
+func preferDefinition(candidate, existing *parser.Definition) bool {
+	if candidate == nil {
+		return false
+	}
+	if existing == nil {
+		return true
+	}
+
+	candidateScore := complexityScore(candidate)
+	existingScore := complexityScore(existing)
+	if candidateScore != existingScore {
+		return candidateScore > existingScore
+	}
+	if candidate.LOC != existing.LOC {
+		return candidate.LOC > existing.LOC
+	}
+	if candidate.BranchCount != existing.BranchCount {
+		return candidate.BranchCount > existing.BranchCount
+	}
+	if candidate.ParameterCount != existing.ParameterCount {
+		return candidate.ParameterCount > existing.ParameterCount
+	}
+	if candidate.NestingDepth != existing.NestingDepth {
+		return candidate.NestingDepth > existing.NestingDepth
+	}
+	return false
+}
+
+func complexityScore(def *parser.Definition) int {
+	if def == nil {
+		return 0
+	}
+	if def.ComplexityScore > 0 {
+		return def.ComplexityScore
+	}
+	return (def.BranchCount * 2) + (def.NestingDepth * 2) + def.ParameterCount + (def.LOC / 10)
 }
 
 func cloneDefinition(def *parser.Definition) *parser.Definition {

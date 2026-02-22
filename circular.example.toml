@@ -40,6 +40,18 @@ path = "history.db"
 busy_timeout = "5s"
 project_mode = "multi"
 
+[write_queue]
+enabled = true
+memory_capacity = 2048
+persistent_enabled = true
+spool_path = "data/database/write_spool.db"
+batch_size = 128
+flush_interval = "250ms"
+shutdown_drain_timeout = "10s"
+retry_base_delay = "500ms"
+retry_max_delay = "30s"
+sync_fallback = true
+
 [projects]
 active = ""
 registry_file = "projects.toml"

@@ -31,6 +31,9 @@ func (g *Graph) TopComplexity(n int) []ComplexityHotspot {
 			if def.Kind != parser.KindFunction && def.Kind != parser.KindMethod {
 				continue
 			}
+			if def.LOC <= 0 {
+				continue
+			}
 
 			score := def.ComplexityScore
 			if score == 0 {

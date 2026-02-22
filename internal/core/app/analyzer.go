@@ -2,6 +2,7 @@ package app
 
 import (
 	"circular/internal/core/app/helpers"
+	"circular/internal/core/ports"
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/observability"
 	"context"
@@ -40,7 +41,10 @@ func (a *App) HandleChanges(paths []string) {
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			a.Graph.RemoveFile(path)
 			a.dropContent(path)
-			if err := a.deleteSymbolStoreFile(path); err != nil {
+			if err := a.enqueueSymbolWrite(ports.WriteRequest{
+				Operation: ports.WriteOperationDeleteFile,
+				FilePath:  path,
+			}); err != nil {
 				slog.Warn("failed to delete persisted symbol rows", "path", path, "error", err)
 			}
 			a.unresolvedMu.Lock()

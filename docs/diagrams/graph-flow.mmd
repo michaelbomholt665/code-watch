@@ -10,6 +10,7 @@ flowchart LR
   circular_internal_core_watcher["circular/internal/core/watcher\n(step:3)"]
   circular_internal_data_history["circular/internal/data/history\n(step:2)"]
   circular_internal_data_query["circular/internal/data/query\n(step:2)"]
+  circular_internal_engine_architecture["circular/internal/engine/architecture\n(step:3)"]
   circular_internal_engine_graph["circular/internal/engine/graph\n(step:3)"]
   circular_internal_engine_parser["circular/internal/engine/parser\n(step:2)"]
   circular_internal_engine_parser_grammar["circular/internal/engine/parser/grammar\n(step:3)"]
@@ -46,6 +47,7 @@ flowchart LR
   circular_internal_core_app --> circular_internal_core_watcher
   circular_internal_core_app --> circular_internal_data_history
   circular_internal_core_app --> circular_internal_data_query
+  circular_internal_core_app --> circular_internal_engine_architecture
   circular_internal_core_app --> circular_internal_engine_graph
   circular_internal_core_app --> circular_internal_engine_parser
   circular_internal_core_app --> circular_internal_engine_resolver
@@ -72,6 +74,9 @@ flowchart LR
   circular_internal_core_watcher --> circular_internal_shared_observability
   circular_internal_data_query --> circular_internal_data_history
   circular_internal_data_query --> circular_internal_engine_graph
+  circular_internal_engine_architecture --> circular_internal_core_ports
+  circular_internal_engine_architecture --> circular_internal_engine_graph
+  circular_internal_engine_architecture --> circular_internal_shared_util
   circular_internal_engine_graph --> circular_internal_engine_parser
   circular_internal_engine_graph --> circular_internal_shared_observability
   circular_internal_engine_graph --> circular_internal_shared_util
@@ -147,6 +152,7 @@ flowchart LR
   circular_internal_ui_report --> circular_internal_data_history
   circular_internal_ui_report --> circular_internal_engine_graph
   circular_internal_ui_report --> circular_internal_ui_report_formats
+  circular_internal_ui_report_formats --> circular_internal_core_ports
   circular_internal_ui_report_formats --> circular_internal_engine_graph
   circular_internal_ui_report_formats --> circular_internal_engine_parser
   circular_internal_ui_report_formats --> circular_internal_engine_resolver
@@ -155,7 +161,7 @@ flowchart LR
   circular_internal_ui_report_formats --> circular_internal_shared_version
 
   classDef flowNode fill:#f7fbff,stroke:#4d6480,stroke-width:1px,color:#000000;
-  class circular_cmd_circular,circular_internal_core_app,circular_internal_core_app_helpers,circular_internal_core_config,circular_internal_core_config_helpers,circular_internal_core_errors,circular_internal_core_ports,circular_internal_core_watcher,circular_internal_data_history,circular_internal_data_query,circular_internal_engine_graph,circular_internal_engine_parser,circular_internal_engine_parser_grammar,circular_internal_engine_parser_registry,circular_internal_engine_resolver,circular_internal_engine_resolver_drivers,circular_internal_engine_secrets,circular_internal_mcp_adapters,circular_internal_mcp_contracts,circular_internal_mcp_openapi,circular_internal_mcp_registry,circular_internal_mcp_runtime,circular_internal_mcp_schema,circular_internal_mcp_tools_graph,circular_internal_mcp_tools_query,circular_internal_mcp_tools_report,circular_internal_mcp_tools_scan,circular_internal_mcp_tools_secrets,circular_internal_mcp_tools_system,circular_internal_mcp_transport,circular_internal_mcp_validate,circular_internal_shared_observability,circular_internal_shared_util,circular_internal_shared_version,circular_internal_ui_cli,circular_internal_ui_report,circular_internal_ui_report_formats flowNode;
+  class circular_cmd_circular,circular_internal_core_app,circular_internal_core_app_helpers,circular_internal_core_config,circular_internal_core_config_helpers,circular_internal_core_errors,circular_internal_core_ports,circular_internal_core_watcher,circular_internal_data_history,circular_internal_data_query,circular_internal_engine_architecture,circular_internal_engine_graph,circular_internal_engine_parser,circular_internal_engine_parser_grammar,circular_internal_engine_parser_registry,circular_internal_engine_resolver,circular_internal_engine_resolver_drivers,circular_internal_engine_secrets,circular_internal_mcp_adapters,circular_internal_mcp_contracts,circular_internal_mcp_openapi,circular_internal_mcp_registry,circular_internal_mcp_runtime,circular_internal_mcp_schema,circular_internal_mcp_tools_graph,circular_internal_mcp_tools_query,circular_internal_mcp_tools_report,circular_internal_mcp_tools_scan,circular_internal_mcp_tools_secrets,circular_internal_mcp_tools_system,circular_internal_mcp_transport,circular_internal_mcp_validate,circular_internal_shared_observability,circular_internal_shared_util,circular_internal_shared_version,circular_internal_ui_cli,circular_internal_ui_report,circular_internal_ui_report_formats flowNode;
   classDef entryNode fill:#e9f5ec,stroke:#2f7d32,stroke-width:2px,color:#000000;
   class circular_cmd_circular entryNode;
 

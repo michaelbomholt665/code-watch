@@ -35,6 +35,13 @@ func (s *analysisService) Unwrap() *App {
 	return s.app
 }
 
+func (s *analysisService) Close(ctx context.Context) error {
+	if s == nil || s.app == nil {
+		return nil
+	}
+	return s.app.Close(ctx)
+}
+
 func (a *App) AnalysisService() ports.AnalysisService {
 	return NewAnalysisService(a)
 }
@@ -187,7 +194,6 @@ func (s *analysisService) CaptureHistoryTrend(ctx context.Context, historyStore 
 	if s.app.archEngine != nil {
 		violations = s.app.ArchitectureViolations()
 	}
-	ruleViolations, ruleSummary := s.app.ArchitectureRuleViolations()
 	hotspotLimit := 0
 	if s.app.Config != nil {
 		hotspotLimit = s.app.Config.Architecture.TopComplexity
@@ -277,6 +283,7 @@ func (s *analysisService) SummarySnapshot(ctx context.Context) (ports.SummarySna
 	hotspots := s.app.Graph.TopComplexity(hotspotLimit)
 	hallucinations := s.app.AnalyzeHallucinations(ctx)
 	unusedImports := s.app.AnalyzeUnusedImports(ctx)
+	ruleViolations, ruleSummary := s.app.ArchitectureRuleViolations()
 
 	return ports.SummarySnapshot{
 		FileCount:      s.app.Graph.FileCount(),

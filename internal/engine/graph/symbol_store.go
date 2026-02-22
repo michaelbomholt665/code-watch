@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	_ "modernc.org/sqlite"
 )
@@ -16,8 +17,14 @@ import (
 const sqliteDriverName = "sqlite"
 
 type SQLiteSymbolStore struct {
-	db         *sql.DB
-	projectKey string
+	db                *sql.DB
+	projectKey        string
+	lookupStmt        *sql.Stmt
+	lookupServiceStmt *sql.Stmt
+
+	cacheMu            sync.RWMutex
+	lookupCache        map[string][]SymbolRecord
+	lookupServiceCache map[string][]SymbolRecord
 }
 
 func OpenSQLiteSymbolStore(path, projectKey string) (*SQLiteSymbolStore, error) {
@@ -61,7 +68,85 @@ func OpenSQLiteSymbolStore(path, projectKey string) (*SQLiteSymbolStore, error) 
 		key = "default"
 	}
 
-	return &SQLiteSymbolStore{db: db, projectKey: key}, nil
+	lookupStmt, err := db.Prepare(`SELECT
+  symbol_name,
+  full_name,
+  module_name,
+  language,
+  file_path,
+  kind,
+  is_exported,
+  visibility,
+  scope,
+  signature,
+  type_hint,
+  decorators,
+  is_service,
+  COALESCE(branch_count,0),
+  COALESCE(parameter_count,0),
+  COALESCE(nesting_depth,0),
+  COALESCE(loc,0),
+  COALESCE(usage_tag,''),
+  COALESCE(confidence,0.0),
+  COALESCE(ancestry,''),
+  COALESCE(line_number,0)
+FROM symbols
+WHERE project_key = ? AND canonical_name = ?
+ORDER BY module_name, file_path, symbol_name`)
+	if err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("prepare lookup stmt: %w", err)
+	}
+
+	lookupServiceStmt, err := db.Prepare(`SELECT
+  symbol_name,
+  full_name,
+  module_name,
+  language,
+  file_path,
+  kind,
+  is_exported,
+  visibility,
+  scope,
+  signature,
+  type_hint,
+  decorators,
+  is_service,
+  COALESCE(branch_count,0),
+  COALESCE(parameter_count,0),
+  COALESCE(nesting_depth,0),
+  COALESCE(loc,0),
+  COALESCE(usage_tag,''),
+  COALESCE(confidence,0.0),
+  COALESCE(ancestry,''),
+  COALESCE(line_number,0)
+FROM symbols
+WHERE project_key = ? AND service_key = ? AND is_service = 1
+ORDER BY module_name, file_path, symbol_name`)
+	if err != nil {
+		_ = lookupStmt.Close()
+		_ = db.Close()
+		return nil, fmt.Errorf("prepare lookup service stmt: %w", err)
+	}
+
+	return &SQLiteSymbolStore{
+		db:                 db,
+		projectKey:         key,
+		lookupStmt:         lookupStmt,
+		lookupServiceStmt:  lookupServiceStmt,
+		lookupCache:        make(map[string][]SymbolRecord),
+		lookupServiceCache: make(map[string][]SymbolRecord),
+	}, nil
+}
+
+func (s *SQLiteSymbolStore) clearCache() {
+	if s == nil {
+		return
+	}
+	s.cacheMu.Lock()
+	defer s.cacheMu.Unlock()
+	s.lookupCache = make(map[string][]SymbolRecord)
+	s.lookupServiceCache = make(map[string][]SymbolRecord)
 }
 
 type Batch struct {
@@ -87,6 +172,41 @@ func (b *Batch) UpsertFile(file *parser.File) error {
 	if err := upsertFileBlob(b.tx, b.store.projectKey, file); err != nil {
 		return err
 	}
+	b.store.clearCache()
+	return nil
+}
+
+func (b *Batch) DeleteFile(path string) error {
+	if err := deletePath(b.tx, b.store.projectKey, path); err != nil {
+		return err
+	}
+	if _, err := b.tx.Exec(`DELETE FROM file_blobs WHERE project_key = ? AND file_path = ?`, b.store.projectKey, path); err != nil {
+		return fmt.Errorf("delete file blob: %w", err)
+	}
+	b.store.clearCache()
+	return nil
+}
+
+func (b *Batch) PruneToPaths(paths []string) error {
+	if len(paths) == 0 {
+		if _, err := b.tx.Exec(`DELETE FROM symbols WHERE project_key = ?`, b.store.projectKey); err != nil {
+			return fmt.Errorf("clear symbols for empty path set: %w", err)
+		}
+		if _, err := b.tx.Exec(`DELETE FROM file_blobs WHERE project_key = ?`, b.store.projectKey); err != nil {
+			return fmt.Errorf("clear file blobs for empty path set: %w", err)
+		}
+	} else {
+		if err := loadTempPaths(b.tx, b.store.projectKey, paths); err != nil {
+			return err
+		}
+		if err := deleteMissingPathsWithTemp(b.tx, b.store.projectKey); err != nil {
+			return err
+		}
+		if _, err := b.tx.Exec(`DELETE FROM file_blobs WHERE project_key = ? AND file_path NOT IN (SELECT file_path FROM current_paths WHERE project_key = ?)`, b.store.projectKey, b.store.projectKey); err != nil {
+			return fmt.Errorf("delete stale file blobs: %w", err)
+		}
+	}
+	b.store.clearCache()
 	return nil
 }
 
@@ -104,6 +224,12 @@ func (b *Batch) Rollback() error {
 func (s *SQLiteSymbolStore) Close() error {
 	if s == nil || s.db == nil {
 		return nil
+	}
+	if s.lookupStmt != nil {
+		_ = s.lookupStmt.Close()
+	}
+	if s.lookupServiceStmt != nil {
+		_ = s.lookupServiceStmt.Close()
 	}
 	return s.db.Close()
 }
@@ -141,6 +267,7 @@ func (s *SQLiteSymbolStore) SyncFromGraph(g *Graph) error {
 		if err := tx.Commit(); err != nil {
 			return fmt.Errorf("commit symbol sync tx: %w", err)
 		}
+		s.clearCache()
 		return nil
 	}
 
@@ -162,6 +289,7 @@ func (s *SQLiteSymbolStore) SyncFromGraph(g *Graph) error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit symbol sync tx: %w", err)
 	}
+	s.clearCache()
 	return nil
 }
 
@@ -184,6 +312,7 @@ func (s *SQLiteSymbolStore) UpsertFile(file *parser.File) error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit symbol upsert tx: %w", err)
 	}
+	s.clearCache()
 	return nil
 }
 
@@ -206,6 +335,7 @@ func (s *SQLiteSymbolStore) DeleteFile(path string) error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit symbol delete tx: %w", err)
 	}
+	s.clearCache()
 	return nil
 }
 
@@ -274,87 +404,86 @@ func (s *SQLiteSymbolStore) PruneToPaths(paths []string) error {
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("commit symbol prune tx: %w", err)
 	}
+	s.clearCache()
 	return nil
 }
 
 func (s *SQLiteSymbolStore) Lookup(symbol string) []SymbolRecord {
-	if s == nil || s.db == nil {
+	if s == nil || s.db == nil || s.lookupStmt == nil {
 		return nil
 	}
 	key := canonicalSymbol(symbol)
 	if key == "" {
 		return nil
 	}
-	return s.lookupRows(`SELECT
-  symbol_name,
-  full_name,
-  module_name,
-  language,
-  file_path,
-  kind,
-  is_exported,
-  visibility,
-  scope,
-  signature,
-  type_hint,
-  decorators,
-  is_service,
-  COALESCE(usage_tag,''),
-  COALESCE(confidence,0.0),
-  COALESCE(ancestry,''),
-  COALESCE(line_number,0)
-FROM symbols
-WHERE project_key = ? AND canonical_name = ?
-ORDER BY module_name, file_path, symbol_name`, s.projectKey, key)
+
+	s.cacheMu.RLock()
+	if res, ok := s.lookupCache[key]; ok {
+		s.cacheMu.RUnlock()
+		return res
+	}
+	s.cacheMu.RUnlock()
+
+	res := s.lookupRowsStmt(s.lookupStmt, s.projectKey, key)
+
+	s.cacheMu.Lock()
+	if s.lookupCache == nil {
+		s.lookupCache = make(map[string][]SymbolRecord)
+	}
+	s.lookupCache[key] = res
+	s.cacheMu.Unlock()
+
+	return res
 }
 
 func (s *SQLiteSymbolStore) LookupService(symbol string) []SymbolRecord {
-	if s == nil || s.db == nil {
+	if s == nil || s.db == nil || s.lookupServiceStmt == nil {
 		return nil
 	}
 	key := serviceSymbolKey(symbol)
 	if key == "" {
 		return nil
 	}
-	return s.lookupRows(`SELECT
-  symbol_name,
-  full_name,
-  module_name,
-  language,
-  file_path,
-  kind,
-  is_exported,
-  visibility,
-  scope,
-  signature,
-  type_hint,
-  decorators,
-  is_service,
-  COALESCE(usage_tag,''),
-  COALESCE(confidence,0.0),
-  COALESCE(ancestry,''),
-  COALESCE(line_number,0)
-FROM symbols
-WHERE project_key = ? AND service_key = ? AND is_service = 1
-ORDER BY module_name, file_path, symbol_name`, s.projectKey, key)
+
+	s.cacheMu.RLock()
+	if res, ok := s.lookupServiceCache[key]; ok {
+		s.cacheMu.RUnlock()
+		return res
+	}
+	s.cacheMu.RUnlock()
+
+	res := s.lookupRowsStmt(s.lookupServiceStmt, s.projectKey, key)
+
+	s.cacheMu.Lock()
+	if s.lookupServiceCache == nil {
+		s.lookupServiceCache = make(map[string][]SymbolRecord)
+	}
+	s.lookupServiceCache[key] = res
+	s.cacheMu.Unlock()
+
+	return res
 }
 
 type symbolRow struct {
-	Name          string
-	CanonicalName string
-	FullName      string
-	Module        string
-	Language      string
-	FilePath      string
-	Kind          int
-	Exported      bool
-	Visibility    string
-	Scope         string
-	Signature     string
-	TypeHint      string
-	Decorators    string
-	IsService     bool
-	ServiceKey    string
+	Name           string
+	CanonicalName  string
+	FullName       string
+	Module         string
+	Language       string
+	FilePath       string
+	Kind           int
+	Exported       bool
+	Visibility     string
+	Scope          string
+	Signature      string
+	TypeHint       string
+	Decorators     string
+	IsService      bool
+	ServiceKey     string
+	BranchCount    int
+	ParameterCount int
+	NestingDepth   int
+	LOC            int
 	// v4 fields
 	UsageTag   string
 	Confidence float64
@@ -363,8 +492,8 @@ type symbolRow struct {
 	Line int
 }
 
-func (s *SQLiteSymbolStore) lookupRows(query string, args ...any) []SymbolRecord {
-	rows, err := s.db.Query(query, args...)
+func (s *SQLiteSymbolStore) lookupRowsStmt(stmt *sql.Stmt, args ...any) []SymbolRecord {
+	rows, err := stmt.Query(args...)
 	if err != nil {
 		return nil
 	}
@@ -392,6 +521,10 @@ func (s *SQLiteSymbolStore) lookupRows(query string, args ...any) []SymbolRecord
 			&rec.TypeHint,
 			&decoratorsJSON,
 			&rec.IsService,
+			&rec.Branches,
+			&rec.Parameters,
+			&rec.Nesting,
+			&rec.LOC,
 			&rec.UsageTag,
 			&rec.Confidence,
 			&rec.Ancestry,
@@ -400,8 +533,6 @@ func (s *SQLiteSymbolStore) lookupRows(query string, args ...any) []SymbolRecord
 			continue
 		}
 		rec.Kind = parser.DefinitionKind(kind)
-		// We don't currently expose Line in SymbolRecord (it's in Location),
-		// but we could if needed. For now just scanning it to consume the column.
 		if decoratorsJSON != "" {
 			var decorators []string
 			if err := json.Unmarshal([]byte(decoratorsJSON), &decorators); err == nil {
@@ -413,18 +544,11 @@ func (s *SQLiteSymbolStore) lookupRows(query string, args ...any) []SymbolRecord
 	return out
 }
 
-// migrateSymbolSchema creates or migrates the symbols table to schema v5.
-// Schema versions:
-//
-//	v1..v3 = legacy (no confidence/ancestry/usage_tag)
-//	v4     = adds usage_tag, confidence, ancestry
-//	v5     = adds line_number to PK to support multiple symbols per file
+// migrateSymbolSchema creates or migrates the symbols table to schema v7.
 func migrateSymbolSchema(db *sql.DB) error {
-	// 1. Check current version
 	var version int
 	_ = db.QueryRow(`PRAGMA user_version`).Scan(&version)
 
-	// 2. Initial creation (if version 0)
 	if version == 0 {
 		_, err := db.Exec(`
 CREATE TABLE symbols (
@@ -444,6 +568,10 @@ CREATE TABLE symbols (
   decorators TEXT NOT NULL DEFAULT '[]',
   is_service INTEGER NOT NULL DEFAULT 0,
   service_key TEXT NOT NULL DEFAULT '',
+  branch_count INTEGER NOT NULL DEFAULT 0,
+  parameter_count INTEGER NOT NULL DEFAULT 0,
+  nesting_depth INTEGER NOT NULL DEFAULT 0,
+  loc INTEGER NOT NULL DEFAULT 0,
   usage_tag TEXT NOT NULL DEFAULT '',
   confidence REAL NOT NULL DEFAULT 0.0,
   ancestry TEXT NOT NULL DEFAULT '',
@@ -461,25 +589,21 @@ CREATE TABLE file_blobs (
   PRIMARY KEY (project_key, file_path)
 );
 
-PRAGMA user_version = 6;
+PRAGMA user_version = 7;
 `)
 		if err != nil {
-			return fmt.Errorf("create v6 schema: %w", err)
+			return fmt.Errorf("create v7 schema: %w", err)
 		}
 		return ensureOverlaySchema(db)
 	}
 
-	// 3. Migration v0..v3 -> v4
 	if version < 4 {
-		// ... (existing v4 logic)
+		// Legacy migration skipped for brevity in this rewrite
 	}
-
-	// 4. Migration v4 -> v5
 	if version < 5 {
-		// ... (existing v5 logic)
+		// Legacy migration skipped
 	}
 
-	// 5. Migration v5 -> v6 (Add file_blobs)
 	if version < 6 {
 		_, err := db.Exec(`
 CREATE TABLE file_blobs (
@@ -494,6 +618,21 @@ PRAGMA user_version = 6;
 			return fmt.Errorf("schema v6 migration: %w", err)
 		}
 		version = 6
+	}
+
+	if version < 7 {
+		stmts := []string{
+			`ALTER TABLE symbols ADD COLUMN branch_count INTEGER NOT NULL DEFAULT 0;`,
+			`ALTER TABLE symbols ADD COLUMN parameter_count INTEGER NOT NULL DEFAULT 0;`,
+			`ALTER TABLE symbols ADD COLUMN nesting_depth INTEGER NOT NULL DEFAULT 0;`,
+			`ALTER TABLE symbols ADD COLUMN loc INTEGER NOT NULL DEFAULT 0;`,
+			`PRAGMA user_version = 7;`,
+		}
+		for _, stmt := range stmts {
+			if _, err := db.Exec(stmt); err != nil {
+				return fmt.Errorf("schema v7 migration: %w", err)
+			}
+		}
 	}
 
 	return ensureOverlaySchema(db)
@@ -537,21 +676,6 @@ func loadTempPaths(tx *sql.Tx, projectKey string, paths []string) error {
 	return nil
 }
 
-func deleteCurrentPaths(tx *sql.Tx, projectKey string, paths []string) error {
-	placeholders := make([]string, 0, len(paths))
-	args := make([]any, 0, len(paths)+1)
-	args = append(args, projectKey)
-	for _, p := range paths {
-		placeholders = append(placeholders, "?")
-		args = append(args, p)
-	}
-	query := fmt.Sprintf(`DELETE FROM symbols WHERE project_key = ? AND file_path IN (%s)`, strings.Join(placeholders, ","))
-	if _, err := tx.Exec(query, args...); err != nil {
-		return fmt.Errorf("delete updated symbol rows: %w", err)
-	}
-	return nil
-}
-
 func deletePath(tx *sql.Tx, projectKey, path string) error {
 	if _, err := tx.Exec(`DELETE FROM symbols WHERE project_key = ? AND file_path = ?`, projectKey, path); err != nil {
 		return fmt.Errorf("delete symbol rows for path %q: %w", path, err)
@@ -574,12 +698,8 @@ func upsertFileRows(tx *sql.Tx, projectKey string, file *parser.File) error {
 }
 
 func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
-	// Use a map to dedup by (Name, Line) to prevent UNIQUE matches on nested AST nodes.
-	// Key = "Name:Line". Value = symbolRow.
-	// Strategy: Keep Highest Confidence.
 	dedup := make(map[string]symbolRow)
 
-	// 1. Process Definitions
 	for i := range file.Definitions {
 		def := file.Definitions[i]
 		decorators := "[]"
@@ -591,7 +711,6 @@ func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
 			decorators = string(raw)
 		}
 
-		// Universal Extractor stores Ancestry in Scope
 		usageTag := "SYM_DEF"
 		ancestry := ""
 		confidence := 1.0
@@ -599,7 +718,7 @@ func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
 
 		if strings.Contains(scope, "->") {
 			ancestry = scope
-			scope = "global" // Reset scope to default
+			scope = "global"
 		}
 
 		key := fmt.Sprintf("%s:%d", def.Name, def.Location.Line)
@@ -619,15 +738,16 @@ func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
 			Decorators:    decorators,
 			IsService:     isLikelyServiceDefinition(def),
 			ServiceKey:    serviceSymbolKey(def.Name),
-			// V5 fields
-			UsageTag:   usageTag,
-			Confidence: confidence,
-			Ancestry:   ancestry,
-			Line:       def.Location.Line,
+			BranchCount:    def.BranchCount,
+			ParameterCount: def.ParameterCount,
+			NestingDepth:   def.NestingDepth,
+			LOC:            def.LOC,
+			UsageTag:       usageTag,
+			Confidence:     confidence,
+			Ancestry:       ancestry,
+			Line:           def.Location.Line,
 		}
 
-		// Definitions always win or merge?
-		// Usually definition confidence is 1.0, so it will overwrite refs.
 		if existing, ok := dedup[key]; ok {
 			if row.Confidence > existing.Confidence {
 				dedup[key] = row
@@ -637,11 +757,8 @@ func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
 		}
 	}
 
-	// 2. Process References (mixed into symbols table for Surgical API)
 	for i := range file.References {
 		ref := file.References[i]
-
-		// Universal Extractor stores "TAG|ANCESTRY" in Context
 		usageTag := ""
 		ancestry := ""
 		confidence := 0.0
@@ -650,7 +767,6 @@ func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
 			parts := strings.SplitN(ref.Context, "|", 2)
 			usageTag = parts[0]
 			ancestry = parts[1]
-			// Restore confidence defaults
 			switch usageTag {
 			case "REF_CALL":
 				confidence = 0.9
@@ -663,30 +779,20 @@ func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
 			default:
 				confidence = 0.5
 			}
-		} else {
-			// Legacy reference context (e.g. "service_bridge")
-			// We can map this to a tag if we want, or leave empty
-			if ref.Context != "" {
-				usageTag = "REF_" + strings.ToUpper(ref.Context)
-				confidence = 0.6
-			}
+		} else if ref.Context != "" {
+			usageTag = "REF_" + strings.ToUpper(ref.Context)
+			confidence = 0.6
 		}
-
-		// Only insert if we have a tag (Surgical API focus) or if we decide to store all refs?
-		// Storing all refs might bloom the table size.
-		// The Surgical API needs context for *usages*.
-		// Universal Extractor emits everything.
-		// Let's store them.
 
 		key := fmt.Sprintf("%s:%d", ref.Name, ref.Location.Line)
 		row := symbolRow{
 			Name:          ref.Name,
 			CanonicalName: canonicalSymbol(ref.Name),
-			FullName:      ref.Name, // Refs usually don't have FullName resolved yet
+			FullName:      ref.Name,
 			Module:        file.Module,
 			Language:      file.Language,
 			FilePath:      file.Path,
-			Kind:          0, // Unknown kind for ref
+			Kind:          0,
 			Exported:      false,
 			Visibility:    "",
 			Scope:         "",
@@ -695,11 +801,14 @@ func symbolRowsForFile(file *parser.File) ([]symbolRow, error) {
 			Decorators:    "[]",
 			IsService:     false,
 			ServiceKey:    "",
-			// V5 fields
-			UsageTag:   usageTag,
-			Confidence: confidence,
-			Ancestry:   ancestry,
-			Line:       ref.Location.Line,
+			BranchCount:    0,
+			ParameterCount: 0,
+			NestingDepth:   0,
+			LOC:            0,
+			UsageTag:       usageTag,
+			Confidence:     confidence,
+			Ancestry:       ancestry,
+			Line:           ref.Location.Line,
 		}
 
 		if existing, ok := dedup[key]; ok {
@@ -737,11 +846,15 @@ INSERT INTO symbols (
   decorators,
   is_service,
   service_key,
+  branch_count,
+  parameter_count,
+  nesting_depth,
+  loc,
   usage_tag,
   confidence,
   ancestry,
   line_number
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `)
 	if err != nil {
 		return fmt.Errorf("prepare symbol insert: %w", err)
@@ -766,6 +879,10 @@ INSERT INTO symbols (
 			row.Decorators,
 			boolToInt(row.IsService),
 			row.ServiceKey,
+			row.BranchCount,
+			row.ParameterCount,
+			row.NestingDepth,
+			row.LOC,
 			row.UsageTag,
 			row.Confidence,
 			row.Ancestry,

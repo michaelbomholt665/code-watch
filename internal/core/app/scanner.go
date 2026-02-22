@@ -2,6 +2,7 @@ package app
 
 import (
 	"circular/internal/core/app/helpers"
+	"circular/internal/core/ports"
 	"circular/internal/engine/parser"
 	"circular/internal/engine/resolver"
 	"circular/internal/shared/observability"
@@ -39,7 +40,7 @@ func (a *App) InitialScan(ctx context.Context) error {
 	}
 
 	var batch batchUpserter
-	if a.symbolStore != nil {
+	if a.symbolStore != nil && !a.Config.WriteQueue.QueueEnabled() {
 		b, err := a.symbolStore.BeginBatch()
 		if err != nil {
 			slog.Warn("failed to begin symbol store batch", "error", err)
@@ -59,7 +60,10 @@ func (a *App) InitialScan(ctx context.Context) error {
 			return err
 		}
 	}
-	if err := a.pruneSymbolStorePaths(); err != nil {
+	if err := a.enqueueSymbolWrite(ports.WriteRequest{
+		Operation: ports.WriteOperationPruneToPaths,
+		Paths:     a.currentGraphPaths(),
+	}); err != nil {
 		slog.Warn("failed to prune persisted symbol rows after initial scan", "error", err)
 	}
 	return nil
@@ -210,7 +214,11 @@ func (a *App) processFileWithUpserter(path string, upserter fileUpserter) error 
 		if err := upserter.UpsertFile(file); err != nil {
 			slog.Warn("failed to upsert persisted symbol rows", "path", path, "error", err)
 		}
-	} else if err := a.upsertSymbolStoreFile(file); err != nil {
+	} else if err := a.enqueueSymbolWrite(ports.WriteRequest{
+		Operation: ports.WriteOperationUpsertFile,
+		File:      file,
+		FilePath:  file.Path,
+	}); err != nil {
 		slog.Warn("failed to upsert persisted symbol rows", "path", path, "error", err)
 	}
 	return nil
