@@ -368,13 +368,33 @@ When OpenAPI conversion is enabled, allowlist filtering is applied to converted 
 - `unavailable`
 - `internal`
 
-## Quick Example
+## Quick Example (Stdio)
 
 ```bash
 cat <<'JSON' | go run ./cmd/circular --config data/config/circular.toml
 {"id":"1","tool":"circular","args":{"operation":"query.modules","params":{"limit":5}}}
 JSON
 ```
+
+## Quick Example (SSE via curl)
+
+1. **Start the server in SSE mode:**
+   ```bash
+   CIRCULAR_MCP_TRANSPORT=sse CIRCULAR_MCP_ADDRESS=127.0.0.1:8080 ./circular
+   ```
+
+2. **Establish the SSE stream (terminal 1):**
+   ```bash
+   curl -N http://127.0.0.1:8080/sse
+   ```
+   *Look for the session ID in the `endpoint` event: `data: /message?session_id=XYZ`*
+
+3. **Send a request (terminal 2):**
+   ```bash
+   curl -X POST "http://127.0.0.1:8080/message?session_id=XYZ" \
+     -H "Content-Type: application/json" \
+     -d '{"jsonrpc":"2.0","id":"1","method":"tools/call","params":{"name":"circular","arguments":{"operation":"query.modules","params":{"limit":5}}}}'
+   ```
 
 ## Wrapper Script
 
@@ -487,9 +507,11 @@ Notes:
 
 ## Client Config Schemas
 
-Use these client-side configs to connect local tools to this MCP server over stdio.
+Use these client-side configs to connect local tools to this MCP server over **stdio** or **SSE**.
 
-### VS Code (`.vscode/mcp.json`)
+### Stdio Configuration (Recommended for Local Use)
+
+#### VS Code (`.vscode/mcp.json`)
 
 ```json
 {
@@ -504,7 +526,7 @@ Use these client-side configs to connect local tools to this MCP server over std
 }
 ```
 
-### Antigravity (`mcp_config.json`)
+#### Antigravity (`mcp_config.json`)
 
 Antigravity no longer relies on the old MCP enable toggle in recent builds; use **Agent Panel -> ... -> Manage MCP Servers -> View raw config** and edit `mcp_config.json`.
 
@@ -520,7 +542,7 @@ Antigravity no longer relies on the old MCP enable toggle in recent builds; use 
 }
 ```
 
-### Gemini CLI (`~/.gemini/settings.json` or `./.gemini/settings.json`)
+#### Gemini CLI (`~/.gemini/settings.json` or `./.gemini/settings.json`)
 
 ```json
 {
@@ -535,22 +557,19 @@ Antigravity no longer relies on the old MCP enable toggle in recent builds; use 
 }
 ```
 
-### Kilo Code (`~/.kilocode/mcp_settings.json` or `./.kilocode/mcp.json`)
+### SSE Configuration (HTTP)
 
-```json
-{
-  "mcpServers": {
-    "circular": {
-      "type": "stdio",
-      "command": "go",
-      "args": ["run", "./cmd/circular", "--config", "data/config/circular.toml"],
-      "cwd": ".",
-      "env": {},
-      "disabled": false
-    }
-  }
-}
-```
+For clients that connect via HTTP SSE, point them at the `/sse` endpoint.
+
+#### Generic SSE Client
+
+- **URL**: `http://127.0.0.1:8080/sse`
+- **Method**: `GET` (Event Stream)
+- **Message Method**: `POST` to `/message?session_id=...`
+
+#### Claude Desktop
+
+Currently, Claude Desktop primarily supports `stdio`. To use SSE, you typically use a bridge or wait for native support in your client version.
 
 ### Codex
 
